@@ -1,0 +1,18 @@
+cat > .gitignore << 'EOF'
+# OS files
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.backup
+*.bak
+*~
+
+# Local machine-specific configs
+*.local
+
+# Sensitive information
+.env
+.env.*
+secrets/
+EOF

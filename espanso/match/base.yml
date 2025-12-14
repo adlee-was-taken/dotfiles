@@ -1,0 +1,518 @@
+# ============================================================================
+# Aaron D. Lee's Espanso matches
+# 2025-12-13
+# ============================================================================
+# yaml-language-server: $schema=https://raw.githubusercontent.com/espanso/espanso/dev/schemas/match.schema.json
+
+matches:
+  # =========================================
+  # Date and Time Stamps
+  # =========================================
+  
+  # Print date stamp (YYYY-MM-DD)
+  - trigger: "..ds"
+    replace: "{{date_stamp}}"
+    vars:
+      - name: date_stamp
+        type: date
+        params:
+          format: "%Y-%m-%d"
+
+  - trigger: "..date"
+    replace: "{{date_stamp}}"
+    vars:
+      - name: date_stamp
+        type: date
+        params:
+          format: "%Y-%m-%d"
+
+  # Print short/filename date stamp (YYYYMMDD)
+  - trigger: "..sds"
+    replace: "{{date_stamp}}"
+    vars:
+      - name: date_stamp
+        type: date
+        params:
+          format: "%Y%m%d"
+
+  # Print UTC date/time stamp (ISO 8601)
+  - trigger: "..ts"
+    replace: "{{date_stamp}}"
+    vars:
+      - name: date_stamp
+        type: shell
+        params:
+          cmd: 'date -u +"%Y-%m-%dT%H:%M:%S.%3NZ"'
+
+  # Print current time w/ timezone
+  - trigger: "..ztime"
+    replace: "{{date_stamp}}"
+    vars:
+      - name: date_stamp
+        type: shell
+        params:
+          cmd: 'date +"%H:%M:%S.%3N %Z"'
+ 
+  # Print UTC time w/ timezone
+  - trigger: "..uztime"
+    replace: "{{date_stamp}}"
+    vars:
+      - name: date_stamp
+        type: shell
+        params:
+          cmd: 'date -u +"%H:%M:%S.%3N %Z"'
+
+  # Print current time
+  - trigger: "..time"
+    replace: "{{date_stamp}}"
+    vars:
+      - name: date_stamp
+        type: shell
+        params:
+          cmd: 'date +"%H:%M:%S"'
+ 
+  # Print UTC time
+  - trigger: "..utime"
+    replace: "{{date_stamp}}"
+    vars:
+      - name: date_stamp
+        type: shell
+        params:
+          cmd: 'date -u +"%H:%M:%S"'
+
+  # Print UTC date/time
+  - trigger: "..utc"
+    replace: "{{date_stamp}}"
+    vars:
+      - name: date_stamp
+        type: shell
+        params:
+          cmd: 'date -u +"%Y-%m-%d %H:%M:%S.%3N %Z"'
+
+  # Print date/time stamp
+  - trigger: "..dt"
+    replace: "{{date_stamp}}"
+    vars:
+      - name: date_stamp
+        type: shell
+        params:
+          cmd: 'date  +"%Y-%m-%d %H:%M:%S %Z"'
+
+  # Print UTC date/time stamp
+  - trigger: "..udt"
+    replace: "{{date_stamp}}"
+    vars:
+      - name: date_stamp
+        type: shell
+        params:
+          cmd: 'date -u +"%Y-%m-%d %H:%M:%S %Z"'
+
+  # Print month name
+  - trigger: "..month"
+    replace: "{{month}}"
+    vars:
+      - name: month
+        type: date
+        params:
+          format: "%B"
+
+  # Print year
+  - trigger: "..year"
+    replace: "{{year}}"
+    vars:
+      - name: year
+        type: date
+        params:
+          format: "%Y"
+
+  # Print week number
+  - trigger: "..week"
+    replace: "{{week}}"
+    vars:
+      - name: week
+        type: date
+        params:
+          format: "Week %U"
+
+  # Print day of week
+  - trigger: "..day"
+    replace: "{{day}}"
+    vars:
+      - name: day
+        type: date
+        params:
+          format: "%A"
+
+  # =========================================
+  # Unix Timestamps
+  # =========================================
+
+  # Unix epoch timestamp
+  - trigger: "..epoch"
+    replace: "{{epoch}}"
+    vars:
+      - name: epoch
+        type: shell
+        params:
+          cmd: 'date +%s'
+
+  # Unix epoch timestamp in milliseconds
+  - trigger: "..epochms"
+    replace: "{{epochms}}"
+    vars:
+      - name: epochms
+        type: shell
+        params:
+          cmd: 'date +%s%3N'
+
+  # =========================================
+  # Quick Text Replacements
+  # =========================================
+  
+  - trigger: "..shrug"
+    replace: "¯\\_(ツ)_/¯"
+    
+  - trigger: "..flip"
+    replace: "(╯°□°)╯︵ ┻━┻"
+    
+  - trigger: "..unflip"
+    replace: "┬─┬ ノ( ゜-゜ノ)"
+    
+  - trigger: "..lenny"
+    replace: "( ͡° ͜ʖ ͡°)"
+
+  - trigger: "..check"
+    replace: "✓"
+  
+  - trigger: "..cross"
+    replace: "✗"
+  
+  - trigger: "..arrow"
+    replace: "→"
+  
+  - trigger: "..larrow"
+    replace: "←"
+
+  # =========================================
+  # System Information
+  # =========================================
+
+  # Public IP address
+  - trigger: "..ip"
+    replace: "{{ip}}"
+    vars:
+      - name: ip
+        type: shell
+        params:
+          cmd: 'curl -s ifconfig.me'
+
+  # Local IP address
+  - trigger: "..locip"
+    replace: "{{localip}}"
+    vars:
+      - name: localip
+        type: shell
+        params:
+          cmd: 'hostname -I | awk "{print $1}"'
+
+  # =========================================
+  # Git Shortcuts
+  # =========================================
+  
+  - trigger: "..gstat"
+    replace: "git status"
+  
+  - trigger: "..gco"
+    replace: "git checkout "
+  
+  - trigger: "..gcm"
+    replace: "git commit -m \"\""
+  
+  - trigger: "..glog"
+    replace: "git log --oneline --graph --decorate --all"
+
+  - trigger: "..gpush"
+    replace: "git push origin "
+
+  - trigger: "..gpull"
+    replace: "git pull origin "
+
+  - trigger: "..gbranch"
+    replace: "git branch -a"
+
+  - trigger: "..gdiff"
+    replace: "git diff"
+
+  - trigger: "..gadd"
+    replace: "git add ."
+
+  # Current git branch
+  - trigger: "..branch"
+    replace: "{{branch}}"
+    vars:
+      - name: branch
+        type: shell
+        params:
+          cmd: 'git branch --show-current 2>/dev/null || echo "not a git repo"'
+
+  # =========================================
+  # Docker Shortcuts
+  # =========================================
+  
+  - trigger: "..dps"
+    replace: "docker ps"
+
+  - trigger: "..dpsa"
+    replace: "docker ps -a"
+  
+  - trigger: "..dcup"
+    replace: "docker-compose up -d"
+  
+  - trigger: "..dcdown"
+    replace: "docker-compose down"
+
+  - trigger: "..dlog"
+    replace: "docker logs -f "
+
+  - trigger: "..dexec"
+    replace: "docker exec -it "
+
+  - trigger: "..dim"
+    replace: "docker images"
+
+  - trigger: "..dprune"
+    replace: "docker system prune -af"
+
+  # =========================================
+  # Code Templates
+  # =========================================
+  
+  - trigger: "..bash"
+    replace: |
+      #!/usr/bin/env bash
+      
+      set -euo pipefail
+      
+  
+  - trigger: "..python"
+    replace: |
+      #!/usr/bin/env python3
+      
+      def main():
+          pass
+      
+      if __name__ == "__main__":
+          main()
+
+  - trigger: "..she!"
+    replace: "#!/usr/bin/env bash"
+
+  # =========================================
+  # Markdown Helpers
+  # =========================================
+
+  - trigger: "..mdcode"
+    replace: |
+      ```
+      {{cursor}}
+      ```
+
+  - trigger: "..mdbash"
+    replace: |
+      ```bash
+      {{cursor}}
+      ```
+
+  - trigger: "..mdpy"
+    replace: |
+      ```python
+      {{cursor}}
+      ```
+
+  - trigger: "..mdjs"
+    replace: |
+      ```javascript
+      {{cursor}}
+      ```
+
+  - trigger: "..mdtable"
+    replace: |
+      | Column 1 | Column 2 | Column 3 |
+      |----------|----------|----------|
+      | Cell 1   | Cell 2   | Cell 3   |
+
+  - trigger: "..mdlink"
+    replace: "[{{text}}]({{url}})"
+    vars:
+      - name: text
+        type: form
+        params:
+          layout: "Link text: {{text}}"
+      - name: url
+        type: form
+        params:
+          layout: "URL: {{url}}"
+
+  - trigger: "..mdimg"
+    replace: "![{{alt}}]({{url}})"
+    vars:
+      - name: alt
+        type: form
+        params:
+          layout: "Alt text: {{alt}}"
+      - name: url
+        type: form
+        params:
+          layout: "Image URL: {{url}}"
+
+  # =========================================
+  # Common Typo Corrections
+  # =========================================
+  
+  - trigger: "teh"
+    replace: "the"
+    
+  - trigger: "recieve"
+    replace: "receive"
+    
+  - trigger: "seperator"
+    replace: "separator"
+    
+  - trigger: "definately"
+    replace: "definitely"
+    
+  - trigger: "occured"
+    replace: "occurred"
+
+  - trigger: "lenght"
+    replace: "length"
+
+  - trigger: "wierd"
+    replace: "weird"
+
+  - trigger: "thier"
+    replace: "their"
+
+  # =========================================
+  # Lorem Ipsum
+  # =========================================
+  
+  - trigger: "..lorem"
+    replace: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+  
+  - trigger: "..loremlong"
+    replace: |
+      Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
+      Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. 
+      Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. 
+      Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+
+  # =========================================
+  # Quick Responses
+  # =========================================
+  
+  - trigger: "..brb"
+    replace: "Be right back"
+  
+  - trigger: "..omw"
+    replace: "On my way"
+  
+  - trigger: "..tyvm"
+    replace: "Thank you very much"
+  
+  - trigger: "..lgtm"
+    replace: "Looks good to me"
+  
+  - trigger: "..wfm"
+    replace: "Works for me"
+
+  - trigger: "..ack"
+    replace: "Acknowledged"
+
+  - trigger: "..asap"
+    replace: "As soon as possible"
+
+  # =========================================
+  # File Paths & Navigation
+  # =========================================
+
+  - trigger: "..~"
+    replace: |
+      cd ~
+
+  - trigger: "..tmp"
+    replace: |
+      cd /tmp/
+
+  - trigger: "..logs"
+    replace: |
+      cd /var/log/
+
+  # =========================================
+  # URLs & Links
+  # =========================================
+  
+  - trigger: "..gh"
+    replace: "https://github.com"
+  
+  - trigger: "..gl"
+    replace: "https://gitlab.com"
+  
+  - trigger: "..gist"
+    replace: "https://gist.github.com"
+
+  - trigger: "..so"
+    replace: "https://stackoverflow.com"
+
+  - trigger: "..reddit"
+    replace: "https://reddit.com"
+
+  # =========================================
+  # Programming Comments
+  # =========================================
+
+  - trigger: "..todo"
+    replace: "// TODO: "
+
+  - trigger: "..fixme"
+    replace: "// FIXME: "
+
+  - trigger: "..note"
+    replace: "// NOTE: "
+
+  - trigger: "..hack"
+    replace: "// HACK: "
+
+  - trigger: "..debug"
+    replace: "// DEBUG: "
+
+  # =========================================
+  # Common Command Patterns
+  # =========================================
+
+  - trigger: "..ll"
+    replace: "ls -lah"
+
+  - trigger: "..la"
+    replace: "ls -A"
+
+  - trigger: "..grep"
+    replace: "grep -rni \"\" ."
+
+  - trigger: "..find"
+    replace: "find . -name \"\""
+
+  - trigger: "..port"
+    replace: "lsof -i :"
+
+  - trigger: "..kill"
+    replace: "kill -9 "
+
+  - trigger: "..proc"
+    replace: "ps aux | grep "
+
+  - trigger: "..disk"
+    replace: "df -h"
+
+  - trigger: "..mem"
+    replace: "free -h"
