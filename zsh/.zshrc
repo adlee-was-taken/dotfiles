@@ -75,7 +75,7 @@ zstyle ':omz:alpha:lib:git' async-prompt no
 plugins=(git)
 
 source $ZSH/oh-my-zsh.sh
-source $HOME/.dotfiles/zsh/functions/snapper.zsh
+
 
 
 # User configuration
@@ -121,3 +121,7 @@ gh-token-setup() {
     
     echo "✓ GitHub token configured!"
 }
+
+# Uncomment if you want any custom functions enabled.
+source $HOME/.dotfiles/zsh/functions/snapper.zsh
+
