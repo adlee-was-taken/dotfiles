@@ -106,4 +106,16 @@ source $ZSH/oh-my-zsh.sh
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 alias vispresso="vim ~/.config/espanso/match/base.yml"
 
-
+# GitHub token helper
+gh-token-setup() {
+    echo "Enter your GitHub username:"
+    read gh_user
+    echo "Enter your GitHub personal access token:"
+    read -s gh_token
+    
+    git config --global credential.helper store
+    echo "https://${gh_user}:${gh_token}@github.com" > ~/.git-credentials
+    chmod 600 ~/.git-credentials
+    
+    echo "✓ GitHub token configured!"
+}

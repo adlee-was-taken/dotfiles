@@ -1,2 +1,7 @@
 [init]
 	defaultBranch = master
+[user]
+	email = aaron.daniel.lee@gmail.com
+	name = Aaron D. Lee
+[credential]
+	helper = store
