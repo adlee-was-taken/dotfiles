@@ -284,7 +284,7 @@ git pull
 source ~/.zshrc
 ```
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### Theme Not Loading
 
@@ -335,7 +335,7 @@ chmod +x ~/.dotfiles/install.sh
 chmod +x ~/.dotfiles/bin/*
 ```
 
-## 🤝 Contributing
+## Contributing
 
 This is a personal dotfiles repository, but suggestions and improvements are welcome!
 
@@ -345,7 +345,7 @@ This is a personal dotfiles repository, but suggestions and improvements are wel
 4. Push to the branch (`git push origin feature/improvement`)
 5. Open a Pull Request
 
-## 📝 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
