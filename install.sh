@@ -98,7 +98,7 @@ install_dependencies() {
         fedora|rhel|centos)
             sudo dnf install -y git curl zsh
             ;;
-        arch)
+        arch|cachyos)
             sudo pacman -Sy --noconfirm git curl zsh
             ;;
         macos)
