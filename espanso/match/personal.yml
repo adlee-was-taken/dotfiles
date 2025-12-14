@@ -1,0 +1,4 @@
+matches:
+  # Simple text replacement
+  - trigger: "..me"
+    replace: "Aaron D. Lee"
