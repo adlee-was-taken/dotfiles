@@ -2,8 +2,8 @@
 # ============================================================================
 # ADLee's Dotfiles Installation Script
 # ============================================================================
-# Quick install: curl -fsSL https://raw.githubusercontent.com/YOUR_USERNAME/dotfiles/main/install.sh | bash
-# Or: git clone https://github.com/YOUR_USERNAME/dotfiles.git && cd dotfiles && ./install.sh
+# Quick install: curl -fsSL https://raw.githubusercontent.com/adlee-was-taken/dotfiles/main/install.sh | bash
+# Or: git clone https://github.com/adlee-was-taken/dotfiles.git && cd dotfiles && ./install.sh
 
 set -e
 
@@ -11,7 +11,7 @@ set -e
 # Configuration
 # ============================================================================
 
-DOTFILES_REPO="https://github.com/YOUR_USERNAME/dotfiles.git"
+DOTFILES_REPO="https://github.com/adlee-was-taken/dotfiles.git"
 DOTFILES_DIR="$HOME/.dotfiles"
 BACKUP_DIR="$HOME/.dotfiles_backup_$(date +%Y%m%d_%H%M%S)"
 
