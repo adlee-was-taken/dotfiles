@@ -1,4 +1,3 @@
-cat > .gitignore << 'EOF'
 # OS files
 .DS_Store
 Thumbs.db
@@ -10,10 +9,19 @@ Thumbs.db
 
 # Local machine-specific configs
 *.local
+.zshrc.local
 
 # Sensitive information
 .env
 .env.*
 secrets/
-EOF
 .git-credentials
+
+# Espanso backups
+espanso/match/*.backup
+
+# Editor files
+*.swp
+*.swo
+.idea/
+.vscode/

@@ -1,4 +1,61 @@
+# ============================================================================
+# Personal Espanso Snippets
+# ============================================================================
+# Customize these with your own information.
+# Run ./bin/setup-espanso.sh to update interactively.
+# ============================================================================
+
 matches:
-  # Simple text replacement
-  - trigger: "..me"
-    replace: "Aaron D. Lee"
+  # --- Personal Info ---
+  
+  - trigger: "..myemail"
+    replace: "your.email@example.com"
+
+  - trigger: "..myname"
+    replace: "Your Full Name"
+
+  - trigger: "..myphone"
+    replace: "+1 (555) 123-4567"
+
+  - trigger: "..myweb"
+    replace: "https://yourwebsite.com"
+
+  - trigger: "..mygithub"
+    replace: "https://github.com/yourusername"
+
+  # --- Email Signatures ---
+
+  - trigger: "..sig"
+    replace: |
+      Best regards,
+      Your Full Name
+      your.email@example.com
+
+  - trigger: "..sigfull"
+    replace: |
+      Best regards,
+      Your Full Name
+      your.email@example.com
+      +1 (555) 123-4567
+      https://yourwebsite.com
+
+  # --- Address ---
+
+  - trigger: "..myaddr"
+    replace: |
+      123 Main Street
+      City, ST 12345
+      USA
+
+  # --- Work Info (customize as needed) ---
+
+  - trigger: "..workemail"
+    replace: "your.name@company.com"
+
+  - trigger: "..worksig"
+    replace: |
+      Best regards,
+      Your Full Name
+      Your Title
+      Company Name
+      your.name@company.com

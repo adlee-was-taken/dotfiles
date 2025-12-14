@@ -2,25 +2,60 @@
 # ============================================================================
 # ADLee's Dotfiles Installation Script
 # ============================================================================
-# Quick install: curl -fsSL https://raw.githubusercontent.com/adlee-was-taken/dotfiles/main/install.sh | bash
-# Or: git clone https://github.com/adlee-was-taken/dotfiles.git && cd dotfiles && ./install.sh
+# Quick install:
+#   curl -fsSL https://raw.githubusercontent.com/adlee-was-taken/dotfiles/main/install.sh | bash
+# Or:
+#   git clone https://github.com/adlee-was-taken/dotfiles.git && cd dotfiles && ./install.sh
+#
+# Fork this repo? Edit dotfiles.conf with your settings.
+# ============================================================================
 
 set -e
 
 # ============================================================================
-# Configuration
+# Load Configuration
 # ============================================================================
 
-DOTFILES_REPO="https://github.com/adlee-was-taken/dotfiles.git"
-DOTFILES_DIR="$HOME/.dotfiles"
-BACKUP_DIR="$HOME/.dotfiles_backup_$(date +%Y%m%d_%H%M%S)"
+load_config() {
+    local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    local conf_file="${script_dir}/dotfiles.conf"
 
+    if [[ -f "$conf_file" ]]; then
+        source "$conf_file"
+    else
+        # Fallback defaults for curl|bash install (before clone)
+        DOTFILES_GITHUB_USER="${DOTFILES_GITHUB_USER:-adlee-was-taken}"
+        DOTFILES_REPO_NAME="${DOTFILES_REPO_NAME:-dotfiles}"
+        DOTFILES_BRANCH="${DOTFILES_BRANCH:-main}"
+        DOTFILES_DIR="${DOTFILES_DIR:-$HOME/.dotfiles}"
+        DOTFILES_BACKUP_PREFIX="${DOTFILES_BACKUP_PREFIX:-$HOME/.dotfiles_backup}"
+        DOTFILES_REPO_URL="https://github.com/${DOTFILES_GITHUB_USER}/${DOTFILES_REPO_NAME}.git"
+
+        # Feature toggles
+        INSTALL_ESPANSO="${INSTALL_ESPANSO:-ask}"
+        INSTALL_FZF="${INSTALL_FZF:-ask}"
+        INSTALL_BAT="${INSTALL_BAT:-ask}"
+        INSTALL_EZA="${INSTALL_EZA:-ask}"
+        SET_ZSH_DEFAULT="${SET_ZSH_DEFAULT:-ask}"
+
+        # Theme settings
+        ZSH_THEME_NAME="${ZSH_THEME_NAME:-adlee}"
+    fi
+}
+
+load_config
+
+BACKUP_DIR="${DOTFILES_BACKUP_PREFIX}_$(date +%Y%m%d_%H%M%S)"
+
+# ============================================================================
 # Colors
+# ============================================================================
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
 # ============================================================================
 # Helper Functions
@@ -28,7 +63,8 @@ NC='\033[0m' # No Color
 
 print_header() {
     echo -e "\n${BLUE}╔════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║${NC}  ADLee's Dotfiles Installation                           ${BLUE}║${NC}"
+    echo -e "${BLUE}║${NC}  Dotfiles Installation                                     ${BLUE}║${NC}"
+    echo -e "${BLUE}║${NC}  Repo: ${DOTFILES_GITHUB_USER}/${DOTFILES_REPO_NAME}${BLUE}║${NC}"
     echo -e "${BLUE}╚════════════════════════════════════════════════════════════╝${NC}\n"
 }
 
@@ -60,8 +96,26 @@ ask_yes_no() {
 
     read -p "$prompt" response
     response=${response:-$default}
-
     [[ "$response" =~ ^[Yy]$ ]]
+}
+
+# Check feature toggle setting
+should_install() {
+    local setting="$1"
+    local name="$2"
+
+    case "$setting" in
+        true|yes|1)
+            return 0
+            ;;
+        false|no|0)
+            return 1
+            ;;
+        *)
+            ask_yes_no "Install $name?"
+            return $?
+            ;;
+    esac
 }
 
 # ============================================================================
@@ -123,13 +177,16 @@ clone_or_update_dotfiles() {
         print_warning "Dotfiles directory already exists"
         if ask_yes_no "Update existing dotfiles?"; then
             cd "$DOTFILES_DIR"
-            #git pull origin main
+            git pull origin "$DOTFILES_BRANCH"
             print_success "Dotfiles updated"
         fi
     else
-        #git clone "$DOTFILES_REPO" "$DOTFILES_DIR"
+        git clone "$DOTFILES_REPO_URL" "$DOTFILES_DIR"
         print_success "Dotfiles cloned to $DOTFILES_DIR"
     fi
+
+    # Reload config after clone (now we have dotfiles.conf)
+    load_config
 }
 
 backup_existing_configs() {
@@ -183,10 +240,10 @@ link_dotfiles() {
         print_success "Linked: .zshrc"
     fi
 
-    # Link adlee theme
-    if [ -f "$DOTFILES_DIR/zsh/themes/adlee.zsh-theme" ]; then
-        ln -sf "$DOTFILES_DIR/zsh/themes/adlee.zsh-theme" "$HOME/.oh-my-zsh/themes/adlee.zsh-theme"
-        print_success "Linked: adlee.zsh-theme"
+    # Link theme
+    if [ -f "$DOTFILES_DIR/zsh/themes/${ZSH_THEME_NAME}.zsh-theme" ]; then
+        ln -sf "$DOTFILES_DIR/zsh/themes/${ZSH_THEME_NAME}.zsh-theme" "$HOME/.oh-my-zsh/themes/${ZSH_THEME_NAME}.zsh-theme"
+        print_success "Linked: ${ZSH_THEME_NAME}.zsh-theme"
     fi
 
     # Link gitconfig
@@ -224,10 +281,21 @@ set_zsh_default() {
     print_step "Setting zsh as default shell"
 
     if [ "$SHELL" != "$(which zsh)" ]; then
-        if ask_yes_no "Set zsh as your default shell?"; then
-            chsh -s "$(which zsh)"
-            print_success "Default shell changed to zsh (restart required)"
-        fi
+        case "$SET_ZSH_DEFAULT" in
+            true|yes|1)
+                chsh -s "$(which zsh)"
+                print_success "Default shell changed to zsh (restart required)"
+                ;;
+            false|no|0)
+                print_warning "Skipping shell change (disabled in config)"
+                ;;
+            *)
+                if ask_yes_no "Set zsh as your default shell?"; then
+                    chsh -s "$(which zsh)"
+                    print_success "Default shell changed to zsh (restart required)"
+                fi
+                ;;
+        esac
     else
         print_success "zsh is already your default shell"
     fi
@@ -243,16 +311,11 @@ install_espanso() {
 
     case "$OS" in
         ubuntu|debian)
-            # Install required dependencies
             sudo apt-get install -y wget
-
-            # Download and install espanso
             ESPANSO_VERSION="2.2.1"
             wget "https://github.com/espanso/espanso/releases/download/v${ESPANSO_VERSION}/espanso-debian-x11-amd64.deb" -O /tmp/espanso.deb
             sudo apt install /tmp/espanso.deb
             rm /tmp/espanso.deb
-
-            # Register espanso as a systemd service
             espanso service register
             print_success "espanso installed (X11 version)"
             ;;
@@ -265,26 +328,18 @@ install_espanso() {
             espanso service register
             print_success "espanso installed"
             ;;
-        arch)
-            # Check if paru is installed, if not try to install it
+        arch|cachyos)
             if ! command -v paru &> /dev/null; then
                 print_warning "paru not found, attempting to install..."
-
-                # Install dependencies for building paru
                 sudo pacman -S --needed --noconfirm base-devel git
-
-                # Clone and build paru
                 cd /tmp
                 git clone https://aur.archlinux.org/paru.git
                 cd paru
                 makepkg -si --noconfirm
                 cd ~
                 rm -rf /tmp/paru
-
                 print_success "paru installed"
             fi
-
-            # Install espanso using paru
             paru -S --noconfirm espanso-bin
             espanso service register
             print_success "espanso installed"
@@ -306,26 +361,17 @@ link_espanso_config() {
     print_step "Linking espanso configuration"
 
     if [ -d "$DOTFILES_DIR/espanso" ]; then
-        # Backup existing espanso config if it exists and is not a symlink
         if [ -d "$HOME/.config/espanso" ] && [ ! -L "$HOME/.config/espanso" ]; then
-            if [ "$backup_needed" = false ]; then
-                mkdir -p "$BACKUP_DIR"
-            fi
+            mkdir -p "$BACKUP_DIR"
             mv "$HOME/.config/espanso" "$BACKUP_DIR/espanso"
             print_success "Backed up existing espanso config"
         fi
 
-        # Remove old symlink if it exists
         [ -L "$HOME/.config/espanso" ] && rm "$HOME/.config/espanso"
-
-        # Create .config directory if it doesn't exist
         mkdir -p "$HOME/.config"
-
-        # Create symlink
         ln -sf "$DOTFILES_DIR/espanso" "$HOME/.config/espanso"
         print_success "Linked: espanso config"
 
-        # Restart espanso if it's running
         if command -v espanso &> /dev/null; then
             espanso restart 2>/dev/null || true
             print_success "Restarted espanso service"
@@ -338,59 +384,43 @@ link_espanso_config() {
 install_optional_tools() {
     print_step "Optional tools"
 
-    # espanso - text expander
+    # espanso
     if ! command -v espanso &> /dev/null; then
-        if ask_yes_no "Install espanso (text expander)?"; then
+        if should_install "$INSTALL_ESPANSO" "espanso (text expander)"; then
             install_espanso
         fi
     fi
 
-    # fzf - fuzzy finder
+    # fzf
     if ! command -v fzf &> /dev/null; then
-        if ask_yes_no "Install fzf (fuzzy finder)?"; then
+        if should_install "$INSTALL_FZF" "fzf (fuzzy finder)"; then
             git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
             ~/.fzf/install --all
             print_success "fzf installed"
         fi
     fi
 
-    # bat - better cat
+    # bat
     if ! command -v bat &> /dev/null && ! command -v batcat &> /dev/null; then
-        if ask_yes_no "Install bat (better cat)?"; then
+        if should_install "$INSTALL_BAT" "bat (better cat)"; then
             case "$OS" in
-                ubuntu|debian)
-                    sudo apt-get install -y bat
-                    ;;
-                fedora|rhel|centos)
-                    sudo dnf install -y bat
-                    ;;
-                arch)
-                    sudo pacman -S --noconfirm bat
-                    ;;
-                macos)
-                    brew install bat
-                    ;;
+                ubuntu|debian) sudo apt-get install -y bat ;;
+                fedora|rhel|centos) sudo dnf install -y bat ;;
+                arch|cachyos) sudo pacman -S --noconfirm bat ;;
+                macos) brew install bat ;;
             esac
             print_success "bat installed"
         fi
     fi
 
-    # eza - better ls
+    # eza
     if ! command -v eza &> /dev/null; then
-        if ask_yes_no "Install eza (better ls)?"; then
+        if should_install "$INSTALL_EZA" "eza (better ls)"; then
             case "$OS" in
-                ubuntu|debian)
-                    sudo apt-get install -y eza
-                    ;;
-                fedora|rhel|centos)
-                    sudo dnf install -y eza
-                    ;;
-                arch)
-                    sudo pacman -S --noconfirm eza
-                    ;;
-                macos)
-                    brew install eza
-                    ;;
+                ubuntu|debian) sudo apt-get install -y eza ;;
+                fedora|rhel|centos) sudo dnf install -y eza ;;
+                arch|cachyos) sudo pacman -S --noconfirm eza ;;
+                macos) brew install eza ;;
             esac
             print_success "eza installed"
         fi
@@ -398,7 +428,7 @@ install_optional_tools() {
 }
 
 # ============================================================================
-# Main Installation Flow
+# Main
 # ============================================================================
 
 main() {
@@ -422,7 +452,7 @@ main() {
         echo -e "${BLUE}Next steps:${NC}"
         echo "  1. Restart your terminal or run: exec zsh"
         echo "  2. Your old configs are backed up in: $BACKUP_DIR"
-        echo "  3. Customize ~/.zshrc as needed"
+        echo "  3. Customize settings in: $DOTFILES_DIR/dotfiles.conf"
         echo
         echo -e "${BLUE}To update dotfiles in the future:${NC}"
         echo "  cd ~/.dotfiles && git pull && ./install.sh"
@@ -433,5 +463,4 @@ main() {
     fi
 }
 
-# Run main function
 main "$@"

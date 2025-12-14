@@ -2,9 +2,31 @@
 # ============================================================================
 # Espanso Setup and Configuration Script
 # ============================================================================
-# This script helps set up espanso with custom configurations
 
 set -e
+
+# ============================================================================
+# Load Configuration
+# ============================================================================
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DOTFILES_CONF="${SCRIPT_DIR}/../dotfiles.conf"
+[[ -f "$DOTFILES_CONF" ]] || DOTFILES_CONF="$HOME/.dotfiles/dotfiles.conf"
+
+if [[ -f "$DOTFILES_CONF" ]]; then
+    source "$DOTFILES_CONF"
+else
+    DOTFILES_DIR="$HOME/.dotfiles"
+    USER_FULLNAME=""
+    USER_EMAIL=""
+    USER_PHONE=""
+    USER_WEBSITE=""
+    USER_GITHUB=""
+fi
+
+# ============================================================================
+# Colors
+# ============================================================================
 
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -46,9 +68,12 @@ ask_yes_no() {
 
     read -p "$prompt" response
     response=${response:-$default}
-
     [[ "$response" =~ ^[Yy]$ ]]
 }
+
+# ============================================================================
+# Functions
+# ============================================================================
 
 check_espanso() {
     if ! command -v espanso &> /dev/null; then
@@ -80,41 +105,84 @@ personalize_config() {
     local personal_file="$HOME/.config/espanso/match/personal.yml"
 
     if [ ! -f "$personal_file" ]; then
-        print_error "Personal config file not found: $personal_file"
-        return 1
+        print_warning "Personal config file not found, creating from template..."
+        mkdir -p "$(dirname "$personal_file")"
+        cat > "$personal_file" << 'EOF'
+# ============================================================================
+# Personal Espanso Snippets
+# ============================================================================
+# Edit these with your own information
+
+matches:
+  # Personal info
+  - trigger: "..myemail"
+    replace: "your.email@example.com"
+
+  - trigger: "..myname"
+    replace: "Your Full Name"
+
+  - trigger: "..myphone"
+    replace: "+1 (555) 123-4567"
+
+  - trigger: "..myweb"
+    replace: "https://yourwebsite.com"
+
+  - trigger: "..mygithub"
+    replace: "https://github.com/yourusername"
+
+  # Email signature
+  - trigger: "..sig"
+    replace: |
+      Best regards,
+      Your Full Name
+      your.email@example.com
+
+  # Address (customize as needed)
+  - trigger: "..myaddr"
+    replace: |
+      123 Main Street
+      City, ST 12345
+EOF
+        print_success "Created personal.yml template"
     fi
 
     echo
     echo "Let's personalize your espanso configuration!"
+    echo "(Press Enter to keep existing/default values)"
     echo
 
-    read -p "Your full name: " fullname
-    read -p "Your email: " email
-    read -p "Your phone (optional): " phone
-    read -p "Your website (optional): " website
-    read -p "Your GitHub username (optional): " github
+    # Use config values as defaults, prompt for any missing
+    local fullname="${USER_FULLNAME}"
+    local email="${USER_EMAIL}"
+    local phone="${USER_PHONE}"
+    local website="${USER_WEBSITE}"
+    local github="${USER_GITHUB}"
 
-    # Create a backup
+    [[ -z "$fullname" ]] && read -p "Your full name: " fullname
+    [[ -z "$email" ]] && read -p "Your email: " email
+    [[ -z "$phone" ]] && read -p "Your phone (optional): " phone
+    [[ -z "$website" ]] && read -p "Your website (optional): " website
+    [[ -z "$github" ]] && read -p "Your GitHub username (optional): " github
+
+    # Create backup
     cp "$personal_file" "$personal_file.backup"
 
-    # Update the personal.yml file
-    sed -i "s/your.email@example.com/$email/g" "$personal_file"
-    sed -i "s/Your Full Name/$fullname/g" "$personal_file"
-
-    if [ -n "$phone" ]; then
-        sed -i "s/+1 (555) 123-4567/$phone/g" "$personal_file"
-    fi
-
-    if [ -n "$website" ]; then
-        sed -i "s|https://yourwebsite.com|$website|g" "$personal_file"
-    fi
-
-    if [ -n "$github" ]; then
-        sed -i "s/yourusername/$github/g" "$personal_file"
-    fi
+    # Update values
+    [[ -n "$email" ]] && sed -i "s/your.email@example.com/$email/g" "$personal_file"
+    [[ -n "$fullname" ]] && sed -i "s/Your Full Name/$fullname/g" "$personal_file"
+    [[ -n "$phone" ]] && sed -i "s/+1 (555) 123-4567/$phone/g" "$personal_file"
+    [[ -n "$website" ]] && sed -i "s|https://yourwebsite.com|$website|g" "$personal_file"
+    [[ -n "$github" ]] && sed -i "s/yourusername/$github/g" "$personal_file"
 
     print_success "Personal configuration updated!"
     print_warning "Backup saved to: $personal_file.backup"
+
+    # Suggest updating dotfiles.conf for future installs
+    echo
+    echo -e "${BLUE}Tip:${NC} Add these to dotfiles.conf for future installs:"
+    echo "  USER_FULLNAME=\"$fullname\""
+    echo "  USER_EMAIL=\"$email\""
+    [[ -n "$github" ]] && echo "  USER_GITHUB=\"$github\""
 }
 
 install_packages() {
@@ -125,8 +193,6 @@ install_packages() {
     echo "  1. emoji - Emoji snippets (e.g., :smile: → 😊)"
     echo "  2. greek-letters - Greek letters (e.g., :alpha: → α)"
     echo "  3. math - Math symbols (e.g., :sum: → ∑)"
-    echo "  4. accents - Accented characters"
-    echo "  5. all-emojis - Complete emoji collection"
     echo
 
     if ask_yes_no "Install emoji package?"; then
@@ -165,46 +231,28 @@ ${YELLOW}Toggle espanso on/off:${NC}
 ${YELLOW}Open search menu:${NC}
   ALT+SPACE
 
-${YELLOW}Basic triggers (from base.yml):${NC}
-  :date       → Current date (YYYY-MM-DD)
-  :time       → Current time (HH:MM:SS)
-  :datetime   → Full datetime
-  :shrug      → ¯\\_(ツ)_/¯
-  :flip       → (╯°□°)╯︵ ┻━┻
-
-${YELLOW}Code snippets:${NC}
-  :bash       → Bash script template
-  :python     → Python script template
-  :mdcode     → Markdown code block
-
-${YELLOW}Git shortcuts:${NC}
-  :gst        → git status
-  :gco        → git checkout
-  :gcm        → git commit -m ""
-
-${YELLOW}Personal (customize in personal.yml):${NC}
-  :myemail    → Your email
-  :myname     → Your name
-  :sig        → Email signature
+${YELLOW}Basic triggers:${NC}
+  ..date      → Current date (YYYY-MM-DD)
+  ..time      → Current time (HH:MM:SS)
+  ..shrug     → ¯\\_(ツ)_/¯
+  ..gstat     → git status
+  ..myemail   → Your email
 
 ${YELLOW}Espanso commands:${NC}
-  espanso status              - Check if running
-  espanso restart             - Restart service
-  espanso edit                - Edit config
-  espanso log                 - View logs
-  espanso package list        - List installed packages
-  espanso package install X   - Install package
+  espanso status    - Check if running
+  espanso restart   - Restart service
+  espanso log       - View logs
 
 ${YELLOW}Configuration files:${NC}
-  ~/.config/espanso/config/default.yml   - Main config
-  ~/.config/espanso/match/base.yml       - Base snippets
-  ~/.config/espanso/match/personal.yml   - Personal snippets
-
-${GREEN}Create your own snippets!${NC}
-Edit the YAML files above to add custom triggers.
+  ~/.config/espanso/match/base.yml       - Main snippets
+  ~/.config/espanso/match/personal.yml   - Your personal snippets
 
 EOF
 }
+
+# ============================================================================
+# Main
+# ============================================================================
 
 main() {
     print_header
@@ -231,7 +279,7 @@ main() {
     echo
     print_success "Espanso setup complete!"
     echo
-    echo "Try typing ${YELLOW}:date${NC} in any application to test it!"
+    echo "Try typing ${YELLOW}..date${NC} in any application to test it!"
 }
 
 main "$@"
