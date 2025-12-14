@@ -6,16 +6,16 @@
 [![Shell](https://img.shields.io/badge/Shell-Zsh-green.svg)](https://www.zsh.org/)
 [![Maintained](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/adlee-was-taken/dotfiles/graphs/commit-activity)
 
-## 📸 Preview
+## Preview
 
 ```
-┌[alee@hostname]─[~/projects/dotfiles ⎇ main *]
+┌[alee@hostname]─[~/.dotfiles]-[main *]
 └%
 ```
 
-## ✨ Features
+## Features
 
-### 🎨 Custom Zsh Theme
+### Custom Zsh Theme
 - **adlee.zsh-theme** - A feature-rich, performant zsh theme
   - Git branch/status integration with visual indicators
   - Command execution timer (shows time for commands > 10s)
@@ -23,7 +23,7 @@
   - User/root detection (blue prompt for users, red for root)
   - Clean, minimal design that's easy to read
 
-### ⌨️ Espanso Text Expansion
+### Espanso Text Expansion
 - **100+ pre-configured snippets** using `..trigger` syntax
   - Date/time stamps (UTC, local, ISO 8601)
   - Git shortcuts (`..gst`, `..gco`, `..gcm`)
@@ -33,13 +33,13 @@
   - Common typo corrections
   - Personal information templates
 
-### 🛠️ Modern CLI Tools
+### Modern CLI Tools
 - **fzf** - Fuzzy finder for files and history
 - **bat** - Syntax-highlighted file viewer
 - **eza** - Modern ls replacement with icons
 - **espanso** - Universal text expander
 
-### 🔄 Easy Deployment
+### Easy Deployment
 - **One-command installation** on new systems
 - **Automated backups** of existing configs
 - **System-wide theme deployment** for all users
@@ -77,7 +77,7 @@ dotfiles/
 │   └── .tmux.conf                  # Tmux configuration
 │
 ├── bin/
-│   ├── update-dotfiles             # Update from repo
+│   ├── update-dotfiles.sh           # Update from repo
 │   ├── setup-espanso.sh            # Espanso setup wizard
 │   └── deploy-zshtheme-systemwide.sh  # System-wide deployment
 │
@@ -108,13 +108,13 @@ cd ~/.dotfiles
 ### What Gets Installed?
 
 The installer will:
-1. ✅ Detect your OS (Ubuntu, Arch, Fedora, macOS)
-2. ✅ Install dependencies (git, curl, zsh)
-3. ✅ Backup existing configs to `~/.dotfiles_backup_YYYYMMDD_HHMMSS/`
-4. ✅ Install oh-my-zsh
-5. ✅ Create symlinks to dotfiles
-6. ✅ Optionally install espanso, fzf, bat, eza
-7. ✅ Set zsh as default shell
+1. Detect your OS (Ubuntu, Arch, Fedora, macOS)
+2. Install dependencies (git, curl, zsh)
+3. Backup existing configs to `~/.dotfiles_backup_YYYYMMDD_HHMMSS/`
+4. Install oh-my-zsh
+5. Create symlinks to dotfiles
+6. Optionally install espanso, fzf, bat, eza
+7. Set zsh as default shell
 
 ## ⚙️ Post-Installation
 
@@ -158,7 +158,7 @@ Options:
 - `--status` - Show deployment status
 - `--force` - Force replace existing links
 
-## 🔄 Updating
+## Updating
 
 ### Update Dotfiles from GitHub
 
@@ -171,7 +171,7 @@ git pull origin main
 Or use the helper script:
 
 ```bash
-update-dotfiles
+update-dotfiles.sh
 ```
 
 ### Push Changes to GitHub
