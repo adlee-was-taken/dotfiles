@@ -135,7 +135,7 @@ This wizard will:
 ### Test Espanso
 
 Try typing these anywhere:
-- `..date` → 2024-12-13
+- `..date` → 2025-12-13
 - `..time` → 14:30:45
 - `..ip` → Your public IP
 - `..shrug` → ¯\\\_(ツ)_/¯
@@ -228,9 +228,9 @@ espanso restart
 ### Date & Time
 | Trigger | Output |
 |---------|--------|
-| `..date` | 2024-12-13 |
+| `..date` | 2025-12-13 |
 | `..time` | 14:30:45 |
-| `..ts` | 2024-12-13T14:30:45.123Z |
+| `..ts` | 2025-12-13T14:30:45.123Z |
 | `..epoch` | 1702476645 |
 
 ### Git Shortcuts
@@ -368,7 +368,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Author**: Aaron D. Lee  
 **Repository**: https://github.com/adlee-was-taken/dotfiles  
-**Last Updated**: 2024-12-13
+**Last Updated**: 2025-12-13
 
 If you find this useful, consider giving it a star!# dotfiles
 Aaron D. Lee's dotfiles for Linux/MacOs

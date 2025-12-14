@@ -2,7 +2,7 @@
 
 A comprehensive guide to using espanso text expansion with Aaron D. Lee's custom configuration.
 
-> **Last Updated**: 2024-12-14
+> **Last Updated**: 2025-12-14
 
 ## 🚀 Getting Started
 
@@ -63,19 +63,19 @@ All triggers use the `..` prefix for consistency and to avoid accidental expansi
 
 | Trigger | Output | Example |
 |---------|--------|---------|
-| `..date` | Current date | `2024-12-14` |
-| `..ds` | Date stamp (alias) | `2024-12-14` |
-| `..sds` | Short date (filename safe) | `20241214` |
-| `..ts` | UTC ISO 8601 timestamp | `2024-12-14T14:30:45.123Z` |
+| `..date` | Current date | `2025-12-14` |
+| `..ds` | Date stamp (alias) | `2025-12-14` |
+| `..sds` | Short date (filename safe) | `20251214` |
+| `..ts` | UTC ISO 8601 timestamp | `2025-12-14T14:30:45.123Z` |
 | `..time` | Current time | `14:30:45` |
 | `..utime` | UTC time | `14:30:45` |
 | `..ztime` | Time with timezone | `14:30:45.123 EST` |
 | `..uztime` | UTC time with timezone | `14:30:45.123 UTC` |
-| `..dt` | Date/time with timezone | `2024-12-14 14:30:45 EST` |
-| `..udt` | UTC date/time | `2024-12-14 14:30:45 UTC` |
-| `..utc` | Full UTC timestamp | `2024-12-14 14:30:45.123 UTC` |
+| `..dt` | Date/time with timezone | `2025-12-14 14:30:45 EST` |
+| `..udt` | UTC date/time | `2025-12-14 14:30:45 UTC` |
+| `..utc` | Full UTC timestamp | `2025-12-14 14:30:45.123 UTC` |
 | `..month` | Current month name | `December` |
-| `..year` | Current year | `2024` |
+| `..year` | Current year | `2025` |
 | `..week` | Week number | `Week 50` |
 | `..day` | Day of week | `Saturday` |
 
@@ -487,6 +487,6 @@ espanso restart
 **Configuration Location**: `~/.config/espanso/`  
 **Total Triggers**: 100+ pre-configured  
 **Custom Prefix**: `..` (double period)  
-**Last Updated**: 2024-12-14
+**Last Updated**: 2025-12-14
 
 Add your own snippets to `personal.yml` for custom shortcuts!
