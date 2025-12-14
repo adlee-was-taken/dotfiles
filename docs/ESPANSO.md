@@ -1,6 +1,8 @@
 # Espanso Quick Reference Guide
 
-A comprehensive guide to using espanso text expansion in your dotfiles setup.
+A comprehensive guide to using espanso text expansion with Aaron D. Lee's custom configuration.
+
+> **Last Updated**: 2024-12-14
 
 ## 🚀 Getting Started
 
@@ -15,6 +17,10 @@ Espanso is automatically installed when you run the main install script:
 Or install it separately:
 
 ```bash
+# Arch Linux
+paru -S espanso-bin
+espanso service register
+
 # Ubuntu/Debian
 wget https://github.com/espanso/espanso/releases/latest/download/espanso-debian-x11-amd64.deb
 sudo apt install ./espanso-debian-x11-amd64.deb
@@ -24,9 +30,6 @@ espanso service register
 brew tap espanso/espanso
 brew install espanso
 espanso service register
-
-# Fedora
-# See: https://espanso.org/install/
 ```
 
 ### Initial Setup
@@ -34,6 +37,7 @@ espanso service register
 Run the setup wizard to personalize your configuration:
 
 ```bash
+cd ~/.dotfiles
 ./bin/setup-espanso.sh
 ```
 
@@ -51,83 +55,208 @@ This will:
 | Restart espanso | `espanso restart` |
 | Check status | `espanso status` |
 
-## 📝 Built-in Snippets
+## Complete Snippet Reference
 
-### Date & Time
+All triggers use the `..` prefix for consistency and to avoid accidental expansion.
+
+### Date & Time Stamps
 
 | Trigger | Output | Example |
 |---------|--------|---------|
-| `:date` | Current date | 2024-12-13 |
-| `:time` | Current time | 14:30:45 |
-| `:datetime` | Date and time | 2024-12-13 14:30:45 |
-| `:now` | Formatted datetime | December 13, 2024 at 02:30 PM |
+| `..date` | Current date | `2024-12-14` |
+| `..ds` | Date stamp (alias) | `2024-12-14` |
+| `..sds` | Short date (filename safe) | `20241214` |
+| `..ts` | UTC ISO 8601 timestamp | `2024-12-14T14:30:45.123Z` |
+| `..time` | Current time | `14:30:45` |
+| `..utime` | UTC time | `14:30:45` |
+| `..ztime` | Time with timezone | `14:30:45.123 EST` |
+| `..uztime` | UTC time with timezone | `14:30:45.123 UTC` |
+| `..dt` | Date/time with timezone | `2024-12-14 14:30:45 EST` |
+| `..udt` | UTC date/time | `2024-12-14 14:30:45 UTC` |
+| `..utc` | Full UTC timestamp | `2024-12-14 14:30:45.123 UTC` |
+| `..month` | Current month name | `December` |
+| `..year` | Current year | `2024` |
+| `..week` | Week number | `Week 50` |
+| `..day` | Day of week | `Saturday` |
 
-### Emoticons & Symbols
+### Unix Timestamps
 
-| Trigger | Output |
-|---------|--------|
-| `:shrug` | ¯\\\_(ツ)_/¯ |
-| `:flip` | (╯°□°)╯︵ ┻━┻ |
-| `:unflip` | ┬─┬ ノ( ゜-゜ノ) |
-| `:lenny` | ( ͡° ͜ʖ ͡°) |
-| `:arrow` | → |
-| `:larrow` | ← |
-| `:check` | ✓ |
-| `:cross` | ✗ |
-| `:star` | ★ |
-| `:heart` | ♥ |
-
-### Code Templates
-
-| Trigger | Output |
-|---------|--------|
-| `:bash` | Bash script template with shebang |
-| `:python` | Python script template |
-| `:shebang` | `#!/usr/bin/env bash` |
-| `:gitignore` | Complete .gitignore template |
-| `:mdcode` | Markdown code block |
-| `:mdtable` | Markdown table template |
+| Trigger | Output | Example |
+|---------|--------|---------|
+| `..epoch` | Unix timestamp (seconds) | `1702573845` |
+| `..epochms` | Unix timestamp (milliseconds) | `1702573845123` |
 
 ### Git Shortcuts
 
 | Trigger | Output |
 |---------|--------|
-| `:gst` | `git status` |
-| `:gco` | `git checkout ` |
-| `:gcm` | `git commit -m ""` |
-| `:glog` | `git log --oneline --graph --decorate --all` |
+| `..gstat` | `git status` |
+| `..gco` | `git checkout ` |
+| `..gcm` | `git commit -m ""` |
+| `..glog` | `git log --oneline --graph --decorate --all` |
+| `..gpush` | `git push origin ` |
+| `..gpull` | `git pull origin ` |
+| `..gbranch` | `git branch -a` |
+| `..gdiff` | `git diff` |
+| `..gadd` | `git add .` |
+| `..branch` | Current git branch name |
 
 ### Docker Shortcuts
 
 | Trigger | Output |
 |---------|--------|
-| `:dps` | `docker ps` |
-| `:dcup` | `docker-compose up -d` |
-| `:dcdown` | `docker-compose down` |
+| `..dps` | `docker ps` |
+| `..dpsa` | `docker ps -a` |
+| `..dcup` | `docker-compose up -d` |
+| `..dcdown` | `docker-compose down` |
+| `..dlog` | `docker logs -f ` |
+| `..dexec` | `docker exec -it ` |
+| `..dim` | `docker images` |
+| `..dprune` | `docker system prune -af` |
 
-### Personal Information (Customizable)
+### System Information
+
+| Trigger | Output | Description |
+|---------|--------|-------------|
+| `..ip` | Your public IP | Via ifconfig.me |
+| `..locip` | Your local IP | From hostname -i |
+
+### Code Templates
 
 | Trigger | Output |
 |---------|--------|
-| `:myemail` | Your email address |
-| `:myname` | Your full name |
-| `:myphone` | Your phone number |
-| `:mywebsite` | Your website URL |
-| `:mygithub` | Your GitHub profile |
-| `:sig` | Your email signature |
+| `..bash` | Bash script template with shebang and error handling |
+| `..python` | Python script template with main function |
+| `..she!` | `#!/usr/bin/env bash` (shebang only) |
 
-### Text Templates
+**Bash Template:**
+```bash
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+```
+
+**Python Template:**
+```python
+#!/usr/bin/env python3
+
+def main():
+    pass
+
+if __name__ == "__main__":
+    main()
+```
+
+### Markdown Helpers
 
 | Trigger | Output |
 |---------|--------|
-| `:lorem` | Lorem ipsum paragraph |
-| `:loremlong` | Extended lorem ipsum |
-| `:emailhi` | Email greeting template |
-| `:emailthanks` | Thank you email template |
-| `:mdheader` | Markdown document header |
-| `:meeting` | Meeting notes template |
+| `..mdcode` | Markdown code block |
+| `..mdbash` | Bash code block |
+| `..mdpy` | Python code block |
+| `..mdjs` | JavaScript code block |
+| `..mdtable` | Markdown table template |
+| `..mdlink` | Markdown link (interactive) |
+| `..mdimg` | Markdown image (interactive) |
 
-## 🎨 Creating Custom Snippets
+**Table Template:**
+```markdown
+| Column 1 | Column 2 | Column 3 |
+|----------|----------|----------|
+| Cell 1   | Cell 2   | Cell 3   |
+```
+
+### Emoticons & Symbols
+
+| Trigger | Output |
+|---------|--------|
+| `..shrug` | ¯\\\_(ツ)_/¯ |
+| `..flip` | (╯°□°)╯︵ ┻━┻ |
+| `..unflip` | ┬─┬ ノ( ゜-゜ノ) |
+| `..lenny` | ( ͡° ͜ʖ ͡°) |
+| `..check` | ✓ |
+| `..cross` | ✗ |
+| `..arrow` | → |
+| `..larrow` | ← |
+
+### Quick Responses
+
+| Trigger | Output |
+|---------|--------|
+| `..brb` | Be right back |
+| `..omw` | On my way |
+| `..tyvm` | Thank you very much |
+| `..lgtm` | Looks good to me |
+| `..wfm` | Works for me |
+| `..ack` | Acknowledged |
+| `..asap` | As soon as possible |
+
+### File Paths & Navigation
+
+| Trigger | Output |
+|---------|--------|
+| `..~` | `cd ~` |
+| `..tmp` | `cd /tmp/` |
+| `..logs` | `cd /var/log/` |
+
+### Common URLs
+
+| Trigger | Output |
+|---------|--------|
+| `..gh` | https://github.com |
+| `..gl` | https://gitlab.com |
+| `..gist` | https://gist.github.com |
+| `..so` | https://stackoverflow.com |
+| `..reddit` | https://reddit.com |
+
+### Programming Comments
+
+| Trigger | Output |
+|---------|--------|
+| `..todo` | `// TODO: ` |
+| `..fixme` | `// FIXME: ` |
+| `..note` | `// NOTE: ` |
+| `..hack` | `// HACK: ` |
+| `..debug` | `// DEBUG: ` |
+
+### Common Commands
+
+| Trigger | Output |
+|---------|--------|
+| `..ll` | `ls -lah` |
+| `..la` | `ls -A` |
+| `..grep` | `grep -rni "" .` |
+| `..find` | `find . -name ""` |
+| `..port` | `lsof -i :` |
+| `..kill` | `kill -9 ` |
+| `..proc` | `ps aux | grep ` |
+| `..disk` | `df -h` |
+| `..mem` | `free -h` |
+
+### Lorem Ipsum
+
+| Trigger | Output |
+|---------|--------|
+| `..lorem` | Single paragraph |
+| `..loremlong` | Extended lorem ipsum (4 sentences) |
+
+### Auto-Corrections
+
+These work automatically without the `..` prefix:
+
+| Typo | Correction |
+|------|------------|
+| `teh` | the |
+| `recieve` | receive |
+| `seperator` | separator |
+| `definately` | definitely |
+| `occured` | occurred |
+| `lenght` | length |
+| `wierd` | weird |
+| `thier` | their |
+
+## Creating Custom Snippets
 
 Edit your snippet files:
 
@@ -143,15 +272,15 @@ vim ~/.config/espanso/match/personal.yml
 
 ```yaml
 matches:
-  - trigger: ":hw"
+  - trigger: "..hw"
     replace: "Hello, World!"
 ```
 
-### With Variables (Dynamic Content)
+### With Date Variables
 
 ```yaml
 matches:
-  - trigger: ":mydate"
+  - trigger: "..today"
     replace: "Today is {{mydate}}"
     vars:
       - name: mydate
@@ -160,52 +289,42 @@ matches:
           format: "%B %d, %Y"
 ```
 
-### Multi-line Templates
-
-```yaml
-matches:
-  - trigger: ":email"
-    replace: |
-      Dear {{name}},
-      
-      
-      
-      Best regards,
-      Your Name
-    vars:
-      - name: name
-        type: form
-        params:
-          layout: "Recipient name: {{name}}"
-```
-
 ### With Shell Commands
 
 ```yaml
 matches:
-  - trigger: ":myip"
+  - trigger: "..uptime"
     replace: "{{output}}"
     vars:
       - name: output
         type: shell
         params:
-          cmd: "curl -s ifconfig.me"
+          cmd: 'uptime -p'
 ```
 
-### Cursor Positioning
+### Multi-line Templates
 
 ```yaml
 matches:
-  - trigger: ":func"
-    replace: "function {{name}}() {\n    {{cursor}}\n}"
+  - trigger: "..header"
+    replace: |
+      # ============================================================================
+      # {{title}}
+      # Author: Aaron D. Lee
+      # Date: {{date}}
+      # ============================================================================
     vars:
-      - name: name
+      - name: title
         type: form
         params:
-          layout: "Function name: {{name}}"
+          layout: "Title: {{title}}"
+      - name: date
+        type: date
+        params:
+          format: "%Y-%m-%d"
 ```
 
-## 📦 Package Management
+## Package Management
 
 ### List Installed Packages
 
@@ -213,7 +332,7 @@ matches:
 espanso package list
 ```
 
-### Install Packages
+### Install Additional Packages
 
 ```bash
 # Emoji support
@@ -225,7 +344,7 @@ espanso install greek-letters --force
 # Math symbols
 espanso install math --force
 
-# All emojis
+# Complete emoji collection
 espanso install all-emojis --force
 ```
 
@@ -233,9 +352,9 @@ espanso install all-emojis --force
 
 Visit: https://hub.espanso.org/
 
-## 🔧 Configuration
+## Configuration
 
-### Main Configuration File
+### Main Configuration
 
 Location: `~/.config/espanso/config/default.yml`
 
@@ -248,7 +367,7 @@ toggle_key: ALT+SHIFT+E
 # Search shortcut
 search_shortcut: ALT+SPACE
 
-# Backend (Auto, Clipboard, or Inject)
+# Backend
 backend: Auto
 
 # Show notifications
@@ -258,24 +377,12 @@ show_notifications: true
 auto_restart: true
 ```
 
-### Application-Specific Configs
+### Match Files
 
-Create configs for specific applications:
+- `~/.config/espanso/match/base.yml` - Main snippets (100+ triggers)
+- `~/.config/espanso/match/personal.yml` - Personal information
 
-```bash
-# Only in terminal
-vim ~/.config/espanso/match/terminal.yml
-```
-
-```yaml
-filter_title: "Terminal|Konsole|iTerm"
-
-matches:
-  - trigger: ":ll"
-    replace: "ls -lah"
-```
-
-## 🛠️ Troubleshooting
+## Troubleshooting
 
 ### Espanso Not Working
 
@@ -301,154 +408,85 @@ matches:
    ```bash
    espanso match list
    ```
-3. Ensure espanso is enabled (not toggled off with ALT+SHIFT+E)
+3. Ensure espanso is enabled (not toggled off with `ALT+SHIFT+E`)
 
-### Conflicts with Other Apps
-
-Some applications may conflict with espanso. Add them to the filter:
-
-```yaml
-# In config/default.yml
-filter_exec: "application_name"
-```
-
-### Clipboard Issues
-
-Try changing the backend:
-
-```yaml
-# In config/default.yml
-backend: Clipboard
-```
-
-## 📚 Advanced Features
-
-### Forms (Interactive Inputs)
-
-```yaml
-matches:
-  - trigger: ":invoice"
-    replace: |
-      Invoice #{{number}}
-      Client: {{client}}
-      Amount: ${{amount}}
-      Due: {{date}}
-    vars:
-      - name: number
-        type: form
-        params:
-          layout: |
-            Invoice Number: {{number}}
-            Client Name: {{client}}
-            Amount: {{amount}}
-            Due Date: {{date}}
-```
-
-### Choice Variables
-
-```yaml
-matches:
-  - trigger: ":env"
-    replace: "{{env}}"
-    vars:
-      - name: env
-        type: choice
-        params:
-          values:
-            - development
-            - staging
-            - production
-```
-
-### Script Variables
-
-```yaml
-matches:
-  - trigger: ":weather"
-    replace: "{{output}}"
-    vars:
-      - name: output
-        type: script
-        params:
-          args:
-            - python
-            - /path/to/weather_script.py
-```
-
-## 🔄 Backup and Sync
-
-### Backup Your Config
+### Test a Specific Trigger
 
 ```bash
-# Using the dotfiles system
+# List all matches
+espanso match list | grep "..date"
+
+# Check if trigger is recognized
+espanso match list | grep "trigger"
+```
+
+## Pro Tips
+
+1. **Consistent Naming**: All triggers use `..` prefix to avoid accidents
+2. **Quick Testing**: Type trigger in any text field to test immediately
+3. **Search Feature**: Use `ALT+SPACE` to search all available snippets
+4. **Restart After Changes**: `espanso restart` after editing YAML files
+5. **Check Logs**: Use `espanso log` to debug issues
+6. **Backup Your Config**: Your espanso config is in your dotfiles repo!
+
+## Common Workflows
+
+### Developer Workflow
+
+```
+..gstat     → Check git status
+..gadd      → Stage all changes
+..gcm       → Commit with message
+..gpush     → Push to remote
+```
+
+### Documentation Writing
+
+```
+..date      → Add current date
+..mdcode    → Insert code block
+..mdtable   → Create table
+..todo      → Add TODO comment
+```
+
+### System Administration
+
+```
+..dps       → Check running containers
+..disk      → Check disk usage
+..mem       → Check memory usage
+..port      → Check port usage
+```
+
+## Syncing Across Systems
+
+Your espanso config is part of your dotfiles:
+
+```bash
+# On system A (after making changes)
 cd ~/.dotfiles
 git add espanso/
-git commit -m "Update espanso config"
+git commit -m "Update espanso snippets"
 git push
-```
 
-### Restore on New System
-
-```bash
-# Clone dotfiles
-git clone https://github.com/YOUR_USERNAME/dotfiles.git ~/.dotfiles
+# On system B (pull changes)
 cd ~/.dotfiles
-
-# Install
-./install.sh
-
-# Personalize
-./bin/setup-espanso.sh
+git pull
+espanso restart
 ```
 
-## 📖 Resources
+## Resources
 
 - [Official Documentation](https://espanso.org/docs/)
 - [Package Hub](https://hub.espanso.org/)
 - [GitHub Repository](https://github.com/espanso/espanso)
 - [Community Forum](https://github.com/espanso/espanso/discussions)
 
-## 💡 Tips & Best Practices
-
-1. **Use consistent prefixes**: Start all triggers with `:` to avoid accidents
-2. **Keep it organized**: Separate snippets by category in different files
-3. **Test before committing**: Verify new snippets work before adding to git
-4. **Use descriptive triggers**: Make triggers memorable and logical
-5. **Leverage forms**: Use forms for snippets that need customization
-6. **Back up regularly**: Keep your config in version control
-7. **Share useful snippets**: Contribute to the community hub
-
-## 🎯 Common Use Cases
-
-### Developer Workflow
-
-```yaml
-:fixme    → // FIXME: 
-:todo     → // TODO: 
-:note     → // NOTE: 
-:debug    → console.log('DEBUG:', );
-```
-
-### Writing & Documentation
-
-```yaml
-:doc      → Documentation template
-:readme   → README.md template
-:license  → MIT License text
-:quote    → > Blockquote
-```
-
-### Communication
-
-```yaml
-:ty       → Thank you
-:yw       → You're welcome
-:lgtm     → Looks good to me
-:wip      → Work in progress
-```
-
 ---
 
-**Happy expanding!** 🚀
+**Configuration Location**: `~/.config/espanso/`  
+**Total Triggers**: 100+ pre-configured  
+**Custom Prefix**: `..` (double period)  
+**Last Updated**: 2024-12-14
 
-For questions or issues, check the [espanso documentation](https://espanso.org/docs/) or open an issue in your dotfiles repository.
+Add your own snippets to `personal.yml` for custom shortcuts!
