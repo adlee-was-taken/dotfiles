@@ -1,5 +1,5 @@
 # ============================================================================
-# Snapper Snapshot Functions for CachyOS/Arch
+# Snapper Snapshot Functions for CachyOS/Arch with limine-snapper-sync
 # ============================================================================
 # Add these functions to your ~/.zshrc or ~/.dotfiles/zsh/.zshrc
 
@@ -64,8 +64,17 @@ snap-create() {
     
     echo -e "${SNAP_GREEN}✓${SNAP_NC} Snapshot created: #$snapshot_num"
     
-    # Wait a moment for the plugin to run
-    echo -e "\n${SNAP_BLUE}==>${SNAP_NC} Waiting for snapper-limine-plugin to update limine.conf..."
+    # Trigger limine-snapper-sync service
+    echo -e "\n${SNAP_BLUE}==>${SNAP_NC} Triggering limine-snapper-sync service..."
+    
+    if sudo systemctl start limine-snapper-sync.service; then
+        echo -e "${SNAP_GREEN}✓${SNAP_NC} Service triggered successfully"
+    else
+        echo -e "${SNAP_YELLOW}⚠${SNAP_NC} Failed to trigger service (may run automatically)"
+    fi
+    
+    # Wait a moment for the service to complete
+    echo -e "${SNAP_BLUE}==>${SNAP_NC} Waiting for limine-snapper-sync to update limine.conf..."
     sleep 2
     
     # Get limine.conf state after snapshot
@@ -122,7 +131,8 @@ snap-create() {
     else
         echo -e "Status:                ${SNAP_RED}✗ VALIDATION FAILED${SNAP_NC}"
         echo -e "\n${SNAP_RED}✗${SNAP_NC} Snapshot created but limine.conf validation failed!"
-        echo -e "${SNAP_YELLOW}⚠${SNAP_NC} Check if snapper-limine-plugin is installed and configured"
+        echo -e "${SNAP_YELLOW}⚠${SNAP_NC} Check if limine-snapper-sync service is running properly"
+        echo -e "${SNAP_YELLOW}Run:${SNAP_NC} sudo systemctl status limine-snapper-sync.service"
         return 1
     fi
 }
@@ -177,7 +187,11 @@ snap-delete() {
     if [[ $? -eq 0 ]]; then
         echo -e "${SNAP_GREEN}✓${SNAP_NC} Snapshot #$snapshot_num deleted"
         
-        # Wait for plugin to update
+        # Trigger sync service
+        echo -e "${SNAP_BLUE}==>${SNAP_NC} Triggering limine-snapper-sync..."
+        sudo systemctl start limine-snapper-sync.service
+        
+        # Wait for service to complete
         sleep 2
         
         # Check after deletion
@@ -241,9 +255,108 @@ snap-check-limine() {
     fi
 }
 
-# Validate snapper-limine-plugin is working
-snap-validate-plugin() {
+# Manually trigger sync service
+snap-sync() {
+    echo -e "${SNAP_BLUE}==>${SNAP_NC} Manually triggering limine-snapper-sync..."
+    
+    if sudo systemctl start limine-snapper-sync.service; then
+        echo -e "${SNAP_GREEN}✓${SNAP_NC} Service triggered successfully"
+        
+        # Wait for completion
+        sleep 2
+        
+        # Show status
+        echo -e "\n${SNAP_BLUE}Service status:${SNAP_NC}"
+        sudo systemctl status limine-snapper-sync.service --no-pager -l | tail -n 10
+    else
+        echo -e "${SNAP_RED}✗${SNAP_NC} Failed to trigger service"
+        return 1
+    fi
+}
+
+# Validate limine-snapper-sync service is working
+snap-validate-service() {
     echo -e "${SNAP_BLUE}╔════════════════════════════════════════════════════════════╗${SNAP_NC}"
+    echo -e "${SNAP_BLUE}║${SNAP_NC}  Limine-Snapper-Sync Service Validation                  ${SNAP_BLUE}║${SNAP_NC}"
+    echo -e "${SNAP_BLUE}╚════════════════════════════════════════════════════════════╝${SNAP_NC}\n"
+    
+    # Check if service unit exists
+    echo -e "${SNAP_BLUE}==>${SNAP_NC} Checking service unit"
+    
+    if systemctl list-unit-files | grep -q "limine-snapper-sync.service"; then
+        echo -e "${SNAP_GREEN}✓${SNAP_NC} limine-snapper-sync.service unit exists"
+    else
+        echo -e "${SNAP_RED}✗${SNAP_NC} limine-snapper-sync.service unit NOT found"
+        echo -e "\n${SNAP_YELLOW}Install with:${SNAP_NC} paru -S limine-snapper-sync"
+        return 1
+    fi
+    
+    # Check if service is enabled
+    echo -e "\n${SNAP_BLUE}==>${SNAP_NC} Checking if service is enabled"
+    
+    if systemctl is-enabled limine-snapper-sync.service &>/dev/null; then
+        echo -e "${SNAP_GREEN}✓${SNAP_NC} Service is enabled"
+    else
+        echo -e "${SNAP_YELLOW}⚠${SNAP_NC} Service is NOT enabled"
+        echo -e "${SNAP_YELLOW}Enable with:${SNAP_NC} sudo systemctl enable limine-snapper-sync.service"
+    fi
+    
+    # Check service status
+    echo -e "\n${SNAP_BLUE}==>${SNAP_NC} Checking service status"
+    
+    if systemctl is-active limine-snapper-sync.service &>/dev/null; then
+        echo -e "${SNAP_GREEN}✓${SNAP_NC} Service is active"
+    else
+        echo -e "${SNAP_YELLOW}⚠${SNAP_NC} Service is inactive (this is normal for oneshot services)"
+    fi
+    
+    # Show recent service logs
+    echo -e "\n${SNAP_BLUE}==>${SNAP_NC} Recent service logs (last 10 lines)"
+    echo ""
+    sudo journalctl -u limine-snapper-sync.service -n 10 --no-pager | sed 's/^/  /'
+    
+    # Check snapper config
+    echo -e "\n${SNAP_BLUE}==>${SNAP_NC} Checking snapper configuration"
+    
+    if [[ -f "/etc/snapper/configs/root" ]]; then
+        echo -e "${SNAP_GREEN}✓${SNAP_NC} Snapper root config exists"
+    else
+        echo -e "${SNAP_RED}✗${SNAP_NC} Snapper root config not found"
+    fi
+    
+    # Check limine.conf
+    echo -e "\n${SNAP_BLUE}==>${SNAP_NC} Checking limine.conf"
+    
+    if [[ -f "/boot/limine.conf" ]]; then
+        echo -e "${SNAP_GREEN}✓${SNAP_NC} limine.conf exists"
+        local snap_entries=$(sudo grep -c "^:.*Snapshot" /boot/limine.conf || echo "0")
+        echo -e "  Snapshot entries: $snap_entries"
+    else
+        echo -e "${SNAP_RED}✗${SNAP_NC} limine.conf not found"
+    fi
+    
+    echo -e "\n${SNAP_GREEN}✓${SNAP_NC} Validation complete"
+}
+
+# Quick snapshot aliases
+alias snap='snap-create'
+alias snapls='snap-list'
+alias snaprm='snap-delete'
+alias snapshow='snap-show'
+alias snapcheck='snap-check-limine'
+alias snapsync='snap-sync'
+
+# ============================================================================
+# Usage Examples (commented out - uncomment to see examples)
+# ============================================================================
+
+# snap-create "Before system update"
+# snap-list 20
+# snap-show 42
+# snap-delete 42
+# snap-check-limine
+# snap-sync
+# snap-validate-serviceNC}"
     echo -e "${SNAP_BLUE}║${SNAP_NC}  Snapper-Limine-Plugin Validation                        ${SNAP_BLUE}║${SNAP_NC}"
     echo -e "${SNAP_BLUE}╚════════════════════════════════════════════════════════════╝${SNAP_NC}\n"
     
