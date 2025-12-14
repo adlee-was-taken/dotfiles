@@ -1,278 +1,226 @@
-# Dotfiles Repository Setup Checklist
+# Setup Guide
 
-Use this checklist to ensure your dotfiles repository is complete and ready to use.
+Step-by-step instructions for setting up and maintaining your dotfiles.
 
-## 📋 File Structure
+## Prerequisites
 
-### Core Files
-- [ ] `README.md` - Main documentation (use the artifact provided)
-- [ ] `LICENSE` - MIT License file
-- [ ] `.gitignore` - Git ignore rules
-- [ ] `install.sh` - Main installation script
+- Git
+- Curl
+- Zsh (will be installed if missing)
 
-### Zsh Configuration
-- [ ] `zsh/.zshrc` - Main zsh config
-- [ ] `zsh/themes/adlee.zsh-theme` - Custom theme
-- [ ] `zsh/.zshrc.local.example` - Template for local settings (optional)
+## Fresh Install
 
-### Espanso Configuration
-- [ ] `espanso/config/default.yml` - Espanso settings
-- [ ] `espanso/match/base.yml` - Base snippets
-- [ ] `espanso/match/personal.yml` - Personal snippets
+### Option 1: One-liner
 
-### Git Configuration
-- [ ] `git/.gitconfig` - Git settings
-- [ ] `git/.gitignore_global` - Global gitignore (optional)
+```bash
+curl -fsSL https://raw.githubusercontent.com/adlee-was-taken/dotfiles/main/install.sh | bash
+```
 
-### Other Configs
-- [ ] `vim/.vimrc` - Vim config (if you use vim)
-- [ ] `tmux/.tmux.conf` - Tmux config (if you use tmux)
+### Option 2: Clone First
 
-### Utility Scripts
-- [ ] `bin/update-dotfiles` - Update script
-- [ ] `bin/setup-espanso.sh` - Espanso wizard
-- [ ] `bin/deploy-zshtheme-systemwide.sh` - System-wide deployment
+```bash
+git clone https://github.com/adlee-was-taken/dotfiles.git ~/.dotfiles
+cd ~/.dotfiles
+./install.sh
+```
 
-### Documentation
-- [ ] `docs/SETUP_GUIDE.md` - Detailed setup guide
-- [ ] `docs/ESPANSO.md` - Espanso reference
-- [ ] `CHECKLIST.md` - This file
+### What the Installer Does
 
-## 🔧 Setup Steps
+1. Detects OS (Ubuntu, Arch, Fedora, macOS)
+2. Installs dependencies (git, curl, zsh)
+3. Backs up existing configs to `~/.dotfiles_backup_YYYYMMDD_HHMMSS/`
+4. Installs oh-my-zsh
+5. Creates symlinks
+6. Optionally installs espanso, fzf, bat, eza
+7. Sets zsh as default shell
 
-### 1. Create Directory Structure
+## Post-Install
+
+### Personalize Espanso
+
+```bash
+./bin/setup-espanso.sh
+```
+
+Updates `personal.yml` with your name, email, etc.
+
+### Test It
+
+```bash
+source ~/.zshrc           # Reload shell
+echo "..date" | espanso   # Test espanso (or just type ..date anywhere)
+```
+
+### Install Zsh Plugins (if missing)
+
+```bash
+git clone https://github.com/zsh-users/zsh-autosuggestions \
+  ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
+
+git clone https://github.com/zsh-users/zsh-syntax-highlighting \
+  ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
+```
+
+## Updating
+
 ```bash
 cd ~/.dotfiles
-mkdir -p zsh/themes
-mkdir -p espanso/config espanso/match
-mkdir -p git
-mkdir -p vim
-mkdir -p tmux
-mkdir -p bin
-mkdir -p docs
+git pull origin main
+./install.sh
+source ~/.zshrc
 ```
 
-### 2. Create/Copy Configuration Files
-
-- [ ] Copy your existing `.zshrc` to `zsh/.zshrc`
-- [ ] Copy your theme to `zsh/themes/adlee.zsh-theme`
-- [ ] Copy espanso configs from `~/.config/espanso/` to `espanso/`
-- [ ] Copy `.gitconfig` to `git/.gitconfig`
-- [ ] Copy `.vimrc` to `vim/.vimrc` (if exists)
-- [ ] Copy `.tmux.conf` to `tmux/.tmux.conf` (if exists)
-
-### 3. Create Scripts
-
-Download or create these scripts from the artifacts:
-- [ ] `install.sh`
-- [ ] `bin/update-dotfiles`
-- [ ] `bin/setup-espanso.sh`
-- [ ] `bin/deploy-zshtheme-systemwide.sh`
-
-Make them executable:
-```bash
-chmod +x install.sh
-chmod +x bin/*
-```
-
-### 4. Create Documentation
-
-- [ ] Create `README.md` (use artifact provided)
-- [ ] Create `docs/SETUP_GUIDE.md` (artifact provided earlier)
-- [ ] Create `docs/ESPANSO.md` (artifact provided earlier)
-
-### 5. Create .gitignore
+Or use the helper:
 
 ```bash
-cat > .gitignore << 'EOF'
-# OS files
-.DS_Store
-Thumbs.db
-
-# Backup files
-*.backup
-*.bak
-*~
-
-# Local machine-specific configs
-*.local
-.zshrc.local
-
-# Sensitive information
-.env
-.env.*
-secrets/
-
-# Optional: Uncomment if personal espanso info is sensitive
-# espanso/match/personal.yml
-
-# Espanso backup files
-espanso/match/*.backup
-EOF
+update-dotfiles.sh
 ```
 
-### 6. Create LICENSE
+## Pushing Changes
 
-```bash
-cat > LICENSE << 'EOF'
-MIT License
-
-Copyright (c) 2025 Aaron D. Lee
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-EOF
-```
-
-## 🐙 GitHub Setup
-
-### 1. Create Repository
-- [ ] Go to https://github.com/new
-- [ ] Name: `dotfiles`
-- [ ] Description: "Personal configuration files and automation scripts"
-- [ ] Visibility: Public or Private
-- [ ] Don't initialize with README (you already have one)
-- [ ] Click "Create repository"
-
-### 2. Initialize Git
 ```bash
 cd ~/.dotfiles
-git init
 git add .
-git commit -m "Initial commit: Add dotfiles and custom zsh theme"
+git commit -m "Update aliases"
+git push origin main
 ```
 
-### 3. Add Remote and Push
-```bash
-# Replace adlee-was-taken with your GitHub username
-git remote add origin https://github.com/adlee-was-taken/dotfiles.git
-git branch -M main
-git push -u origin main
-```
-
-### 4. Update URLs in Files
-- [ ] Update `install.sh` - Replace `adlee-was-taken` in `DOTFILES_REPO`
-- [ ] Update `README.md` - Replace all `adlee-was-taken` references
-- [ ] Update `docs/SETUP_GUIDE.md` - Replace `adlee-was-taken`
+## Multi-Machine Sync
 
 ```bash
-# Quick find all instances
-grep -r "adlee-was-taken" .
+# Machine A: push changes
+cd ~/.dotfiles && git add . && git commit -m "Update" && git push
+
+# Machine B: pull changes
+cd ~/.dotfiles && git pull && source ~/.zshrc
 ```
 
-## ✅ Verification
+## File Structure
 
-### Test Local Installation
-- [ ] Test install script on local machine
-  ```bash
-  # Dry run first
-  bash -n install.sh  # Check for syntax errors
-  
-  # Then test (will backup existing configs)
-  ./install.sh
-  ```
+| Path | Purpose |
+|------|---------|
+| `zsh/.zshrc` | Main shell config |
+| `zsh/themes/adlee.zsh-theme` | Prompt theme |
+| `zsh/functions/snapper.zsh` | Btrfs snapshot helpers |
+| `espanso/match/base.yml` | Text snippets |
+| `espanso/match/personal.yml` | Your personal info |
+| `git/.gitconfig` | Git settings |
+| `vim/.vimrc` | Vim config |
+| `tmux/.tmux.conf` | Tmux config |
+| `bin/` | Utility scripts |
 
-- [ ] Verify symlinks were created correctly
-  ```bash
-  ls -la ~ | grep "^l"  # Show all symlinks in home
-  ```
+## Symlinks Created
 
-- [ ] Test zsh theme
-  ```bash
-  source ~/.zshrc
-  # Check if prompt looks correct
-  ```
+| Source | Target |
+|--------|--------|
+| `~/.dotfiles/zsh/.zshrc` | `~/.zshrc` |
+| `~/.dotfiles/zsh/themes/adlee.zsh-theme` | `~/.oh-my-zsh/themes/adlee.zsh-theme` |
+| `~/.dotfiles/git/.gitconfig` | `~/.gitconfig` |
+| `~/.dotfiles/vim/.vimrc` | `~/.vimrc` |
+| `~/.dotfiles/tmux/.tmux.conf` | `~/.tmux.conf` |
+| `~/.dotfiles/espanso/` | `~/.config/espanso` |
 
-- [ ] Test espanso
-  ```bash
-  espanso status
-  # Try typing: ..date
-  ```
+## System-Wide Theme
 
-### Test GitHub Setup
-- [ ] Clone on a test directory
-  ```bash
-  cd /tmp
-  git clone https://github.com/adlee-was-taken/dotfiles.git test-dotfiles
-  cd test-dotfiles
-  ./install.sh
-  ```
+Deploy to all users on a system:
 
-### Test System-wide Deployment
-- [ ] Check current status
-  ```bash
-  sudo ./bin/deploy-zshtheme-systemwide.sh --status
-  ```
+```bash
+# Interactive
+sudo ./bin/deploy-zshtheme-systemwide.sh
 
-- [ ] Test deployment
-  ```bash
-  sudo ./bin/deploy-zshtheme-systemwide.sh --current
-  ```
+# All users with oh-my-zsh
+sudo ./bin/deploy-zshtheme-systemwide.sh --all
 
-## 📝 Final Touches
+# Current user + root only
+sudo ./bin/deploy-zshtheme-systemwide.sh --current
 
-### Customize Personal Info
-- [ ] Edit `espanso/match/personal.yml` with your info
-- [ ] Edit `git/.gitconfig` with your name and email
-- [ ] Update `README.md` with your GitHub username
-- [ ] Update any other personal references
+# Check status
+sudo ./bin/deploy-zshtheme-systemwide.sh --status
+```
 
-### Optional Enhancements
-- [ ] Add GitHub Actions for linting (optional)
-- [ ] Add screenshots to README
-- [ ] Create a demo GIF of the theme
-- [ ] Add more espanso snippets for your workflow
-- [ ] Create shell aliases in `.zshrc`
+Creates symlinks from each user's oh-my-zsh themes folder to `/usr/local/share/zsh/themes/adlee.zsh-theme`.
 
-### Security Check
-- [ ] Ensure no sensitive info in committed files
-  ```bash
-  # Search for potential secrets
-  grep -rE '(password|secret|token|key)' . --exclude-dir=.git
-  ```
+## Customization Tips
 
-- [ ] Verify `.gitignore` is working
-  ```bash
-  git status  # Should not show .local files or sensitive data
-  ```
+### Add Aliases
 
-## 🎉 You're Done!
+Edit `~/.dotfiles/zsh/.zshrc`:
 
-Once all items are checked:
-- [ ] Commit any final changes
-  ```bash
-  git add .
-  git commit -m "Complete repository setup"
-  git push
-  ```
+```bash
+alias projects='cd ~/projects'
+alias k='kubectl'
+```
 
-- [ ] Test on a second machine (if available)
-- [ ] Star your own repo (you deserve it! 😄)
-- [ ] Share with others who might find it useful
+### Machine-Specific Config
 
-## 📚 Next Steps
+Create `~/.zshrc.local` (not tracked by git):
 
-- Read through `docs/SETUP_GUIDE.md` for detailed usage
-- Explore `docs/ESPANSO.md` for all available snippets
-- Customize the theme colors in `zsh/themes/adlee.zsh-theme`
-- Add more aliases to `.zshrc`
-- Consider contributing to the espanso community hub
+```bash
+# Work machine specific
+export WORK_API_KEY="xxx"
+alias vpn='sudo openconnect ...'
+```
 
----
+### Theme Colors
 
-**Need help?** Open an issue in your repository or check the documentation files.
+Edit `~/.dotfiles/zsh/themes/adlee.zsh-theme` and look for:
+
+```zsh
+typeset -g COLOR_GREEN='%{$FG[118]%}'
+typeset -g COLOR_BLUE='%{$FG[069]%}'
+```
+
+## Troubleshooting
+
+### Theme Not Loading
+
+```bash
+grep ZSH_THEME ~/.zshrc  # Should show: ZSH_THEME="adlee"
+source ~/.zshrc
+```
+
+### Espanso Not Expanding
+
+```bash
+espanso status    # Should show "running"
+espanso restart
+espanso log       # Check for errors
+```
+
+### Broken Symlinks
+
+```bash
+# Find broken symlinks in home
+find ~ -maxdepth 1 -type l -xtype l
+
+# Re-run installer
+cd ~/.dotfiles && ./install.sh
+```
+
+### Permission Errors
+
+```bash
+chmod +x ~/.dotfiles/install.sh
+chmod +x ~/.dotfiles/bin/*
+```
+
+## Security Notes
+
+- `.gitignore` excludes `.env`, `secrets/`, and `*.local` files
+- Review `git/.gitconfig` before pushing (contains email)
+- Personal espanso snippets may contain sensitive info
+
+## Uninstalling
+
+```bash
+# Remove symlinks
+rm ~/.zshrc ~/.gitconfig ~/.vimrc ~/.tmux.conf
+rm ~/.oh-my-zsh/themes/adlee.zsh-theme
+rm -rf ~/.config/espanso
+
+# Restore backups
+cp ~/.dotfiles_backup_*/.zshrc ~/ 
+
+# Remove dotfiles
+rm -rf ~/.dotfiles
+```
