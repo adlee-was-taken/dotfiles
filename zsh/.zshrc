@@ -75,6 +75,8 @@ zstyle ':omz:alpha:lib:git' async-prompt no
 plugins=(git)
 
 source $ZSH/oh-my-zsh.sh
+source $HOME/.dotfiles/zsh/functions/snapper.zsh
+
 
 # User configuration
 
