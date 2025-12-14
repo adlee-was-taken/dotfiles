@@ -86,11 +86,18 @@ _adlee_format_user_host() {
 }
 
 # Format current directory with git info
+#_adlee_format_directory() {
+#    local short_path="$(_adlee_get_short_path)"
+#    local git_info='$(git_prompt_info)'"${COLOR_GREY}"
+#    echo "${short_path}${git_info}"
+#}
+
 _adlee_format_directory() {
     local short_path="$(_adlee_get_short_path)"
-    local git_info='$(git_prompt_info)'"${COLOR_GREY}"
-    echo "${short_path}${git_info}"
+    # Remove the single quotes so it gets evaluated in the prompt
+    echo "${short_path}\$(git_prompt_info)${COLOR_GREY}"
 }
+
 
 # ============================================================================
 # COMMAND TIMER FUNCTIONS
@@ -123,17 +130,23 @@ _adlee_format_elapsed_time() {
 # PROMPT BUILDING
 # ============================================================================
 
+#_adlee_build_prompt() {
+#    local user_host="$(_adlee_format_user_host)"
+#    local directory="$(_adlee_format_directory)"
+#    
+#    # Build top line: ┌[user@host]─[directory]
+#    local top_line="${COLOR_GREY}┌[${user_host}]─[${directory}]"
+#    
+#    print -P "${top_line}"
+#    
+#    # Set bottom line prompt character
+#    PROMPT="$(_adlee_get_prompt_char)"
+#}
+#
+
 _adlee_build_prompt() {
-    local user_host="$(_adlee_format_user_host)"
-    local directory="$(_adlee_format_directory)"
-    
-    # Build top line: ┌[user@host]─[directory]
-    local top_line="${COLOR_GREY}┌[${user_host}]─[${directory}]"
-    
-    print -P "${top_line}"
-    
-    # Set bottom line prompt character
-    PROMPT="$(_adlee_get_prompt_char)"
+    PROMPT="${COLOR_GREY}┌[${COLOR_GREEN}%n@%m${COLOR_RESET}${COLOR_GREY}]─[${COLOR_YELLOW}%~${COLOR_RESET}${COLOR_GREY}\$(git_prompt_info)${COLOR_GREY}]
+${COLOR_GREY}└${COLOR_BOLD}${COLOR_BLUE}%#${COLOR_RESET} "
 }
 
 # ============================================================================
