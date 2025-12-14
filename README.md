@@ -349,15 +349,16 @@ This is a personal dotfiles repository, but suggestions and improvements are wel
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - [oh-my-zsh](https://ohmyz.sh/) - Zsh configuration framework
 - [espanso](https://espanso.org/) - Text expander
+- [vimrc](https://github.com/amix/vimrc) - Ultimate virmrc by amix
 - [fzf](https://github.com/junegunn/fzf) - Fuzzy finder
 - [bat](https://github.com/sharkdp/bat) - Cat clone with syntax highlighting
 - [eza](https://github.com/eza-community/eza) - Modern ls replacement
 
-## 🔗 Resources
+## Resources
 
 - [Arch Linux Wiki: Dotfiles](https://wiki.archlinux.org/title/Dotfiles)
 - [GitHub: Awesome Dotfiles](https://github.com/webpro/awesome-dotfiles)
@@ -369,5 +370,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **Repository**: https://github.com/adlee-was-taken/dotfiles  
 **Last Updated**: 2024-12-13
 
-⭐ If you find this useful, consider giving it a star!# dotfiles
+If you find this useful, consider giving it a star!# dotfiles
 Aaron D. Lee's dotfiles for Linux/MacOs
