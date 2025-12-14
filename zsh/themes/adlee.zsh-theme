@@ -225,7 +225,7 @@ reload-zshrc() {
 zle -N reload-zshrc  # Register as a widget
 bindkey "^X@s^[^R" reload-zshrc  # Bind to Ctrl+Super+Alt+R
 
- # Function.
+# Fastfetch Function.
 grab-fastfetch() {
     echo "fastfetch"
     fastfetch
@@ -234,7 +234,6 @@ grab-fastfetch() {
 }
 zle -N grab-fastfetch  # Register as a widget
 bindkey "^X@s^[^F" grab-fastfetch  # Bind to Ctrl+Super+Alt+F
-
 
 # ============================================================================
 # DEPLOYMENT NOTES

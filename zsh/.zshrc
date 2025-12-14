@@ -140,6 +140,13 @@ alias myip='curl ifconfig.me'
 alias ports='netstat -tulanp'
 
 # --- Functions ---
+#
+# Juuuust puuush it.
+push-it() {
+    git add .
+    git commit -m "$1"
+    git push origin
+}
 
 # Create directory and cd into it
 mkcd() {
