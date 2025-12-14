@@ -8,34 +8,41 @@
 # CONFIGURATION & CONSTANTS
 # ============================================================================
 
+setopt PROMPT_SUBST
+# Ensure proper line handling in tmux
+setopt PROMPT_CR
+setopt PROMPT_SP
+setopt TYPESET_SILENT 
+export PROMPT_EOL_MARK=''
+
 # Prevent multiple initialization on reload
-if [[ -z "$_ADLEE_THEME_LOADED" ]]; then
+if [[ -z "$_ADLEE_THEME_LOADED" || "$TERM" = 'tmux-256color' ]] ; then
     export _ADLEE_THEME_LOADED=1
     
     export KEYTIMEOUT=1
     
     # Color definitions
-    typeset -gr COLOR_GREY='%{$FG[239]%}'
-    typeset -gr COLOR_YELLOW='%{$FG[179]%}'
-    typeset -gr COLOR_BLUE='%{$FG[069]%}'
-    typeset -gr COLOR_GREEN='%{$FG[118]%}'
-    typeset -gr COLOR_RED='%{$FG[196]%}'
-    typeset -gr COLOR_ORANGE='%{$FG[220]%}'
-    typeset -gr COLOR_LIGHT_ORANGE='%{$FG[228]%}'
-    typeset -gr COLOR_LIGHT_GREEN='%{$FG[002]%}'
-    typeset -gr COLOR_BRIGHT_GREEN='%{$FG[010]%}'
-    typeset -gr COLOR_RESET='%{$reset_color%}'
-    typeset -gr COLOR_BOLD='%{$FX[bold]%}'
+    typeset -g COLOR_GREY='%{$FG[239]%}'
+    typeset -g COLOR_YELLOW='%{$FG[179]%}'
+    typeset -g COLOR_BLUE='%{$FG[069]%}'
+    typeset -g COLOR_GREEN='%{$FG[118]%}'
+    typeset -g COLOR_RED='%{$FG[196]%}'
+    typeset -g COLOR_ORANGE='%{$FG[220]%}'
+    typeset -g COLOR_LIGHT_ORANGE='%{$FG[228]%}'
+    typeset -g COLOR_LIGHT_GREEN='%{$FG[002]%}'
+    typeset -g COLOR_BRIGHT_GREEN='%{$FG[010]%}'
+    typeset -g COLOR_RESET='%{$reset_color%}'
+    typeset -g COLOR_BOLD='%{$FX[bold]%}'
     
     # Prompt characters
-    typeset -gr PROMPT_CHAR_USER="${COLOR_GREY}└${COLOR_BOLD}${COLOR_BLUE}%#${COLOR_RESET} "
-    typeset -gr PROMPT_CHAR_ROOT="${COLOR_GREY}└${COLOR_BOLD}${COLOR_RED}%#${COLOR_RESET} "
+    typeset -g PROMPT_CHAR_USER="${COLOR_GREY}└${COLOR_BOLD}${COLOR_BLUE}%#${COLOR_RESET} "
+    typeset -g PROMPT_CHAR_ROOT="${COLOR_GREY}└${COLOR_BOLD}${COLOR_RED}%#${COLOR_RESET} "
     
     # Path truncation threshold
-    typeset -gr PATH_TRUNCATE_LENGTH=32
+    typeset -g PATH_TRUNCATE_LENGTH=32
     
     # Timer threshold (seconds)
-    typeset -gr TIMER_THRESHOLD=10
+    typeset -g TIMER_THRESHOLD=10
 fi
 
 # ============================================================================
