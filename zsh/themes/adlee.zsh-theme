@@ -9,49 +9,56 @@
 # ============================================================================
 
 setopt PROMPT_SUBST
-# Ensure proper line handling in tmux
 setopt PROMPT_CR
 setopt PROMPT_SP
-setopt TYPESET_SILENT 
+setopt TYPESET_SILENT
 export PROMPT_EOL_MARK=''
 
-# Prevent multiple initialization on reload
-if [[ -z "$_ADLEE_THEME_LOADED" || "$TERM" = 'tmux-256color' ]] ; then
-    export _ADLEE_THEME_LOADED=1
-    
-    export KEYTIMEOUT=1
-    
-    # Color definitions
-    typeset -g COLOR_GREY='%{$FG[239]%}'
-    typeset -g COLOR_YELLOW='%{$FG[179]%}'
-    typeset -g COLOR_BLUE='%{$FG[069]%}'
-    typeset -g COLOR_GREEN='%{$FG[118]%}'
-    typeset -g COLOR_RED='%{$FG[196]%}'
-    typeset -g COLOR_ORANGE='%{$FG[220]%}'
-    typeset -g COLOR_LIGHT_ORANGE='%{$FG[228]%}'
-    typeset -g COLOR_LIGHT_GREEN='%{$FG[002]%}'
-    typeset -g COLOR_BRIGHT_GREEN='%{$FG[010]%}'
-    typeset -g COLOR_RESET='%{$reset_color%}'
-    typeset -g COLOR_BOLD='%{$FX[bold]%}'
-    
-    # Prompt characters
-    typeset -g PROMPT_CHAR_USER="${COLOR_GREY}└${COLOR_BOLD}${COLOR_BLUE}%#${COLOR_RESET} "
-    typeset -g PROMPT_CHAR_ROOT="${COLOR_GREY}└${COLOR_BOLD}${COLOR_RED}%#${COLOR_RESET} "
-    
-    # Path truncation threshold
-    typeset -g PATH_TRUNCATE_LENGTH=32
-    
-    # Timer threshold (seconds)
-    typeset -g TIMER_THRESHOLD=10
-fi
+# Force color loading (critical for tmux)
+autoload -U colors && colors
+
+export KEYTIMEOUT=1
+
+# Color definitions - always set these
+typeset -g COLOR_GREY='%{$FG[239]%}'
+typeset -g COLOR_YELLOW='%{$FG[179]%}'
+typeset -g COLOR_BLUE='%{$FG[069]%}'
+typeset -g COLOR_GREEN='%{$FG[118]%}'
+typeset -g COLOR_RED='%{$FG[196]%}'
+typeset -g COLOR_ORANGE='%{$FG[220]%}'
+typeset -g COLOR_LIGHT_ORANGE='%{$FG[228]%}'
+typeset -g COLOR_LIGHT_GREEN='%{$FG[002]%}'
+typeset -g COLOR_BRIGHT_GREEN='%{$FG[010]%}'
+typeset -g COLOR_RESET='%{$reset_color%}'
+typeset -g COLOR_BOLD='%{$FX[bold]%}'
+
+# Prompt characters
+typeset -g PROMPT_CHAR_USER="${COLOR_GREY}└${COLOR_BOLD}${COLOR_BLUE}%#${COLOR_RESET} "
+typeset -g PROMPT_CHAR_ROOT="${COLOR_GREY}└${COLOR_BOLD}${COLOR_RED}%#${COLOR_RESET} "
+
+# Path truncation threshold
+typeset -g PATH_TRUNCATE_LENGTH=32
+
+# Timer threshold (seconds)
+typeset -g TIMER_THRESHOLD=10
 
 # ============================================================================
 # GIT PROMPT CONFIGURATION
 # ============================================================================
 
-ZSH_THEME_GIT_PROMPT_PREFIX="]─[%{$fg_bold[green]%}"
+# Force load git library for git_prompt_info
+if [[ -f "$ZSH/lib/git.zsh" ]]; then
+    source "$ZSH/lib/git.zsh"
+fi
+
+#ZSH_THEME_GIT_PROMPT_PREFIX="]─[%{$fg_bold[green]%}"
+#ZSH_THEME_GIT_PROMPT_SUFFIX="%{$reset_color$FG[239]%}"
+#ZSH_THEME_GIT_PROMPT_DIRTY=" %{$fg[red]%}*%{$fg[green]%}"
+#ZSH_THEME_GIT_PROMPT_CLEAN=""
+
+ZSH_THEME_GIT_PROMPT_PREFIX=" %{$fg_bold[green]%}⎇ "
 ZSH_THEME_GIT_PROMPT_SUFFIX="%{$reset_color$FG[239]%}"
-ZSH_THEME_GIT_PROMPT_DIRTY=" %{$fg[red]%}*%{$fg[green]%}"
+ZSH_THEME_GIT_PROMPT_DIRTY=" %{$fg[red]%}*"
 ZSH_THEME_GIT_PROMPT_CLEAN=""
 
 # ============================================================================
@@ -130,24 +137,20 @@ _adlee_format_elapsed_time() {
 # PROMPT BUILDING
 # ============================================================================
 
-#_adlee_build_prompt() {
-#    local user_host="$(_adlee_format_user_host)"
-#    local directory="$(_adlee_format_directory)"
-#    
-#    # Build top line: ┌[user@host]─[directory]
-#    local top_line="${COLOR_GREY}┌[${user_host}]─[${directory}]"
-#    
-#    print -P "${top_line}"
-#    
-#    # Set bottom line prompt character
-#    PROMPT="$(_adlee_get_prompt_char)"
-#}
-#
+
+# Ensure git prompt function is available
+if ! (( $+functions[git_prompt_info] )); then
+    # Git lib not loaded yet, source it manually
+    source "$ZSH/lib/git.zsh" 2>/dev/null || true
+fi
 
 _adlee_build_prompt() {
-    PROMPT="${COLOR_GREY}┌[${COLOR_GREEN}%n@%m${COLOR_RESET}${COLOR_GREY}]─[${COLOR_YELLOW}%~${COLOR_RESET}${COLOR_GREY}\$(git_prompt_info)${COLOR_GREY}]
-${COLOR_GREY}└${COLOR_BOLD}${COLOR_BLUE}%#${COLOR_RESET} "
+    # Use direct color codes instead of variables in PROMPT
+    PROMPT='%{$FG[239]%}┌[%{$FG[118]%}%n@%m%{$reset_color$FG[239]%}]─[%{$FG[179]%}%~%{$reset_color$FG[239]%}$(git_prompt_info)%{$FG[239]%}]
+%{$FG[239]%}└%{$FX[bold]$FG[069]%}%#%{$reset_color%} '
 }
+
+
 
 # ============================================================================
 # ZSH HOOKS
@@ -197,6 +200,11 @@ histsearch() {
 
 # Load required functions
 autoload -Uz add-zsh-hook
+
+# Force initial prompt build for tmux
+if [[ -n "$TMUX" ]]; then
+    _adlee_build_prompt
+fi
 
 # Register hooks
 add-zsh-hook preexec adlee_preexec
