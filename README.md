@@ -45,7 +45,7 @@
 - **System-wide theme deployment** for all users
 - **Modular architecture** for easy customization
 
-## 📁 Repository Structure
+## Repository Structure
 
 ```
 dotfiles/
@@ -217,13 +217,13 @@ Then restart espanso:
 espanso restart
 ```
 
-## 📚 Documentation
+## Documentation
 
 - **[SETUP_GUIDE.md](docs/SETUP_GUIDE.md)** - Detailed setup instructions
 - **[ESPANSO.md](docs/ESPANSO.md)** - Complete espanso reference
 - **[Zsh Theme Variables](zsh/themes/adlee.zsh-theme)** - Customize colors and format
 
-## 🌟 Espanso Quick Reference
+## Espanso Quick Reference
 
 ### Date & Time
 | Trigger | Output |
@@ -258,7 +258,7 @@ espanso restart
 
 [See full list in ESPANSO.md](docs/ESPANSO.md)
 
-## 🖥️ Multi-System Setup
+## Multi-System Setup
 
 ### Deploy to New System
 
