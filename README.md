@@ -183,7 +183,7 @@ git commit -m "Update theme colors"
 git push origin main
 ```
 
-## 🎨 Customization
+## Customization
 
 ### Modify the Zsh Theme
 
