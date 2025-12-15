@@ -60,7 +60,7 @@ export EDITOR='vim'
 export VISUAL='vim'
 export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
-export PATH="$HOME/.local/bin:$PATH"
+export PATH="$HOME/.local/bin:$HOME/.dotfiles/bin:$PATH"
 
 # --- Aliases ---
 
@@ -330,7 +330,7 @@ fi
 
 if [[ "${DOTFILES_AUTO_SYNC_CHECK:-true}" == "true" ]]; then
     # Quick async check for dotfiles updates
-    (dotfiles-sync.sh --auto 2>/dev/null &)
+    ($HOME/.dotfiles/bin/dotfiles-sync.sh --auto 2>/dev/null &)
 fi
 
 # --- Vault Integration ---
