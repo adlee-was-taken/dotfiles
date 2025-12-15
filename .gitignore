@@ -1,27 +1,63 @@
-# OS files
+# ============================================================================
+# Dotfiles .gitignore
+# ============================================================================
+
+# --- OS files ---
 .DS_Store
 Thumbs.db
+Desktop.ini
 
-# Backup files
+# --- Backup files ---
 *.backup
 *.bak
 *~
+*.swp
+*.swo
 
-# Local machine-specific configs
+# --- Local machine-specific configs ---
 *.local
 .zshrc.local
+.gitconfig.local
 
-# Sensitive information
+# --- Sensitive information ---
 .env
 .env.*
 secrets/
 .git-credentials
 
-# Espanso backups
+# --- Vault (encrypted secrets) ---
+vault/
+!vault/.gitkeep
+
+# --- Espanso ---
 espanso/match/*.backup
 
-# Editor files
-*.swp
-*.swo
+# --- Editor/IDE files ---
 .idea/
 .vscode/
+*.sublime-*
+.project
+.settings/
+
+# --- Cache and temp files ---
+.cache/
+*.log
+*.tmp
+.sync_state
+.sync_log
+
+# --- Command tracking ---
+.smart-suggest-track
+
+# --- Bookmarks (machine-specific) ---
+.bookmarks
+
+# --- Generated files ---
+dotfiles.conf.wizard
+git/.gitconfig
+
+# --- Package managers ---
+node_modules/
+__pycache__/
+*.pyc
+.npm/

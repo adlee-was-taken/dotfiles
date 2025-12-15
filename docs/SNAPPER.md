@@ -7,31 +7,24 @@ Zsh functions for managing btrfs snapshots with limine-snapper-sync integration 
 - Btrfs filesystem with snapper configured
 - `limine-snapper-sync` package (AUR)
 - Snapper config named "root"
+- Limine bootloader
+
+---
 
 ## Quick Reference
 
-| Command | Description |
-|---------|-------------|
-| `snap-create "desc"` | Create snapshot + validate limine entry |
-| `snap-list [n]` | Show last n snapshots (default: 10) |
-| `snap-show <num>` | Details for specific snapshot |
-| `snap-delete <num>` | Delete snapshot + update limine |
-| `snap-check-limine` | Verify boot menu sync status |
-| `snap-sync` | Manually trigger limine sync |
-| `snap-info` | Detailed breakdown by type |
-| `snap-validate-service` | Check service health |
+| Command | Alias | Description |
+|---------|-------|-------------|
+| `snap-create "desc"` | `snap` | Create snapshot + validate limine entry |
+| `snap-list [n]` | `snapls` | Show last n snapshots (default: 10) |
+| `snap-show <num>` | `snapshow` | Details for specific snapshot |
+| `snap-delete <num>` | `snaprm` | Delete snapshot + update limine |
+| `snap-check-limine` | `snapcheck` | Verify boot menu sync status |
+| `snap-sync` | `snapsync` | Manually trigger limine sync |
+| `snap-info` | `snapinfo` | Detailed breakdown by type |
+| `snap-validate-service` | - | Check service health |
 
-### Aliases
-
-```bash
-snap      → snap-create
-snapls    → snap-list
-snaprm    → snap-delete
-snapshow  → snap-show
-snapcheck → snap-check-limine
-snapsync  → snap-sync
-snapinfo  → snap-info
-```
+---
 
 ## Usage Examples
 
@@ -39,46 +32,100 @@ snapinfo  → snap-info
 
 ```bash
 snap-create "Before system update"
-# or just:
+# or using alias:
 snap "Before system update"
 ```
 
-Output shows:
-- Snapshot number created
-- Limine sync trigger
-- Validation that entry was added to boot menu
+Output:
+
+```
+╔════════════════════════════════════════════════════════════╗
+║  Snapper Snapshot Creation & Validation                    ║
+╚════════════════════════════════════════════════════════════╝
+
+==> Checking limine.conf state before snapshot
+✓ Before: 5 snapshot entries
+✓ Before checksum: a1b2c3d4...
+
+==> Creating snapshot: "Before system update"
+✓ Snapshot created: #42
+
+==> Triggering limine-snapper-sync service...
+✓ Service triggered successfully
+
+==> Validating limine.conf update
+✓ limine.conf was updated
+✓ Added 1 new snapshot entry
+✓ Found snapshot #42 in limine.conf
+
+╔════════════════════════════════════════════════════════════╗
+║  Summary                                                   ║
+╚════════════════════════════════════════════════════════════╝
+Snapshot Number:       #42
+Description:           "Before system update"
+Status:                ✓ VALIDATED
+```
 
 ### Check Boot Menu Sync
 
 ```bash
 snap-check-limine
+# or:
+snapcheck
 ```
 
 Shows:
 - All snapshots in limine.conf
 - Comparison with snapper list
 - Missing entries (if any)
+- Sync status
 
-### Pre/Post System Changes
+### List Recent Snapshots
 
 ```bash
-# Before risky change
-snap "Before kernel update"
-
-# Make changes...
-sudo pacman -Syu
-
-# If something breaks, boot into the snapshot from limine menu
+snap-list        # Last 10
+snap-list 20     # Last 20
+# or:
+snapls 20
 ```
+
+### View Snapshot Details
+
+```bash
+snap-show 42
+# or:
+snapshow 42
+```
+
+Shows:
+- Snapshot info from snapper
+- Corresponding entry in limine.conf
+
+### Delete Snapshot
+
+```bash
+snap-delete 42
+# or:
+snaprm 42
+```
+
+Automatically:
+- Deletes snapshot from snapper
+- Triggers limine-snapper-sync
+- Verifies removal from boot menu
+
+---
 
 ## How It Works
 
-1. **snap-create** calls `snapper -c root create`
+1. **`snap-create`** calls `snapper -c root create`
 2. Triggers `limine-snapper-sync.service`
 3. Validates that `/boot/limine.conf` was updated
 4. Shows the new boot entry
 
-The limine bootloader can then boot any snapshot directly.
+The limine bootloader can then boot any snapshot directly from the boot menu.
+
+---
 
 ## Snapshot Types
 
@@ -88,7 +135,26 @@ The limine bootloader can then boot any snapshot directly.
 | `pre` | Auto before package operations |
 | `post` | Auto after package operations |
 
-View with `snap-info`.
+View breakdown with `snap-info` or `snapinfo`.
+
+---
+
+## Pre/Post System Changes Workflow
+
+```bash
+# Before risky change
+snap "Before kernel update"
+
+# Make changes
+sudo pacman -Syu
+
+# If something breaks:
+# 1. Reboot
+# 2. Select snapshot from limine boot menu
+# 3. System restored to pre-update state
+```
+
+---
 
 ## Troubleshooting
 
@@ -100,6 +166,8 @@ snap-validate-service
 
 # Manual sync
 snap-sync
+# or:
+snapsync
 
 # Verify
 snap-check-limine
@@ -121,17 +189,95 @@ snap-delete 42
 # This auto-triggers sync to remove from limine.conf
 ```
 
+### Check Service Logs
+
+```bash
+sudo journalctl -u limine-snapper-sync.service -n 50
+```
+
+### Validate Everything
+
+```bash
+snap-validate-service
+```
+
+This checks:
+- Service unit exists
+- Service is enabled
+- Snapper config exists
+- limine.conf exists
+- Current sync status
+
+---
+
 ## Configuration
 
-Functions are in `~/.dotfiles/zsh/functions/snapper.zsh` and sourced by `.zshrc`.
+Functions are sourced from `~/.dotfiles/zsh/functions/snapper.zsh`.
 
-Key settings:
-- Snapper config: `root`
-- Limine config: `/boot/limine.conf`
-- Sync service: `limine-snapper-sync.service`
+Settings in `~/.dotfiles/dotfiles.conf`:
+
+```bash
+SNAPPER_CONFIG="root"
+LIMINE_CONF="/boot/limine.conf"
+```
+
+---
 
 ## Limitations
 
-- Only works with limine bootloader
-- Requires snapper config named "root"
-- limine-snapper-sync typically limits boot entries to recent snapshots (this is intentional to prevent menu clutter)
+- Only works with **limine bootloader**
+- Requires snapper config named **"root"**
+- `limine-snapper-sync` typically limits boot entries to recent snapshots (intentional to prevent menu clutter)
+
+---
+
+## Installing limine-snapper-sync
+
+On Arch/CachyOS:
+
+```bash
+# If using paru
+paru -S limine-snapper-sync
+
+# If using yay
+yay -S limine-snapper-sync
+
+# Enable service
+sudo systemctl enable limine-snapper-sync.service
+```
+
+---
+
+## Manual Snapper Commands
+
+If you need to use snapper directly:
+
+```bash
+# List all snapshots
+sudo snapper -c root list
+
+# Create snapshot
+sudo snapper -c root create --description "My snapshot"
+
+# Delete snapshot
+sudo snapper -c root delete 42
+
+# Compare snapshots
+sudo snapper -c root diff 41..42
+
+# Show snapper config
+sudo snapper -c root get-config
+```
+
+---
+
+## Boot Recovery
+
+If your system won't boot:
+
+1. At limine boot menu, select a snapshot
+2. System boots into that snapshot state
+3. Once booted, you can:
+   - Fix the issue
+   - Roll back permanently with `snapper rollback`
+   - Create a new snapshot of the working state
