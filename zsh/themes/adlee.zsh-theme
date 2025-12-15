@@ -32,10 +32,6 @@ typeset -g COLOR_BRIGHT_GREEN='%{$FG[010]%}'
 typeset -g COLOR_RESET='%{$reset_color%}'
 typeset -g COLOR_BOLD='%{$FX[bold]%}'
 
-# Prompt characters
-typeset -g PROMPT_CHAR_USER="${COLOR_GREY}└${COLOR_BOLD}${COLOR_BLUE}%#${COLOR_RESET} "
-typeset -g PROMPT_CHAR_ROOT="${COLOR_GREY}└${COLOR_BOLD}${COLOR_RED}%#${COLOR_RESET} "
-
 # Path truncation threshold
 typeset -g PATH_TRUNCATE_LENGTH=32
 
@@ -50,11 +46,6 @@ typeset -g TIMER_THRESHOLD=10
 if [[ -f "$ZSH/lib/git.zsh" ]]; then
     source "$ZSH/lib/git.zsh"
 fi
-
-#ZSH_THEME_GIT_PROMPT_PREFIX="]─[%{$fg_bold[green]%}"
-#ZSH_THEME_GIT_PROMPT_SUFFIX="%{$reset_color$FG[239]%}"
-#ZSH_THEME_GIT_PROMPT_DIRTY=" %{$fg[red]%}*%{$fg[green]%}"
-#ZSH_THEME_GIT_PROMPT_CLEAN=""
 
 ZSH_THEME_GIT_PROMPT_PREFIX=" %{$fg_bold[green]%}⎇ "
 ZSH_THEME_GIT_PROMPT_SUFFIX="%{$reset_color$FG[239]%}"
@@ -78,27 +69,12 @@ _adlee_get_short_path() {
     fi
 }
 
-# Get appropriate prompt character based on user
-_adlee_get_prompt_char() {
-    if [[ $UID == 0 || $EUID == 0 ]]; then
-        echo "$PROMPT_CHAR_ROOT"
-    else
-        echo "$PROMPT_CHAR_USER"
-    fi
-}
-
 # Format user@host section
 _adlee_format_user_host() {
     echo "${COLOR_GREEN}%n@%m${COLOR_RESET}${COLOR_GREY}"
 }
 
 # Format current directory with git info
-#_adlee_format_directory() {
-#    local short_path="$(_adlee_get_short_path)"
-#    local git_info='$(git_prompt_info)'"${COLOR_GREY}"
-#    echo "${short_path}${git_info}"
-#}
-
 _adlee_format_directory() {
     local short_path="$(_adlee_get_short_path)"
     # Remove the single quotes so it gets evaluated in the prompt
@@ -145,9 +121,10 @@ if ! (( $+functions[git_prompt_info] )); then
 fi
 
 _adlee_build_prompt() {
-    # Use direct color codes instead of variables in PROMPT
+    # Prompt character: blue for users, red for root
+    # %(#.TRUE.FALSE) - if privileged (root), use TRUE, else FALSE
     PROMPT='%{$FG[239]%}┌[%{$FG[118]%}%n@%m%{$reset_color$FG[239]%}]─[%{$FG[179]%}%~%{$reset_color$FG[239]%}$(git_prompt_info)%{$FG[239]%}]
-%{$FG[239]%}└%{$FX[bold]$FG[069]%}%#%{$reset_color%} '
+%{$FG[239]%}└%{$FX[bold]%}%(#.%{$FG[196]%}.%{$FG[069]%})%#%{$reset_color%} '
 }
 
 
@@ -225,7 +202,7 @@ reload-zshrc() {
 zle -N reload-zshrc  # Register as a widget
 bindkey "^X@s^[^R" reload-zshrc  # Bind to Ctrl+Super+Alt+R
 
-# Fastfetch Function.
+ # Function.
 grab-fastfetch() {
     echo "fastfetch"
     fastfetch
@@ -234,6 +211,7 @@ grab-fastfetch() {
 }
 zle -N grab-fastfetch  # Register as a widget
 bindkey "^X@s^[^F" grab-fastfetch  # Bind to Ctrl+Super+Alt+F
+
 
 # ============================================================================
 # DEPLOYMENT NOTES
