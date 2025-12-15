@@ -7,10 +7,47 @@
 # Or:
 #   git clone https://github.com/adlee-was-taken/dotfiles.git && cd dotfiles && ./install.sh
 #
+# Options:
+#   --skip-deps    Skip dependency installation (for re-runs)
+#   --deps-only    Only install dependencies, then exit
+#   --help         Show help
+#
 # Fork this repo? Edit dotfiles.conf with your settings.
 # ============================================================================
 
 set -e
+
+# ============================================================================
+# Command Line Options
+# ============================================================================
+
+SKIP_DEPS=false
+DEPS_ONLY=false
+
+for arg in "$@"; do
+    case "$arg" in
+        --skip-deps)
+            SKIP_DEPS=true
+            ;;
+        --deps-only)
+            DEPS_ONLY=true
+            ;;
+        --help|-h)
+            echo "Usage: $0 [OPTIONS]"
+            echo
+            echo "Options:"
+            echo "  --skip-deps    Skip dependency installation (useful for re-runs)"
+            echo "  --deps-only    Only install dependencies, then exit"
+            echo "  --help         Show this help message"
+            echo
+            echo "Configuration:"
+            echo "  Edit dotfiles.conf to customize installation behavior"
+            echo "  Set INSTALL_DEPS=\"false\" to always skip dependencies"
+            echo
+            exit 0
+            ;;
+    esac
+done
 
 # ============================================================================
 # Load Configuration
@@ -32,6 +69,7 @@ load_config() {
         DOTFILES_REPO_URL="https://github.com/${DOTFILES_GITHUB_USER}/${DOTFILES_REPO_NAME}.git"
 
         # Feature toggles
+        INSTALL_DEPS="${INSTALL_DEPS:-auto}"
         INSTALL_ESPANSO="${INSTALL_ESPANSO:-ask}"
         INSTALL_FZF="${INSTALL_FZF:-ask}"
         INSTALL_BAT="${INSTALL_BAT:-ask}"
@@ -64,7 +102,7 @@ NC='\033[0m'
 print_header() {
     echo -e "\n${BLUE}╔════════════════════════════════════════════════════════════╗${NC}"
     echo -e "${BLUE}║${NC}  Dotfiles Installation                                     ${BLUE}║${NC}"
-    echo -e "${BLUE}║${NC}  Repo: ${DOTFILES_GITHUB_USER}/${DOTFILES_REPO_NAME}${BLUE}║${NC}"
+    echo -e "${BLUE}║${NC}  Repo: ${DOTFILES_GITHUB_USER}/${DOTFILES_REPO_NAME}                        ${BLUE}║${NC}"
     echo -e "${BLUE}╚════════════════════════════════════════════════════════════╝${NC}\n"
 }
 
@@ -141,7 +179,31 @@ detect_os() {
     fi
 }
 
+# Check if core dependencies are already installed
+check_core_deps() {
+    command -v git &>/dev/null && command -v curl &>/dev/null && command -v zsh &>/dev/null
+}
+
 install_dependencies() {
+    # Skip if --skip-deps flag
+    if [[ "$SKIP_DEPS" == true ]]; then
+        print_step "Skipping dependencies (--skip-deps)"
+        return 0
+    fi
+
+    # Skip if INSTALL_DEPS=false in config
+    if [[ "${INSTALL_DEPS}" == "false" || "${INSTALL_DEPS}" == "no" || "${INSTALL_DEPS}" == "0" ]]; then
+        print_step "Skipping dependencies (INSTALL_DEPS=false in config)"
+        return 0
+    fi
+
+    # Auto-detect: skip if deps already installed (default behavior)
+    if [[ "${INSTALL_DEPS}" == "auto" ]] && check_core_deps; then
+        print_step "Dependencies check"
+        print_success "Core dependencies already installed (git, curl, zsh)"
+        return 0
+    fi
+
     print_step "Installing dependencies"
 
     case "$OS" in
@@ -216,15 +278,15 @@ backup_existing_configs() {
     if [ "$backup_needed" = true ]; then
         print_success "Backups saved to: $BACKUP_DIR"
     else
-        print_success "No backups needed"
+        print_success "No backups needed (files already symlinked or don't exist)"
     fi
 }
 
 install_oh_my_zsh() {
-    print_step "Installing oh-my-zsh"
+    print_step "Checking oh-my-zsh"
 
     if [ -d "$HOME/.oh-my-zsh" ]; then
-        print_warning "oh-my-zsh already installed"
+        print_success "oh-my-zsh already installed"
     else
         sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
         print_success "oh-my-zsh installed"
@@ -278,7 +340,7 @@ link_dotfiles() {
 }
 
 set_zsh_default() {
-    print_step "Setting zsh as default shell"
+    print_step "Checking default shell"
 
     if [ "$SHELL" != "$(which zsh)" ]; then
         case "$SET_ZSH_DEFAULT" in
@@ -302,12 +364,12 @@ set_zsh_default() {
 }
 
 install_espanso() {
-    print_step "Installing espanso (text expander)"
-
     if command -v espanso &> /dev/null; then
-        print_warning "espanso already installed"
+        print_success "espanso already installed"
         return 0
     fi
+
+    print_step "Installing espanso (text expander)"
 
     case "$OS" in
         ubuntu|debian)
@@ -389,6 +451,8 @@ install_optional_tools() {
         if should_install "$INSTALL_ESPANSO" "espanso (text expander)"; then
             install_espanso
         fi
+    else
+        print_success "espanso already installed"
     fi
 
     # fzf
@@ -398,6 +462,8 @@ install_optional_tools() {
             ~/.fzf/install --all
             print_success "fzf installed"
         fi
+    else
+        print_success "fzf already installed"
     fi
 
     # bat
@@ -411,6 +477,8 @@ install_optional_tools() {
             esac
             print_success "bat installed"
         fi
+    else
+        print_success "bat already installed"
     fi
 
     # eza
@@ -424,6 +492,8 @@ install_optional_tools() {
             esac
             print_success "eza installed"
         fi
+    else
+        print_success "eza already installed"
     fi
 }
 
@@ -435,6 +505,14 @@ main() {
     print_header
 
     detect_os
+
+    # Handle --deps-only
+    if [[ "$DEPS_ONLY" == true ]]; then
+        install_dependencies
+        echo
+        print_success "Dependencies installed. Run without --deps-only to continue."
+        exit 0
+    fi
 
     if ask_yes_no "Install/update dotfiles?"; then
         install_dependencies

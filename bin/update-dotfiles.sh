@@ -3,8 +3,46 @@
 # Update Dotfiles Script
 # ============================================================================
 # Updates dotfiles from the git repository and relinks files
+#
+# Usage:
+#   update-dotfiles.sh              # Pull and re-run install
+#   update-dotfiles.sh --skip-deps  # Pull and re-run install without deps
+#   update-dotfiles.sh --pull-only  # Only git pull, don't re-run install
+# ============================================================================
 
 set -e
+
+# ============================================================================
+# Options
+# ============================================================================
+
+SKIP_DEPS=true   # Default to skipping deps on updates
+PULL_ONLY=false
+
+for arg in "$@"; do
+    case "$arg" in
+        --skip-deps)
+            SKIP_DEPS=true
+            ;;
+        --with-deps)
+            SKIP_DEPS=false
+            ;;
+        --pull-only)
+            PULL_ONLY=true
+            ;;
+        --help|-h)
+            echo "Usage: $0 [OPTIONS]"
+            echo
+            echo "Options:"
+            echo "  --skip-deps    Skip dependency check (default for updates)"
+            echo "  --with-deps    Run full dependency check"
+            echo "  --pull-only    Only git pull, don't re-run install script"
+            echo "  --help         Show this help message"
+            echo
+            exit 0
+            ;;
+    esac
+done
 
 # ============================================================================
 # Load Configuration
@@ -32,6 +70,7 @@ fi
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
+BLUE='\033[0;34m'
 NC='\033[0m'
 
 print_success() {
@@ -44,6 +83,10 @@ print_warning() {
 
 print_error() {
     echo -e "${RED}✗${NC} $1"
+}
+
+print_step() {
+    echo -e "${GREEN}==>${NC} $1"
 }
 
 # ============================================================================
@@ -59,11 +102,18 @@ fi
 
 cd "$DOTFILES_DIR"
 
-echo "Updating dotfiles from repository..."
+print_step "Updating dotfiles from repository..."
 git pull origin "$DOTFILES_BRANCH"
 
 if [ $? -eq 0 ]; then
     print_success "Dotfiles updated successfully"
+
+    if [[ "$PULL_ONLY" == true ]]; then
+        echo
+        print_success "Pull complete (--pull-only mode)"
+        echo "Run ./install.sh manually to re-link files"
+        exit 0
+    fi
 
     if [ -f "$DOTFILES_DIR/install.sh" ]; then
         echo
@@ -71,7 +121,11 @@ if [ $? -eq 0 ]; then
         response=${response:-y}
 
         if [[ "$response" =~ ^[Yy]$ ]]; then
-            "$DOTFILES_DIR/install.sh"
+            if [[ "$SKIP_DEPS" == true ]]; then
+                "$DOTFILES_DIR/install.sh" --skip-deps
+            else
+                "$DOTFILES_DIR/install.sh"
+            fi
         fi
     fi
 
