@@ -127,25 +127,3 @@ zle -N zle-keymap-select
 # Initial prompt build (critical for tmux)
 _adlee_build_prompt
 
-# ============================================================================
-# CUSTOM WIDGETS
-# ============================================================================
-
-reload-zshrc() {
-    echo -n "Re-sourcing ~/.zshrc ... "
-    source ~/.zshrc
-    echo "Done."
-    _adlee_build_prompt
-    zle reset-prompt
-}
-zle -N reload-zshrc
-bindkey "^X@s^[^R" reload-zshrc  # Ctrl+Super+Alt+R
-
-grab-fastfetch() {
-    echo "fastfetch"
-    fastfetch
-    _adlee_build_prompt
-    zle reset-prompt
-}
-zle -N grab-fastfetch
-bindkey "^X@s^[^F" grab-fastfetch  # Ctrl+Super+Alt+F
