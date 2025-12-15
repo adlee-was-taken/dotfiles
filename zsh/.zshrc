@@ -2,16 +2,6 @@
 # ADLee's ZSH Configuration
 # ============================================================================
 
-# Force proper initialization in tmux
-if [[ -n "$TMUX" ]]; then
-    # Ensure oh-my-zsh paths are set
-    export ZSH="$HOME/.oh-my-zsh"
-fi
-
-# Path to oh-my-zsh installation
-export ZSH="$HOME/.oh-my-zsh"
-
-
 # Path to oh-my-zsh installation
 export ZSH="$HOME/.oh-my-zsh"
 
@@ -68,12 +58,8 @@ source $ZSH/oh-my-zsh.sh
 
 export EDITOR='vim'
 export VISUAL='vim'
-
-# Language environment
 export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
-
-# Add local bin to PATH
 export PATH="$HOME/.local/bin:$PATH"
 
 # --- Aliases ---
@@ -140,7 +126,7 @@ alias myip='curl ifconfig.me'
 alias ports='netstat -tulanp'
 
 # --- Functions ---
-#
+
 # Juuuust puuush it.
 push-it() {
     git add .
@@ -155,7 +141,7 @@ mkcd() {
 
 # Extract various archive formats
 extract() {
-    if [ -f "$1" ]; then
+    if [[ -f "$1" ]]; then
         case "$1" in
             *.tar.bz2)   tar xjf "$1"    ;;
             *.tar.gz)    tar xzf "$1"    ;;
@@ -180,8 +166,8 @@ ff() {
     find . -type f -iname "*$1*"
 }
 
-# Quick find directory
-fd() {
+# Quick find directory (renamed to avoid conflict with fd tool)
+fdir() {
     find . -type d -iname "*$1*"
 }
 
@@ -193,16 +179,11 @@ backup() {
 # --- FZF Configuration ---
 
 if command -v fzf &> /dev/null; then
-    # Use fd if available for better performance
     if command -v fd &> /dev/null; then
         export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
         export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
     fi
-    
-    # FZF color scheme
     export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border'
-    
-    # CTRL-R for history search
     bindkey '^R' fzf-history-widget
 fi
 
@@ -212,7 +193,6 @@ HISTSIZE=10000
 SAVEHIST=10000
 HISTFILE=~/.zsh_history
 
-# Share history between sessions
 setopt SHARE_HISTORY
 setopt APPEND_HISTORY
 setopt EXTENDED_HISTORY
@@ -222,18 +202,13 @@ setopt HIST_IGNORE_SPACE
 
 # --- Key Bindings ---
 
-# Bind Ctrl+Left/Right to move by word
-bindkey "^[[1;5C" forward-word
-bindkey "^[[1;5D" backward-word
+bindkey "^[[1;5C" forward-word      # Ctrl+Right
+bindkey "^[[1;5D" backward-word     # Ctrl+Left
+bindkey "^[[H" beginning-of-line    # Home
+bindkey "^[[F" end-of-line          # End
+bindkey "^[[3~" delete-char         # Delete
 
-# Bind Home/End keys
-bindkey "^[[H" beginning-of-line
-bindkey "^[[F" end-of-line
-
-# Bind Delete key
-bindkey "^[[3~" delete-char
-
-# --- Custom Key Bindings ---
+# --- Custom Widgets ---
 
 # Alt+R to reload zsh config
 reload-zsh() {
@@ -242,7 +217,7 @@ reload-zsh() {
     zle reset-prompt
 }
 zle -N reload-zsh
-bindkey "^[r" reload-zsh  # Alt+R
+bindkey "^[r" reload-zsh
 
 # Alt+G to show git status
 git-status-widget() {
@@ -251,45 +226,85 @@ git-status-widget() {
     zle reset-prompt
 }
 zle -N git-status-widget
-bindkey "^[g" git-status-widget  # Alt+G
+bindkey "^[g" git-status-widget
 
-# --- Application-Specific Settings ---
+# ============================================================================
+# Lazy-loaded Tools (for faster shell startup)
+# ============================================================================
 
-# Node Version Manager (if installed)
+# --- NVM (lazy load) ---
+# Only loads when you first use node, npm, nvm, or npx
 export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 
-# Python virtual environment
+_load_nvm() {
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+}
+
+# Create lazy-load wrappers
+if [ -s "$NVM_DIR/nvm.sh" ]; then
+    nvm() {
+        unfunction nvm node npm npx 2>/dev/null
+        _load_nvm
+        nvm "$@"
+    }
+    node() {
+        unfunction nvm node npm npx 2>/dev/null
+        _load_nvm
+        node "$@"
+    }
+    npm() {
+        unfunction nvm node npm npx 2>/dev/null
+        _load_nvm
+        npm "$@"
+    }
+    npx() {
+        unfunction nvm node npm npx 2>/dev/null
+        _load_nvm
+        npx "$@"
+    }
+fi
+
+# --- Python virtualenvwrapper (lazy load) ---
 export WORKON_HOME=$HOME/.virtualenvs
-export VIRTUALENVWRAPPER_PYTHON=$(which python3)
-[ -f /usr/local/bin/virtualenvwrapper.sh ] && source /usr/local/bin/virtualenvwrapper.sh
 
-# Rust cargo
+_load_virtualenvwrapper() {
+    export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3
+    [ -f /usr/local/bin/virtualenvwrapper.sh ] && source /usr/local/bin/virtualenvwrapper.sh
+}
+
+if [ -f /usr/local/bin/virtualenvwrapper.sh ]; then
+    workon() {
+        unfunction workon mkvirtualenv rmvirtualenv 2>/dev/null
+        _load_virtualenvwrapper
+        workon "$@"
+    }
+    mkvirtualenv() {
+        unfunction workon mkvirtualenv rmvirtualenv 2>/dev/null
+        _load_virtualenvwrapper
+        mkvirtualenv "$@"
+    }
+fi
+
+# --- Rust cargo (only if exists) ---
 [ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env"
 
 # --- OS-Specific Configuration ---
 
 case "$(uname -s)" in
     Darwin*)
-        # macOS specific settings
         export HOMEBREW_NO_ANALYTICS=1
-        ;;
-    Linux*)
-        # Linux specific settings
         ;;
 esac
 
 # --- Snapper Functions ---
 
-# Source snapper snapshot management functions
 if [[ -f "$HOME/.dotfiles/zsh/functions/snapper.zsh" ]]; then
     source "$HOME/.dotfiles/zsh/functions/snapper.zsh"
 fi
 
 # --- Local Configuration ---
 
-# Load local configuration if it exists (for machine-specific settings)
 [ -f ~/.zshrc.local ] && source ~/.zshrc.local
 
 # ============================================================================
