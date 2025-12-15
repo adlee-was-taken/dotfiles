@@ -10,6 +10,7 @@
 # Options:
 #   --skip-deps    Skip dependency installation (for re-runs)
 #   --deps-only    Only install dependencies, then exit
+#   --uninstall    Remove symlinks and optionally restore backups
 #   --help         Show help
 #
 # Fork this repo? Edit dotfiles.conf with your settings.
@@ -23,6 +24,8 @@ set -e
 
 SKIP_DEPS=false
 DEPS_ONLY=false
+UNINSTALL=false
+UNINSTALL_PURGE=false
 
 for arg in "$@"; do
     case "$arg" in
@@ -32,17 +35,31 @@ for arg in "$@"; do
         --deps-only)
             DEPS_ONLY=true
             ;;
+        --uninstall)
+            UNINSTALL=true
+            ;;
+        --purge)
+            UNINSTALL_PURGE=true
+            ;;
         --help|-h)
             echo "Usage: $0 [OPTIONS]"
             echo
             echo "Options:"
             echo "  --skip-deps    Skip dependency installation (useful for re-runs)"
             echo "  --deps-only    Only install dependencies, then exit"
+            echo "  --uninstall    Remove symlinks and restore backups"
+            echo "  --purge        With --uninstall, also remove ~/.dotfiles directory"
             echo "  --help         Show this help message"
             echo
             echo "Configuration:"
             echo "  Edit dotfiles.conf to customize installation behavior"
             echo "  Set INSTALL_DEPS=\"false\" to always skip dependencies"
+            echo
+            echo "Examples:"
+            echo "  ./install.sh                    # Full install"
+            echo "  ./install.sh --skip-deps        # Re-run without checking deps"
+            echo "  ./install.sh --uninstall        # Remove symlinks"
+            echo "  ./install.sh --uninstall --purge # Remove everything"
             echo
             exit 0
             ;;
@@ -61,6 +78,7 @@ load_config() {
         source "$conf_file"
     else
         # Fallback defaults for curl|bash install (before clone)
+        DOTFILES_VERSION="${DOTFILES_VERSION:-1.0.0}"
         DOTFILES_GITHUB_USER="${DOTFILES_GITHUB_USER:-adlee-was-taken}"
         DOTFILES_REPO_NAME="${DOTFILES_REPO_NAME:-dotfiles}"
         DOTFILES_BRANCH="${DOTFILES_BRANCH:-main}"
@@ -70,6 +88,7 @@ load_config() {
 
         # Feature toggles
         INSTALL_DEPS="${INSTALL_DEPS:-auto}"
+        INSTALL_ZSH_PLUGINS="${INSTALL_ZSH_PLUGINS:-true}"
         INSTALL_ESPANSO="${INSTALL_ESPANSO:-ask}"
         INSTALL_FZF="${INSTALL_FZF:-ask}"
         INSTALL_BAT="${INSTALL_BAT:-ask}"
@@ -78,6 +97,12 @@ load_config() {
 
         # Theme settings
         ZSH_THEME_NAME="${ZSH_THEME_NAME:-adlee}"
+
+        # Git settings
+        GIT_USER_NAME="${GIT_USER_NAME:-}"
+        GIT_USER_EMAIL="${GIT_USER_EMAIL:-}"
+        GIT_DEFAULT_BRANCH="${GIT_DEFAULT_BRANCH:-master}"
+        GIT_CREDENTIAL_HELPER="${GIT_CREDENTIAL_HELPER:-store}"
     fi
 }
 
@@ -93,6 +118,7 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 NC='\033[0m'
 
 # ============================================================================
@@ -101,7 +127,7 @@ NC='\033[0m'
 
 print_header() {
     echo -e "\n${BLUE}╔════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║${NC}  Dotfiles Installation                                     ${BLUE}║${NC}"
+    echo -e "${BLUE}║${NC}  Dotfiles Installation  ${CYAN}v${DOTFILES_VERSION}${NC}                          ${BLUE}║${NC}"
     echo -e "${BLUE}║${NC}  Repo: ${DOTFILES_GITHUB_USER}/${DOTFILES_REPO_NAME}                        ${BLUE}║${NC}"
     echo -e "${BLUE}╚════════════════════════════════════════════════════════════╝${NC}\n"
 }
@@ -154,6 +180,97 @@ should_install() {
             return $?
             ;;
     esac
+}
+
+# ============================================================================
+# Uninstall Function
+# ============================================================================
+
+do_uninstall() {
+    echo -e "\n${BLUE}╔════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}║${NC}  Dotfiles Uninstallation                                   ${BLUE}║${NC}"
+    echo -e "${BLUE}╚════════════════════════════════════════════════════════════╝${NC}\n"
+
+    print_step "Removing symlinks"
+
+    local symlinks=(
+        "$HOME/.zshrc"
+        "$HOME/.gitconfig"
+        "$HOME/.vimrc"
+        "$HOME/.tmux.conf"
+        "$HOME/.oh-my-zsh/themes/${ZSH_THEME_NAME:-adlee}.zsh-theme"
+        "$HOME/.config/espanso"
+    )
+
+    for link in "${symlinks[@]}"; do
+        if [[ -L "$link" ]]; then
+            rm "$link"
+            print_success "Removed: $link"
+        elif [[ -e "$link" ]]; then
+            print_warning "Not a symlink (skipped): $link"
+        fi
+    done
+
+    # Remove bin symlinks
+    if [[ -d "$HOME/.local/bin" ]]; then
+        for script in "$HOME/.local/bin"/*; do
+            if [[ -L "$script" ]] && [[ "$(readlink "$script")" == *".dotfiles"* ]]; then
+                rm "$script"
+                print_success "Removed: $script"
+            fi
+        done
+    fi
+
+    # Find and offer to restore backups
+    print_step "Looking for backups"
+
+    local backup_dirs=($(ls -d ${DOTFILES_BACKUP_PREFIX}_* 2>/dev/null || true))
+
+    if [[ ${#backup_dirs[@]} -gt 0 ]]; then
+        echo "Found ${#backup_dirs[@]} backup(s):"
+        for i in "${!backup_dirs[@]}"; do
+            echo "  $((i+1)). ${backup_dirs[$i]}"
+        done
+        echo
+
+        if ask_yes_no "Restore from most recent backup?"; then
+            local latest_backup="${backup_dirs[-1]}"
+            print_step "Restoring from: $latest_backup"
+
+            for file in "$latest_backup"/*; do
+                if [[ -f "$file" ]]; then
+                    local filename=$(basename "$file")
+                    cp "$file" "$HOME/.$filename" 2>/dev/null || cp "$file" "$HOME/$filename"
+                    print_success "Restored: $filename"
+                fi
+            done
+        fi
+    else
+        print_warning "No backups found"
+    fi
+
+    # Purge dotfiles directory if requested
+    if [[ "$UNINSTALL_PURGE" == true ]]; then
+        print_step "Purging dotfiles directory"
+
+        if [[ -d "$DOTFILES_DIR" ]]; then
+            if ask_yes_no "Delete $DOTFILES_DIR?" "n"; then
+                rm -rf "$DOTFILES_DIR"
+                print_success "Removed: $DOTFILES_DIR"
+            else
+                print_warning "Kept: $DOTFILES_DIR"
+            fi
+        fi
+    fi
+
+    echo
+    print_success "Uninstallation complete!"
+    echo
+    echo "You may also want to:"
+    echo "  - Remove oh-my-zsh: rm -rf ~/.oh-my-zsh"
+    echo "  - Change shell back: chsh -s /bin/bash"
+    echo
+    exit 0
 }
 
 # ============================================================================
@@ -291,6 +408,89 @@ install_oh_my_zsh() {
         sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
         print_success "oh-my-zsh installed"
     fi
+}
+
+install_zsh_plugins() {
+    print_step "Installing zsh plugins"
+
+    local custom_dir="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins"
+    mkdir -p "$custom_dir"
+
+    # zsh-autosuggestions
+    if [[ ! -d "$custom_dir/zsh-autosuggestions" ]]; then
+        git clone --depth 1 https://github.com/zsh-users/zsh-autosuggestions "$custom_dir/zsh-autosuggestions"
+        print_success "Installed: zsh-autosuggestions"
+    else
+        print_success "Already installed: zsh-autosuggestions"
+    fi
+
+    # zsh-syntax-highlighting
+    if [[ ! -d "$custom_dir/zsh-syntax-highlighting" ]]; then
+        git clone --depth 1 https://github.com/zsh-users/zsh-syntax-highlighting "$custom_dir/zsh-syntax-highlighting"
+        print_success "Installed: zsh-syntax-highlighting"
+    else
+        print_success "Already installed: zsh-syntax-highlighting"
+    fi
+}
+
+configure_git() {
+    print_step "Configuring git"
+
+    # Determine git user info (config > user identity > prompt)
+    local git_name="${GIT_USER_NAME:-$USER_FULLNAME}"
+    local git_email="${GIT_USER_EMAIL:-$USER_EMAIL}"
+
+    # Prompt if still empty
+    if [[ -z "$git_name" ]]; then
+        local current_name=$(git config --global user.name 2>/dev/null || echo "")
+        if [[ -n "$current_name" ]]; then
+            print_success "Git name already set: $current_name"
+        else
+            read -p "Git user name: " git_name
+        fi
+    fi
+
+    if [[ -z "$git_email" ]]; then
+        local current_email=$(git config --global user.email 2>/dev/null || echo "")
+        if [[ -n "$current_email" ]]; then
+            print_success "Git email already set: $current_email"
+        else
+            read -p "Git email: " git_email
+        fi
+    fi
+
+    # Generate .gitconfig
+    local gitconfig_path="$DOTFILES_DIR/git/.gitconfig"
+    mkdir -p "$DOTFILES_DIR/git"
+
+    cat > "$gitconfig_path" << EOF
+[init]
+	defaultBranch = ${GIT_DEFAULT_BRANCH:-master}
+[user]
+	email = ${git_email}
+	name = ${git_name}
+[credential]
+	helper = ${GIT_CREDENTIAL_HELPER:-store}
+[core]
+	editor = vim
+	autocrlf = input
+[pull]
+	rebase = false
+[push]
+	default = current
+[alias]
+	st = status
+	co = checkout
+	br = branch
+	ci = commit
+	lg = log --oneline --graph --decorate --all
+EOF
+
+    print_success "Generated: .gitconfig"
+
+    # Also set git config directly (in case symlink isn't in place yet)
+    [[ -n "$git_name" ]] && git config --global user.name "$git_name"
+    [[ -n "$git_email" ]] && git config --global user.email "$git_email"
 }
 
 link_dotfiles() {
@@ -502,6 +702,12 @@ install_optional_tools() {
 # ============================================================================
 
 main() {
+    # Handle uninstall mode
+    if [[ "$UNINSTALL" == true ]]; then
+        load_config
+        do_uninstall
+    fi
+
     print_header
 
     detect_os
@@ -519,6 +725,13 @@ main() {
         clone_or_update_dotfiles
         backup_existing_configs
         install_oh_my_zsh
+
+        # Install zsh plugins if enabled
+        if [[ "${INSTALL_ZSH_PLUGINS}" == "true" || "${INSTALL_ZSH_PLUGINS}" == "yes" || "${INSTALL_ZSH_PLUGINS}" == "1" ]]; then
+            install_zsh_plugins
+        fi
+
+        configure_git
         link_dotfiles
         link_espanso_config
         set_zsh_default
@@ -531,9 +744,13 @@ main() {
         echo "  1. Restart your terminal or run: exec zsh"
         echo "  2. Your old configs are backed up in: $BACKUP_DIR"
         echo "  3. Customize settings in: $DOTFILES_DIR/dotfiles.conf"
+        echo "  4. Run 'dotfiles-doctor.sh' to verify installation"
         echo
         echo -e "${BLUE}To update dotfiles in the future:${NC}"
         echo "  cd ~/.dotfiles && git pull && ./install.sh"
+        echo
+        echo -e "${BLUE}To uninstall:${NC}"
+        echo "  ./install.sh --uninstall"
         echo
     else
         print_warning "Installation cancelled"

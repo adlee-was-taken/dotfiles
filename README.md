@@ -30,13 +30,22 @@ git clone https://github.com/adlee-was-taken/dotfiles.git ~/.dotfiles
 cd ~/.dotfiles && ./install.sh
 ```
 
-The installer backs up existing configs, installs oh-my-zsh, and creates symlinks.
+The installer backs up existing configs, installs oh-my-zsh + plugins, configures git, and creates symlinks.
+
+### Install Options
+
+```bash
+./install.sh --skip-deps        # Skip dependency check (re-runs)
+./install.sh --uninstall        # Remove symlinks
+./install.sh --uninstall --purge # Remove everything
+```
 
 ## Repository Layout
 
 ```
 dotfiles/
 ├── install.sh              # Main installer
+├── dotfiles.conf           # Configuration (fork-friendly)
 ├── zsh/
 │   ├── .zshrc              # Shell config
 │   ├── themes/adlee.zsh-theme
@@ -44,11 +53,24 @@ dotfiles/
 ├── espanso/
 │   ├── config/default.yml
 │   └── match/base.yml      # 100+ snippets
-├── git/.gitconfig
+├── git/.gitconfig.template # Git config template
 ├── vim/.vimrc
 ├── tmux/.tmux.conf
 ├── bin/                    # Helper scripts
+│   ├── dotfiles-doctor.sh  # Health checker
+│   ├── dotfiles-version.sh # Version checker
+│   └── update-dotfiles.sh
 └── docs/                   # Extended docs
+```
+
+## Health Check
+
+Verify your installation:
+
+```bash
+dotfiles-doctor.sh          # Run diagnostics
+dotfiles-doctor.sh --fix    # Auto-fix issues
+dotfiles-version.sh         # Check for updates
 ```
 
 ## Espanso Snippets
@@ -115,11 +137,17 @@ snap-check-limine             # Verify boot menu sync
 
 ## Troubleshooting
 
+```bash
+dotfiles-doctor.sh --fix    # Auto-diagnose and fix
+```
+
 | Issue | Fix |
 |-------|-----|
-| Theme not loading | Check `ZSH_THEME="adlee"` in ~/.zshrc, then `source ~/.zshrc` |
+| Theme not loading | `dotfiles-doctor.sh --fix` |
+| Zsh plugins missing | `./install.sh` (auto-installs now) |
 | Espanso not working | `espanso status`, then `espanso restart` |
-| Broken symlinks | `cd ~/.dotfiles && ./install.sh` |
+| Broken symlinks | `./install.sh` |
+| Want to uninstall | `./install.sh --uninstall` |
 
 ## License
 

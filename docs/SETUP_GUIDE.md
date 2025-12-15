@@ -30,11 +30,38 @@ cd ~/.dotfiles
 2. Installs dependencies (git, curl, zsh)
 3. Backs up existing configs to `~/.dotfiles_backup_YYYYMMDD_HHMMSS/`
 4. Installs oh-my-zsh
-5. Creates symlinks
-6. Optionally installs espanso, fzf, bat, eza
-7. Sets zsh as default shell
+5. Installs zsh plugins (autosuggestions, syntax-highlighting)
+6. Configures git (prompts for name/email if not in config)
+7. Creates symlinks
+8. Optionally installs espanso, fzf, bat, eza
+9. Sets zsh as default shell
+
+### Install Options
+
+```bash
+./install.sh                # Full interactive install
+./install.sh --skip-deps    # Skip dependency check (for re-runs)
+./install.sh --deps-only    # Only install dependencies
+./install.sh --uninstall    # Remove symlinks, offer to restore backups
+./install.sh --uninstall --purge  # Also remove ~/.dotfiles
+./install.sh --help         # Show all options
+```
 
 ## Post-Install
+
+### Verify Installation
+
+```bash
+dotfiles-doctor.sh          # Check health of installation
+dotfiles-doctor.sh --fix    # Attempt to fix issues
+```
+
+### Check Version
+
+```bash
+dotfiles-version.sh         # Show local vs remote version
+dotfiles-version.sh --check # Exit 1 if updates available
+```
 
 ### Personalize Espanso
 
@@ -140,6 +167,54 @@ sudo ./bin/deploy-zshtheme-systemwide.sh --status
 
 Creates symlinks from each user's oh-my-zsh themes folder to `/usr/local/share/zsh/themes/adlee.zsh-theme`.
 
+## Configuration
+
+### dotfiles.conf
+
+The main configuration file. Edit to customize your installation:
+
+```bash
+# --- Version ---
+DOTFILES_VERSION="1.0.0"
+
+# --- User Identity ---
+USER_FULLNAME="Your Name"
+USER_EMAIL="you@example.com"
+USER_GITHUB="yourusername"
+
+# --- Git Configuration ---
+GIT_USER_NAME=""           # Falls back to USER_FULLNAME
+GIT_USER_EMAIL=""          # Falls back to USER_EMAIL
+GIT_DEFAULT_BRANCH="main"
+GIT_CREDENTIAL_HELPER="store"
+
+# --- Feature Toggles ---
+INSTALL_DEPS="auto"        # "auto", "true", "false", or "ask"
+INSTALL_ZSH_PLUGINS="true" # Auto-install zsh plugins
+INSTALL_ESPANSO="ask"
+INSTALL_FZF="ask"
+INSTALL_BAT="ask"
+INSTALL_EZA="ask"
+SET_ZSH_DEFAULT="ask"
+```
+
+### Git Identity
+
+The installer configures git automatically:
+
+1. Uses `GIT_USER_NAME` / `GIT_USER_EMAIL` from config
+2. Falls back to `USER_FULLNAME` / `USER_EMAIL`
+3. Prompts if both are empty
+
+To reconfigure git later:
+
+```bash
+git config --global user.name "New Name"
+git config --global user.email "new@email.com"
+```
+
+Or edit `dotfiles.conf` and re-run `./install.sh`.
+
 ## Customization Tips
 
 ### Add Aliases
@@ -172,45 +247,45 @@ typeset -g COLOR_BLUE='%{$FG[069]%}'
 
 ## Troubleshooting
 
-### Theme Not Loading
+### Run the Doctor
 
 ```bash
-grep ZSH_THEME ~/.zshrc  # Should show: ZSH_THEME="adlee"
-source ~/.zshrc
+dotfiles-doctor.sh          # Diagnose issues
+dotfiles-doctor.sh --fix    # Auto-fix what's possible
 ```
 
-### Espanso Not Expanding
+### Common Issues
+
+| Issue | Fix |
+|-------|-----|
+| Theme not loading | `dotfiles-doctor.sh --fix` |
+| Zsh plugins missing | `./install.sh` (auto-installs) |
+| Espanso not expanding | `espanso restart` |
+| Git identity not set | Re-run `./install.sh` |
+| Broken symlinks | `./install.sh` |
+
+### Manual Fixes
 
 ```bash
-espanso status    # Should show "running"
-espanso restart
-espanso log       # Check for errors
-```
+# Reinstall zsh plugins
+git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
+git clone https://github.com/zsh-users/zsh-syntax-highlighting ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
 
-### Broken Symlinks
-
-```bash
-# Find broken symlinks in home
-find ~ -maxdepth 1 -type l -xtype l
-
-# Re-run installer
-cd ~/.dotfiles && ./install.sh
-```
-
-### Permission Errors
-
-```bash
+# Fix permissions
 chmod +x ~/.dotfiles/install.sh
 chmod +x ~/.dotfiles/bin/*
 ```
 
-## Security Notes
-
-- `.gitignore` excludes `.env`, `secrets/`, and `*.local` files
-- Review `git/.gitconfig` before pushing (contains email)
-- Personal espanso snippets may contain sensitive info
-
 ## Uninstalling
+
+### Quick Uninstall
+
+```bash
+./install.sh --uninstall           # Remove symlinks, offer backup restore
+./install.sh --uninstall --purge   # Also delete ~/.dotfiles
+```
+
+### Manual Uninstall
 
 ```bash
 # Remove symlinks
