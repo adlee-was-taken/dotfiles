@@ -5,6 +5,21 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/espanso/espanso/dev/schemas/match.schema.json
 
 matches:
+
+  # =========================================
+  # Clipboard Stuff
+  # =========================================
+
+  # Quick paste from primary clipboard (X11 selection)
+
+  - trigger: "..qp"
+    replace: "{{clipboard}}"
+    vars:
+      - name: clipboard
+        type: shell
+        params:
+          cmd: "wl-paste --primary"
+  
   # =========================================
   # Date and Time Stamps
   # =========================================
