@@ -256,7 +256,8 @@ draw_bar() {
         empty_bar+="░"
     done
     
-    printf "%s%s%s%s%s" "${GREEN}" "${filled_bar}" "${DIM}" "${empty_bar}" "${NC}"
+    # Use echo -ne to interpret escape sequences
+    echo -ne "\033[0;32m${filled_bar}\033[2m${empty_bar}\033[0m"
 }
 
 show_dashboard() {
