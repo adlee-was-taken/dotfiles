@@ -101,18 +101,6 @@ _motd_load() {
     echo "${load:-?}"
 }
 
-_motd_updates() {
-    local count=0
-    if command -v checkupdates &>/dev/null; then
-        count=$(checkupdates 2>/dev/null | wc -l)
-    elif command -v apt &>/dev/null; then
-        count=$(apt list --upgradable 2>/dev/null | grep -c upgradable || echo 0)
-    elif command -v brew &>/dev/null; then
-        count=$(brew outdated 2>/dev/null | wc -l | tr -d ' ')
-    fi
-    echo "$count"
-}
-
 _motd_date() {
     date '+%a %b %d'
 }
@@ -136,19 +124,12 @@ show_motd() {
     local mem=$(_motd_memory)
     local disk=$(_motd_disk)
     local load=$(_motd_load)
-    local updates=$(_motd_updates)
-    local docker=$(_motd_docker)
-    local git_status=$(_motd_git_repos)
     local dotfiles=$(_motd_dotfiles_status)
     local dt=$(_motd_date)
     local tm=$(_motd_time)
     
     # Build status indicators
     local status_line=""
-    
-    [[ -n "$docker" ]] && status_line+="${M_CYAN}◉${M_RESET}$docker  "
-    [[ -n "$git_status" ]] && status_line+="${M_YELLOW}⎇${M_RESET}$git_status  "
-    [[ "$updates" -gt 0 ]] && status_line+="${M_GREEN}↑${M_RESET}${updates}updates  "
     
     # Print compact MOTD
     echo
