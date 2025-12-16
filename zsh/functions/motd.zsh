@@ -113,43 +113,6 @@ _motd_updates() {
     echo "$count"
 }
 
-_motd_docker() {
-    command -v docker &>/dev/null || return
-    local running=$(docker ps -q 2>/dev/null | wc -l | tr -d ' ')
-    [[ "$running" -gt 0 ]] && echo "${running} containers"
-}
-
-_motd_git_repos() {
-    # Check for uncommitted changes in common dirs
-    local needs_push=0
-    local dirs=("$HOME/.dotfiles" "$HOME/projects" "$HOME/work")
-    
-    for dir in "${dirs[@]}"; do
-        [[ -d "$dir/.git" ]] || continue
-        (cd "$dir" && ! git diff --quiet 2>/dev/null) && ((needs_push++))
-    done
-    
-    [[ $needs_push -gt 0 ]] && echo "$needs_push dirty"
-}
-
-_motd_dotfiles_status() {
-    [[ ! -d "$HOME/.dotfiles/.git" ]] && return
-    
-    cd "$HOME/.dotfiles" 2>/dev/null || return
-    git fetch origin --quiet 2>/dev/null
-    
-    local behind=$(git rev-list HEAD..origin/main --count 2>/dev/null || git rev-list HEAD..origin/master --count 2>/dev/null || echo 0)
-    local ahead=$(git rev-list origin/main..HEAD --count 2>/dev/null || git rev-list origin/master..HEAD --count 2>/dev/null || echo 0)
-    
-    if [[ $behind -gt 0 ]]; then
-        echo "↓$behind"
-    elif [[ $ahead -gt 0 ]]; then
-        echo "↑$ahead"
-    else
-        echo "✓"
-    fi
-}
-
 _motd_date() {
     date '+%a %b %d'
 }
@@ -186,7 +149,6 @@ show_motd() {
     [[ -n "$docker" ]] && status_line+="${M_CYAN}◉${M_RESET}$docker  "
     [[ -n "$git_status" ]] && status_line+="${M_YELLOW}⎇${M_RESET}$git_status  "
     [[ "$updates" -gt 0 ]] && status_line+="${M_GREEN}↑${M_RESET}${updates}updates  "
-    [[ -n "$dotfiles" ]] && status_line+="${M_MAGENTA}●${M_RESET}dotfiles:$dotfiles"
     
     # Print compact MOTD
     echo
