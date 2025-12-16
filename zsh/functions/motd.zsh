@@ -1,182 +1,145 @@
 #!/usr/bin/env zsh
 # ============================================================================
-# Dynamic MOTD - Compact System Info on Shell Start
-# ============================================================================
-# A beautiful, informative welcome screen for your terminal
-#
-# Add to .zshrc:
-#   source ~/.dotfiles/zsh/functions/motd.zsh
-#   show_motd  # or call automatically
+# Dynamic MOTD (zsh) — PARSE-SAFE GRID LAYOUT
 # ============================================================================
 
-# ============================================================================
-# Configuration
-# ============================================================================
+# ---------------------------- Configuration ---------------------------------
 
-typeset -g MOTD_ENABLED="${MOTD_ENABLED:-true}"
-typeset -g MOTD_SHOW_WEATHER="${MOTD_SHOW_WEATHER:-false}"
-typeset -g MOTD_WEATHER_LOCATION="${MOTD_WEATHER_LOCATION:-}"
+MOTD_ENABLED="${MOTD_ENABLED:-true}"
+MOTD_MAX_WIDTH=80
+MOTD_LABEL_WIDTH=12
+MOTD_ONCE_VAR="__MOTD_SHOWN"
 
-# Colors
-typeset -g M_RESET=$'\033[0m'
-typeset -g M_BOLD=$'\033[1m'
-typeset -g M_DIM=$'\033[2m'
-typeset -g M_CYAN=$'\033[36m'
-typeset -g M_GREEN=$'\033[32m'
-typeset -g M_YELLOW=$'\033[33m'
-typeset -g M_RED=$'\033[31m'
-typeset -g M_BLUE=$'\033[34m'
-typeset -g M_MAGENTA=$'\033[35m'
+# ---------------------------- Colors -----------------------------------------
 
-# ============================================================================
-# Data Collection Functions
-# ============================================================================
+autoload -Uz colors && colors
 
-_motd_hostname() {
-    hostname -s 2>/dev/null || echo "${HOST:-unknown}"
+C_RESET="%f%k"
+C_DIM="%F{242}"
+C_HEAD="%B%F{39}"
+C_LABEL="%F{51}"
+C_OK="%F{82}"
+
+# ---------------------------- Utilities --------------------------------------
+
+_strip_colors() {
+  local s="$1"
+  s="${s//\%\{/%}"
+  s="${s//\%\}/%}"
+  print -r -- "${(S%%)s}"
 }
 
-_motd_user() {
-    echo "${USER:-$(whoami)}"
+_term_width() {
+  print ${COLUMNS:-$(tput cols 2>/dev/null || echo 80)}
 }
 
-_motd_uptime() {
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        local boot=$(sysctl -n kern.boottime | awk '{print $4}' | tr -d ',')
-        local now=$(date +%s)
-        local diff=$((now - boot))
-    else
-        local diff=$(cat /proc/uptime 2>/dev/null | cut -d. -f1)
-    fi
-    
-    [[ -z "$diff" ]] && { echo "?"; return; }
-    
-    local days=$((diff / 86400))
-    local hours=$(((diff % 86400) / 3600))
-    local mins=$(((diff % 3600) / 60))
-    
-    if [[ $days -gt 0 ]]; then
-        echo "${days}d ${hours}h"
-    elif [[ $hours -gt 0 ]]; then
-        echo "${hours}h ${mins}m"
-    else
-        echo "${mins}m"
-    fi
+_box_width() {
+  local w=$(_term_width)
+  (( w > MOTD_MAX_WIDTH )) && w=$MOTD_MAX_WIDTH
+  print $w
 }
 
-_motd_cpu() {
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        local cpu=$(top -l 1 -n 0 2>/dev/null | grep "CPU usage" | awk '{print int($3)}')
-    else
-        local cpu=$(top -bn1 2>/dev/null | grep "Cpu(s)" | awk '{print int($2)}')
-        [[ -z "$cpu" ]] && cpu=$(cat /proc/stat 2>/dev/null | head -1 | awk '{print int(($2+$4)*100/($2+$4+$5))}')
-    fi
-    echo "${cpu:-?}%"
+_hr_top() {
+  local w=$(_box_width)
+  print -P -- "${C_DIM}┌${(l:$((w-2))::─:)}┐${C_RESET}"
 }
 
-_motd_memory() {
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        local total=$(sysctl -n hw.memsize 2>/dev/null)
-        local used=$(vm_stat 2>/dev/null | awk '/Pages active/ {print $3}' | tr -d '.')
-        if [[ -n "$total" && -n "$used" ]]; then
-            local total_gb=$((total / 1073741824))
-            local used_gb=$((used * 4096 / 1073741824))
-            echo "${used_gb}/${total_gb}G"
-        else
-            echo "?G"
-        fi
-    else
-        local mem=$(free -h 2>/dev/null | awk '/^Mem:/ {print $3"/"$2}')
-        echo "${mem:-?G}" | sed 's/i//g'
-    fi
+_hr_bottom() {
+  local w=$(_box_width)
+  print -P -- "${C_DIM}└${(l:$((w-2))::─:)}┘${C_RESET}"
 }
 
-_motd_disk() {
-    local disk=$(df -h ~ 2>/dev/null | awk 'NR==2 {print $4}')
-    echo "${disk:-?}free"
+_header() {
+  local text="$1"
+  local w=$(_box_width)
+  local inner=$(( w - 2 ))
+
+  # Strip color + force ASCII dash to avoid Unicode width issues
+  local raw="$(_strip_colors "$text" | sed 's/—/-/')"
+  (( ${#raw} > inner )) && raw="${raw[1,inner]}"
+
+  local pad=$(( (inner - ${#raw}) / 2 ))
+  local rpad=$(( inner - ${#raw} - pad ))
+
+  print -P -- \
+    "${C_DIM}│${C_RESET}${(l:$pad:: :)}${text}${(l:$rpad:: :)}${C_DIM}│${C_RESET}"
 }
 
-_motd_load() {
-    local load=$(uptime 2>/dev/null | awk -F'load average:' '{print $2}' | awk -F',' '{print $1}' | tr -d ' ')
-    echo "${load:-?}"
+_message() {
+  local msg="$1"
+  local w=$(_box_width)
+  local inner=$(( w - 2 ))
+
+  local raw="$(_strip_colors "$msg")"
+  (( ${#raw} > inner )) && msg="${msg[1,inner]}"
+
+  local fill=$(( inner - ${#raw} ))
+
+  print -P -- \
+    "${C_DIM}│${C_RESET}${msg}${(l:$fill:: :)}${C_DIM}│${C_RESET}"
 }
 
-_motd_date() {
-    date '+%a %b %d'
+_blank() {
+  local w=$(_box_width)
+  print -P -- "${C_DIM}│${C_RESET}$(printf '%*s' $((w-2)) '')${C_DIM}│${C_RESET}"
 }
 
-_motd_time() {
-    date '+%H:%M'
+_row() {
+  local label="$1"
+  local value="$2"
+
+  local w=$(_box_width)
+  local value_width=$(( w - 4 - MOTD_LABEL_WIDTH ))
+
+  # Truncate value safely
+  local raw="$(_strip_colors "$value")"
+  if (( ${#raw} > value_width )); then
+    value="${value[1,value_width]}"
+  fi
+
+  # Recalculate after truncation
+  raw="$(_strip_colors "$value")"
+  local pad_len=$(( value_width - ${#raw} ))
+  (( pad_len < 0 )) && pad_len=0
+
+  printf -v lpad "%-*s" "$MOTD_LABEL_WIDTH" "$label"
+  printf -v vpad "%*s" "$pad_len" ""
+
+  print -P -- \
+    "${C_DIM}│${C_RESET} ${C_LABEL}${lpad}${C_RESET} ${value}${vpad}${C_DIM}│${C_RESET}"
 }
 
-# ============================================================================
-# Display Function
-# ============================================================================
+
+# ---------------------------- Info Providers ---------------------------------
+
+_get_os()     { uname -sr }
+_get_uptime() { uptime | sed 's/.*up *//' | cut -d',' -f1 }
+_get_load()   { uptime | awk -F'load average:' '{print $2}' | xargs }
+_get_mem()    { free -h | awk '/Mem:/ {print $3 "/" $2}' }
+_get_disk() {
+  df -h / | awk 'NR==2 {print $3 "/" $2 " (" $5 ")"}'
+}
+
+# ---------------------------- MOTD -------------------------------------------
 
 show_motd() {
-    [[ "$MOTD_ENABLED" != "true" ]] && return
-    
-    # Collect data
-    local user=$(_motd_user)
-    local host=$(_motd_hostname)
-    local uptime=$(_motd_uptime)
-    local cpu=$(_motd_cpu)
-    local mem=$(_motd_memory)
-    local disk=$(_motd_disk)
-    local load=$(_motd_load)
-    local dotfiles=$(_motd_dotfiles_status)
-    local dt=$(_motd_date)
-    local tm=$(_motd_time)
-    
-    # Build status indicators
-    local status_line=""
-    
-    # Print compact MOTD
-    echo
-    echo "${M_DIM}┌──────────────────────────────────────────────────────────────┐${M_RESET}"
-    printf "${M_DIM}│${M_RESET} ${M_BOLD}${M_CYAN}✦${M_RESET} ${M_BOLD}%s${M_RESET}@${M_CYAN}%s${M_RESET}%*s${M_DIM}%s %s${M_RESET} ${M_DIM}│${M_RESET}\n" \
-        "$user" "$host" $((40 - ${#user} - ${#host})) "" "$dt" "$tm"
-    echo "${M_DIM}├──────────────────────────────────────────────────────────────┤${M_RESET}"
-    printf "${M_DIM}│${M_RESET} ▲ %-8s  ◆ %-10s  ◇ %-10s  ⊡ %-8s ${M_DIM}│${M_RESET}\n" \
-        "up:$uptime" "cpu:$cpu" "mem:$mem" "$disk"
-    
-    if [[ -n "$status_line" ]]; then
-        echo "${M_DIM}├──────────────────────────────────────────────────────────────┤${M_RESET}"
-        printf "${M_DIM}│${M_RESET} %s%*s${M_DIM}│${M_RESET}\n" "$status_line" $((62 - ${#status_line} + 30)) ""
-    fi
-    
-    echo "${M_DIM}└──────────────────────────────────────────────────────────────┘${M_RESET}"
-    echo
+  [[ -o interactive ]] || return
+  [[ "$MOTD_ENABLED" != true ]] && return
+  [[ -n ${(P)MOTD_ONCE_VAR} ]] && return
+  typeset -g ${MOTD_ONCE_VAR}=1
+
+  _hr_top
+  _header "${C_HEAD} $(hostname) ${C_RESET}- ${C_DIM}$(_get_os)${C_RESET}"
+  _blank
+  _row "Uptime" "$(_get_uptime)"
+  _row "Load"   "$(_get_load)"
+  _row "Memory" "$(_get_mem)"
+  _row "Disk"   "$(_get_disk)"
+  _blank
+  _message "${C_OK}System up to date${C_RESET}"
+  _hr_bottom
+  print
 }
 
-# Alias
-motd() { show_motd; }
+show_motd
 
-# ============================================================================
-# Minimal Version (single line)
-# ============================================================================
-
-show_motd_mini() {
-    [[ "$MOTD_ENABLED" != "true" ]] && return
-    
-    local user=$(_motd_user)
-    local host=$(_motd_hostname)
-    local uptime=$(_motd_uptime)
-    local mem=$(_motd_memory)
-    local updates=$(_motd_updates)
-    
-    local info="${M_CYAN}${user}@${host}${M_RESET}"
-    info+=" ${M_DIM}│${M_RESET} ▲${uptime}"
-    info+=" ${M_DIM}│${M_RESET} ◇${mem}"
-    [[ "$updates" -gt 0 ]] && info+=" ${M_DIM}│${M_RESET} ${M_GREEN}↑${updates}${M_RESET}"
-    
-    echo "$info"
-    echo
-}
-
-# ============================================================================
-# Auto-show on source (optional)
-# ============================================================================
-
-# Uncomment to show automatically:
-# show_motd
