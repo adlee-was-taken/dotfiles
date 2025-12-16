@@ -42,6 +42,9 @@ alias vls='dotfiles-vault.sh list'
 alias vget='dotfiles-vault.sh get'
 alias vset='dotfiles-vault.sh set'
 
+# Compile - compile zsh files for speed
+alias dfcompile='dotfiles-compile.sh'
+
 # --- Quick Edit Aliases ---
 alias zshrc='${EDITOR:-vim} ~/.zshrc'
 alias dfconf='${EDITOR:-vim} ~/.dotfiles/dotfiles.conf'
