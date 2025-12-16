@@ -185,7 +185,7 @@ bindkey "^[[F" end-of-line
 bindkey "^[[3~" delete-char
 
 # Alt+R to reload
-reload-zsh() { echo "Reloading ~/.zshrc ... "; source ~/.zshrc; zle reset-prompt}
+reload-zsh() { echo "Reloading ~/.zshrc ... "; source ~/.zshrc; zle -N reload-zsh; zle reset-prompt}
 bindkey "^[r" reload-zsh
 
 # ============================================================================
