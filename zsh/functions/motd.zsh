@@ -122,7 +122,7 @@ _motd_docker() {
 _motd_git_repos() {
     # Check for uncommitted changes in common dirs
     local needs_push=0
-    local dirs=("$HOME/.dotfiles" "$HOME/projects"/* "$HOME/work"/* 2>/dev/null)
+    local dirs=("$HOME/.dotfiles" "$HOME/projects" "$HOME/work")
     
     for dir in "${dirs[@]}"; do
         [[ -d "$dir/.git" ]] || continue
