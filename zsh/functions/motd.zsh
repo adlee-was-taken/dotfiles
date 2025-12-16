@@ -1,102 +1,157 @@
 #!/usr/bin/env zsh
 # ============================================================================
-# MOTD — Width-Safe, Color-Safe, Reload-Safe
+# MOTD (Message of the Day) - Dynamic System Info
+# ============================================================================
+# Displays system information on shell startup
+#
+# Functions:
+#   show_motd       - Compact box format
+#   show_motd_mini  - Single line format
 # ============================================================================
 
-# ---------------------------- Guards -----------------------------------------
+# Only run in interactive shells
+[[ -o interactive ]] || return 0
 
-[[ -o interactive ]] || return
-[[ -n $__MOTD_SHOWN ]] && return
-typeset -g __MOTD_SHOWN=1
+# ============================================================================
+# Colors (ANSI escape codes)
+# ============================================================================
 
-# ---------------------------- Configuration ----------------------------------
+_M_RESET=$'\033[0m'
+_M_BOLD=$'\033[1m'
+_M_DIM=$'\033[2m'
+_M_BLUE=$'\033[38;5;39m'
+_M_CYAN=$'\033[38;5;51m'
+_M_GREEN=$'\033[38;5;82m'
+_M_YELLOW=$'\033[38;5;220m'
+_M_GREY=$'\033[38;5;242m'
 
-BOX_WIDTH=78        # total width INCLUDING borders
-INNER_WIDTH=$(( BOX_WIDTH - 2 ))
-LABEL_WIDTH=12
+# ============================================================================
+# Info Gathering
+# ============================================================================
 
-# ---------------------------- Colors -----------------------------------------
-
-autoload -Uz colors && colors
-
-C_DIM="%F{242}"
-C_HEAD="%B%F{39}"
-C_LABEL="%F{51}"
-C_OK="%F{82}"
-C_RESET="%f%b"
-
-# ---------------------------- Low-level helpers ------------------------------
-
-repeat_char() {
-  local ch="$1" n="$2"
-  printf '%*s' "$n" '' | tr ' ' "$ch"
+_motd_uptime() {
+    local up=$(uptime 2>/dev/null)
+    if [[ "$up" =~ "up "([^,]+) ]]; then
+        echo "${match[1]}" | sed 's/^ *//'
+    else
+        echo "?"
+    fi
 }
 
-pad_right() {
-  local s="$1" w="$2"
-  printf '%-*s' "$w" "$s"
+_motd_load() {
+    if [[ -f /proc/loadavg ]]; then
+        awk '{print $1}' /proc/loadavg
+    else
+        uptime | awk -F'load average:' '{print $2}' | awk -F, '{print $1}' | xargs
+    fi
 }
 
-center_text() {
-  local s="$1" w="$2"
-  local len=${#s}
-  (( len >= w )) && { print "${s[1,w]}"; return }
-  local pad=$(( (w - len) / 2 ))
-  printf '%*s%s%*s' "$pad" '' "$s" "$(( w - len - pad ))" ''
+_motd_mem() {
+    free -h 2>/dev/null | awk '/^Mem:/ {print $3 "/" $2}' || echo "N/A"
 }
 
-# ---------------------------- Box primitives ---------------------------------
-
-box_top() {
-  print "${C_DIM}┌$(repeat_char '─' $INNER_WIDTH)┐${C_RESET}"
+_motd_disk() {
+    df -h / 2>/dev/null | awk 'NR==2 {print $4 " free"}' || echo "N/A"
 }
 
-box_bottom() {
-  print "${C_DIM}└$(repeat_char '─' $INNER_WIDTH)┘${C_RESET}"
+# ============================================================================
+# Box Drawing - Fixed Width
+# ============================================================================
+
+# Fixed box width
+_M_WIDTH=62
+
+_motd_line() {
+    local char="$1"
+    local i
+    local line=""
+    for ((i=0; i<_M_WIDTH; i++)); do
+        line+="$char"
+    done
+    echo "$line"
 }
 
-box_blank() {
-  print "${C_DIM}│$(repeat_char ' ' $INNER_WIDTH)│${C_RESET}"
+_motd_pad() {
+    # Pad a plain string to exact width
+    local str="$1"
+    local width="$2"
+    local len=${#str}
+    if (( len >= width )); then
+        echo "${str:0:$width}"
+    else
+        printf "%-${width}s" "$str"
+    fi
 }
 
-box_line() {
-  local content="$1"
-  content="$(pad_right "$content" "$INNER_WIDTH")"
-  print "${C_DIM}│${C_RESET}${content}${C_DIM}│${C_RESET}"
+# ============================================================================
+# Main Display Function
+# ============================================================================
+
+show_motd() {
+    [[ -n "$_MOTD_SHOWN" && "$1" != "--force" ]] && return 0
+    typeset -g _MOTD_SHOWN=1
+
+    local hostname="${HOST:-$(hostname -s 2>/dev/null)}"
+    local datetime=$(date '+%a %b %d %H:%M')
+    local uptime=$(_motd_uptime)
+    local load=$(_motd_load)
+    local mem=$(_motd_mem)
+    local disk=$(_motd_disk)
+
+    local hline=$(_motd_line '─')
+    local inner=$((_M_WIDTH - 2))
+
+    echo ""
+    
+    # Top border
+    echo "${_M_GREY}┌${hline}┐${_M_RESET}"
+    
+    # Header: hostname + datetime
+    local h_left="✦ ${hostname}"
+    local h_right="${datetime}"
+    local h_pad=$((inner - ${#h_left} - ${#h_right}))
+    local h_spaces=""
+    for ((i=0; i<h_pad; i++)); do h_spaces+=" "; done
+    echo "${_M_GREY}│${_M_RESET} ${_M_BOLD}${_M_BLUE}✦${_M_RESET} ${_M_BOLD}${hostname}${_M_RESET}${h_spaces}${_M_DIM}${datetime}${_M_RESET} ${_M_GREY}│${_M_RESET}"
+    
+    # Separator
+    echo "${_M_GREY}├${hline}┤${_M_RESET}"
+    
+    # Stats line - build with exact spacing
+    local s1="▲up:${uptime}"
+    local s2="◆load:${load}"
+    local s3="◇mem:${mem}"
+    local s4="⊡${disk}"
+    local stats_content="${s1}  ${s2}  ${s3}  ${s4}"
+    local stats_pad=$((inner - ${#stats_content} - 1))
+    local stats_spaces=""
+    for ((i=0; i<stats_pad; i++)); do stats_spaces+=" "; done
+    echo "${_M_GREY}│${_M_RESET} ${_M_DIM}▲${_M_RESET}up:${uptime}  ${_M_DIM}◆${_M_RESET}load:${load}  ${_M_DIM}◇${_M_RESET}mem:${mem}  ${_M_DIM}⊡${_M_RESET}${disk}${stats_spaces}${_M_GREY}  │${_M_RESET}"
+    
+    # Bottom border
+    echo "${_M_GREY}└${hline}┘${_M_RESET}"
+    
+    echo ""
 }
 
-# ---------------------------- Content builders -------------------------------
+# ============================================================================
+# Mini Format (Single Line)
+# ============================================================================
 
-header_line() {
-  local text="$1"
-  box_line "$(center_text "$text" "$INNER_WIDTH")"
+show_motd_mini() {
+    [[ -n "$_MOTD_SHOWN" && "$1" != "--force" ]] && return 0
+    typeset -g _MOTD_SHOWN=1
+
+    local hostname="${HOST:-$(hostname -s 2>/dev/null)}"
+    local uptime=$(_motd_uptime)
+    local mem=$(_motd_mem)
+
+    echo "${_M_DIM}──${_M_RESET} ${_M_BOLD}${hostname}${_M_RESET} ${_M_DIM}│${_M_RESET} up:${uptime} ${_M_DIM}│${_M_RESET} mem:${mem} ${_M_DIM}──${_M_RESET}"
 }
 
-row_line() {
-  local label="$1" value="$2"
-  local left="$(pad_right "$label" "$LABEL_WIDTH")"
-  box_line " ${left} ${value}"
-}
+# ============================================================================
+# Aliases
+# ============================================================================
 
-# ---------------------------- Info providers ---------------------------------
-
-get_os()     { uname -sr }
-get_uptime() { uptime | sed 's/.*up *//' | cut -d',' -f1 }
-get_load()   { uptime | awk -F'load average:' '{print $2}' | xargs }
-get_mem()    { free -h | awk '/Mem:/ {print $3 "/" $2}' }
-get_disk()   { df -h / | awk 'NR==2 {print $3 "/" $2 " (" $5 ")"}' }
-
-# ---------------------------- Render -----------------------------------------
-
-box_top
-header_line "${C_HEAD}$(hostname)${C_RESET} - ${C_DIM}$(get_os)${C_RESET}"
-box_blank
-row_line "${C_LABEL}Uptime${C_RESET}"  "$(get_uptime)"
-row_line "${C_LABEL}Load${C_RESET}"    "$(get_load)"
-row_line "${C_LABEL}Memory${C_RESET}"  "$(get_mem)"
-row_line "${C_LABEL}Disk${C_RESET}"    "$(get_disk)"
-box_blank
-box_line " ${C_OK}System up to date${C_RESET}"
-box_bottom
-print
-
+alias motd='show_motd --force'
+alias motd-mini='show_motd_mini --force'

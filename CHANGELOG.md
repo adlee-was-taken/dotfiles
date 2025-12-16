@@ -5,6 +5,64 @@ All notable changes to this dotfiles project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-12-16
+
+### Added
+
+#### Shell Startup Optimization
+- **Deferred Loading** - Heavy plugins and functions load after first prompt displays
+- **Cached Command Checks** - `_has_cmd()` function caches `command -v` results for faster lookups
+- **Lazy kubectl** - kubectl completions only load when first used (saves ~200-500ms)
+- **Background Tasks** - Dotfiles sync check runs fully async with `&!`
+- **Compile Script** (`dotfiles-compile.sh`) - Pre-compile zsh files to `.zwc` bytecode for 20-50ms speedup
+
+#### Smart Path Resolution
+- **`_df_run()` Helper** - All aliases use full path with fallback to PATH
+- Fixes "command not found" errors on fresh installs
+- Scripts work even before symlinks are created or PATH is set
+
+#### New Aliases
+- `dfcompile` - Compile zsh files for faster startup
+- `dfcd` - Navigate to dotfiles directory (replaces `df` to avoid disk utility conflict)
+
+### Changed
+
+#### Script Reorganization
+- Renamed `bin/shell-stats.sh` → `bin/dotfiles-stats.sh`
+- Renamed `bin/vault.sh` → `bin/dotfiles-vault.sh`
+- Renamed `bin/update-dotfiles.sh` → `bin/dotfiles-update.sh`
+- Moved `bin/setup-wizard.sh` → `setup/setup-wizard.sh`
+- Moved `bin/setup-espanso.sh` → `setup/setup-espanso.sh`
+- Removed deprecated `bin/deploy-zshtheme-systemwide.sh`
+
+#### Alias System Overhaul
+- All command aliases now use `_df_run()` function wrapper
+- Uses full path `$_df_dir/bin/script.sh` with fallback to PATH lookup
+- Better error messages when scripts not found
+- Removed `df` alias (conflicts with disk free utility)
+
+#### .zshrc Optimizations
+- Reduced default plugins (removed `docker`, `docker-compose`, `kubectl` from immediate load)
+- Disabled oh-my-zsh auto-update check on every load (`DISABLE_AUTO_UPDATE="true"`)
+- Tool aliases (eza, bat) now set up in deferred loading
+- FZF configuration deferred until after prompt
+- Vault secrets loaded with full path to avoid command_not_found issues
+- Background sync check uses full script path
+
+### Fixed
+
+- **Fresh Install Bug** - "Command not found: dotfiles-sync.sh" error on new user accounts
+- **Path Resolution** - Scripts now work before `~/.local/bin` is in PATH
+- **Smart Suggest Conflicts** - Background tasks no longer trigger `command_not_found_handler`
+
+### Removed
+
+- `df` alias (conflicted with `df` disk utility)
+- Heavy plugins from default load (now lazy-loaded)
+- `bin/deploy-zshtheme-systemwide.sh` (redundant with installer)
+
+---
+
 ## [1.0.0] - 2025-12-15
 
 ### Added
@@ -14,8 +72,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Dynamic MOTD** (`motd.zsh`) - Compact system info on shell start (uptime, CPU, memory, docker, git status)
 - **Command Palette** (`command-palette.zsh`) - Raycast-style fuzzy launcher triggered by Ctrl+Space or Ctrl+P
 - **Smart Suggestions** (`smart-suggest.zsh`) - Typo correction for 100+ common mistakes + alias recommendations
-- **Shell Analytics** (`shell-stats.sh`) - Dashboard showing command usage, suggestions, and activity heatmap
-- **Secrets Vault** (`vault.sh`) - Encrypted storage for API keys using age/gpg
+- **Shell Analytics** (`dotfiles-stats.sh`) - Dashboard showing command usage, suggestions, and activity heatmap
+- **Secrets Vault** (`dotfiles-vault.sh`) - Encrypted storage for API keys using age/gpg
 - **Password Manager Integration** (`password-manager.zsh`) - Unified CLI for 1Password, LastPass, Bitwarden
 - **Dotfiles Sync** (`dotfiles-sync.sh`) - Multi-machine synchronization with watch mode
 - **Dotfiles Doctor** (`dotfiles-doctor.sh`) - Health checker with auto-fix capability
@@ -86,35 +144,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Checking Your Version
 
 ```bash
+dfv
+# or
 dotfiles-version.sh
 ```
 
 ### Updating
 
 ```bash
-cd ~/.dotfiles
-git pull origin main
-./install.sh --skip-deps
-```
-
-Or use:
-
-```bash
-update-dotfiles.sh
+dfu
+# or
+dotfiles-update.sh
 ```
 
 ---
 
 ## Roadmap
 
-### Planned for 1.1.0
+### Planned for 1.2.0
 - [ ] Multiple theme support with live preview
 - [ ] Project scaffolding templates
 - [ ] SSH key generation helper
 - [ ] Machine profiles (work, personal, server)
 
-### Planned for 1.2.0
-- [ ] Dynamic MOTD/welcome screen
+### Planned for 1.3.0
 - [ ] Remote machine bootstrap script
 - [ ] Neovim configuration support
 

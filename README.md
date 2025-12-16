@@ -357,9 +357,11 @@ All dotfiles commands have convenient aliases:
 | `dfu` | `dotfiles-update.sh` | Update dotfiles |
 | `dfv` | `dotfiles-version.sh` | Version info |
 | `dfstats` | `dotfiles-stats.sh` | Shell analytics |
+| `dfcompile` | `dotfiles-compile.sh` | Compile zsh for speed |
 | `vault` | `dotfiles-vault.sh` | Secrets manager |
 | `reload` | `source ~/.zshrc` | Reload shell |
 | `dfc` | `dotfiles-cli` | CLI with subcommands |
+| `dotfiles` | `cd ~/.dotfiles` | Go to dotfiles dir |
 
 ## 🗑️ Uninstalling
 

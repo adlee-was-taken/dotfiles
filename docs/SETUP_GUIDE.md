@@ -409,7 +409,7 @@ All dotfiles commands have convenient aliases defined in `~/.dotfiles/zsh/aliase
 
 | Alias | Full Command | Description |
 |-------|--------------|-------------|
-| `dotfiles` / `df` | `cd ~/.dotfiles` | Go to dotfiles directory |
+| `dotfiles` / `dfcd` | `cd ~/.dotfiles` | Go to dotfiles directory |
 | `dfd` / `doctor` | `dotfiles-doctor.sh` | Run health check |
 | `dffix` | `dotfiles-doctor.sh --fix` | Auto-fix issues |
 | `dfs` / `dfsync` | `dotfiles-sync.sh` | Interactive sync |
@@ -421,6 +421,7 @@ All dotfiles commands have convenient aliases defined in `~/.dotfiles/zsh/aliase
 | `dfstats` / `stats` | `dotfiles-stats.sh` | Shell analytics |
 | `tophist` | `dotfiles-stats.sh --top` | Top commands |
 | `suggest` | `dotfiles-stats.sh --suggest` | Alias suggestions |
+| `dfcompile` | `dotfiles-compile.sh` | Compile zsh for speed |
 
 ### Vault Commands
 
@@ -451,10 +452,66 @@ dfc update          # Update dotfiles
 dfc version         # Show version
 dfc stats           # Shell analytics
 dfc vault           # Secrets manager
+dfc compile         # Compile zsh for speed
 dfc edit            # Open in editor
 dfc cd              # Go to dotfiles dir
 dfc help            # Show help
 ```
+
+---
+
+## Shell Optimization
+
+The `.zshrc` is optimized for fast startup while maintaining full functionality.
+
+### Measuring Startup Time
+
+```bash
+# Quick measurement
+time zsh -i -c exit
+
+# More accurate (requires hyperfine)
+hyperfine 'zsh -i -c exit'
+```
+
+### Compile Zsh Files
+
+Pre-compile `.zsh` files to bytecode for 20-50ms speedup:
+
+```bash
+dfcompile              # Compile all zsh files
+dfcompile --clean      # Remove compiled files
+```
+
+### Loading Strategy
+
+| Phase | What Loads | Timing |
+|-------|------------|--------|
+| **Immediate** | PATH, history, oh-my-zsh, basic aliases, keybindings | Blocks prompt |
+| **Deferred** | Tool aliases (eza, bat), FZF, smart-suggest, snapper, vault | After first prompt |
+| **Background** | Dotfiles sync check | Fully async |
+| **Lazy** | NVM, kubectl, virtualenvwrapper | When first used |
+
+### Profiling
+
+To debug slow startup, edit `~/.zshrc`:
+
+```zsh
+# Uncomment at the TOP of file:
+zmodload zsh/zprof
+
+# Uncomment at the BOTTOM of file:
+zprof
+```
+
+Then run `zsh -i -c exit` to see timing breakdown.
+
+### Tips for Fast Startup
+
+1. **Run `dfcompile`** after installation
+2. **Avoid adding** `command -v` checks in `.zshrc` (use `_has_cmd` cache instead)
+3. **Use lazy loading** for heavy tools (NVM, kubectl already lazy-loaded)
+4. **Keep `.zshrc.local`** minimal
 
 ---
 

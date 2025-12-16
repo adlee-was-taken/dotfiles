@@ -26,6 +26,7 @@ SKIP_DEPS=false
 DEPS_ONLY=false
 UNINSTALL=false
 UNINSTALL_PURGE=false
+RUN_WIZARD=false
 
 for arg in "$@"; do
     case "$arg" in
@@ -41,10 +42,14 @@ for arg in "$@"; do
         --purge)
             UNINSTALL_PURGE=true
             ;;
+        --wizard)
+            RUN_WIZARD=true
+            ;;
         --help|-h)
             echo "Usage: $0 [OPTIONS]"
             echo
             echo "Options:"
+            echo "  --wizard       Run interactive setup wizard (recommended)"
             echo "  --skip-deps    Skip dependency installation (useful for re-runs)"
             echo "  --deps-only    Only install dependencies, then exit"
             echo "  --uninstall    Remove symlinks and restore backups"
@@ -57,6 +62,7 @@ for arg in "$@"; do
             echo
             echo "Examples:"
             echo "  ./install.sh                    # Full install"
+            echo "  ./install.sh --wizard           # Interactive wizard"
             echo "  ./install.sh --skip-deps        # Re-run without checking deps"
             echo "  ./install.sh --uninstall        # Remove symlinks"
             echo "  ./install.sh --uninstall --purge # Remove everything"
@@ -800,6 +806,28 @@ main() {
         do_uninstall
     fi
 
+    # Handle wizard mode
+    if [[ "$RUN_WIZARD" == true ]]; then
+        load_config
+        local wizard_script="$DOTFILES_DIR/setup/setup-wizard.sh"
+        
+        # If dotfiles not yet cloned, clone first
+        if [[ ! -f "$wizard_script" ]]; then
+            detect_os
+            install_dependencies
+            clone_or_update_dotfiles
+            load_config
+            wizard_script="$DOTFILES_DIR/setup/setup-wizard.sh"
+        fi
+        
+        if [[ -f "$wizard_script" ]]; then
+            exec bash "$wizard_script"
+        else
+            print_error "Wizard script not found: $wizard_script"
+            exit 1
+        fi
+    fi
+
     print_header
 
     detect_os
@@ -844,6 +872,7 @@ main() {
         echo "  dfs / dfsync      - Sync dotfiles"
         echo "  dfu / dfupdate    - Update dotfiles"
         echo "  dfstats / stats   - Shell analytics"
+        echo "  dfcompile         - Compile zsh for speed"
         echo "  vault             - Secrets manager"
         echo
         echo -e "${BLUE}To uninstall:${NC}"

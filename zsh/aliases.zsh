@@ -25,39 +25,45 @@ _df_run() {
     fi
 }
 
+# --- Core Dotfiles Commands ---
+alias dotfiles='cd ~/.dotfiles'
+alias dfcd='cd ~/.dotfiles'
+# Note: 'df' not aliased to avoid conflict with disk free utility
+
 # Doctor - health check
-function dfd()    { _df_run dotfiles-doctor.sh "$@"; }
-function doctor() { _df_run dotfiles-doctor.sh "$@"; }
-function dffix()  { _df_run dotfiles-doctor.sh --fix "$@"; }
+dfd()    { _df_run dotfiles-doctor.sh "$@"; }
+doctor() { _df_run dotfiles-doctor.sh "$@"; }
+dffix()  { _df_run dotfiles-doctor.sh --fix "$@"; }
 
 # Sync - multi-machine synchronization
-function dfs()      { _df_run dotfiles-sync.sh "$@"; }
-function dfsync()   { _df_run dotfiles-sync.sh "$@"; }
-function dfpush()   { _df_run dotfiles-sync.sh --push "$@"; }
-function dfpull()   { _df_run dotfiles-sync.sh --pull "$@"; }
-function dfstatus() { _df_run dotfiles-sync.sh --status "$@"; }
+dfs()      { _df_run dotfiles-sync.sh "$@"; }
+dfsync()   { _df_run dotfiles-sync.sh "$@"; }
+dfpush()   { _df_run dotfiles-sync.sh --push "$@"; }
+dfpull()   { _df_run dotfiles-sync.sh --pull "$@"; }
+dfstatus() { _df_run dotfiles-sync.sh --status "$@"; }
 
 # Update - pull latest and reinstall
-function dfu()      { _df_run dotfiles-update.sh "$@"; }
-function dfupdate() { _df_run dotfiles-update.sh "$@"; }
+dfu()      { _df_run dotfiles-update.sh "$@"; }
+dfupdate() { _df_run dotfiles-update.sh "$@"; }
 
 # Version - check version info
-function dfv()        { _df_run dotfiles-version.sh "$@"; }
-function dfversion()  { _df_run dotfiles-version.sh "$@"; }
+dfv()        { _df_run dotfiles-version.sh "$@"; }
+dfversion()  { _df_run dotfiles-version.sh "$@"; }
 
 # Stats - shell analytics
-function dfstats() { _df_run dotfiles-stats.sh "$@"; }
-function tophist() { _df_run dotfiles-stats.sh --top "$@"; }
-function suggest() { _df_run dotfiles-stats.sh --suggest "$@"; }
+dfstats() { _df_run dotfiles-stats.sh "$@"; }
+stats()   { _df_run dotfiles-stats.sh "$@"; }
+tophist() { _df_run dotfiles-stats.sh --top "$@"; }
+suggest() { _df_run dotfiles-stats.sh --suggest "$@"; }
 
 # Vault - secrets management
-function vault() { _df_run dotfiles-vault.sh "$@"; }
-function vls()   { _df_run dotfiles-vault.sh list "$@"; }
-function vget()  { _df_run dotfiles-vault.sh get "$@"; }
-function vset()  { _df_run dotfiles-vault.sh set "$@"; }
+vault() { _df_run dotfiles-vault.sh "$@"; }
+vls()   { _df_run dotfiles-vault.sh list "$@"; }
+vget()  { _df_run dotfiles-vault.sh get "$@"; }
+vset()  { _df_run dotfiles-vault.sh set "$@"; }
 
 # Compile - compile zsh files for speed
-function dfcompile() { _df_run dotfiles-compile.sh "$@"; }
+dfcompile() { _df_run dotfiles-compile.sh "$@"; }
 
 # --- Quick Edit Aliases ---
 alias zshrc='${EDITOR:-vim} ~/.zshrc'
