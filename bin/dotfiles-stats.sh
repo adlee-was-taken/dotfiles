@@ -237,14 +237,26 @@ draw_bar() {
     local value=$1
     local max=$2
     local width=${3:-30}
+    
+    # Avoid division by zero
+    [[ $max -eq 0 ]] && max=1
+    
     local filled=$((value * width / max))
     local empty=$((width - filled))
     
-    printf "${GREEN}"
-    printf "%${filled}s" | tr ' ' '█'
-    printf "${DIM}"
-    printf "%${empty}s" | tr ' ' '░'
-    printf "${NC}"
+    # Build filled portion
+    local filled_bar=""
+    local empty_bar=""
+    local i
+    
+    for ((i=0; i<filled; i++)); do
+        filled_bar+="█"
+    done
+    for ((i=0; i<empty; i++)); do
+        empty_bar+="░"
+    done
+    
+    printf "%s%s%s%s%s" "${GREEN}" "${filled_bar}" "${DIM}" "${empty_bar}" "${NC}"
 }
 
 show_dashboard() {
