@@ -11,13 +11,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Core Features
 - **Interactive Setup Wizard** (`setup-wizard.sh`) - Beautiful TUI installer using `gum` with fallback to basic prompts
+- **Dynamic MOTD** (`motd.zsh`) - Compact system info on shell start (uptime, CPU, memory, docker, git status)
 - **Command Palette** (`command-palette.zsh`) - Raycast-style fuzzy launcher triggered by Ctrl+Space or Ctrl+P
 - **Smart Suggestions** (`smart-suggest.zsh`) - Typo correction for 100+ common mistakes + alias recommendations
 - **Shell Analytics** (`shell-stats.sh`) - Dashboard showing command usage, suggestions, and activity heatmap
 - **Secrets Vault** (`vault.sh`) - Encrypted storage for API keys using age/gpg
+- **Password Manager Integration** (`password-manager.zsh`) - Unified CLI for 1Password, LastPass, Bitwarden
 - **Dotfiles Sync** (`dotfiles-sync.sh`) - Multi-machine synchronization with watch mode
 - **Dotfiles Doctor** (`dotfiles-doctor.sh`) - Health checker with auto-fix capability
 - **Version Tracking** (`dotfiles-version.sh`) - Compare local vs remote versions
+
+#### Password Manager Support
+- 1Password CLI (`op`) installation and integration
+- LastPass CLI (`lpass`) installation and integration
+- Bitwarden CLI (`bw`) installation and integration
+- Unified `pw` command with fuzzy search support
 
 #### Configuration
 - Centralized `dotfiles.conf` for all settings

@@ -15,11 +15,13 @@ Personal configuration files for a fast, consistent dev environment across Linux
 | Feature | Description |
 |---------|-------------|
 | **Setup Wizard** | Beautiful TUI installer with feature selection |
+| **Dynamic MOTD** | System info on shell start (uptime, CPU, memory, updates) |
 | **Zsh Theme** | Git status, command timer, root detection |
 | **Command Palette** | Raycast-style fuzzy launcher (Ctrl+Space) |
 | **Smart Suggestions** | Typo correction + alias recommendations |
 | **Shell Analytics** | Track command usage, get insights |
 | **Secrets Vault** | Encrypted storage for API keys |
+| **Password Managers** | Unified CLI for 1Password, LastPass, Bitwarden |
 | **Dotfiles Sync** | Auto-sync across machines |
 | **Espanso** | 100+ text expansion snippets |
 | **Snapper** | Btrfs snapshot helpers (Arch/CachyOS) |
@@ -183,6 +185,45 @@ eval $(vault shell)                   # Load all secrets
 ```
 
 Uses `age` or `gpg` encryption. Secrets auto-load on shell start.
+
+## 🔑 Password Manager Integration
+
+Unified CLI for 1Password, LastPass, and Bitwarden:
+
+```bash
+pw list                    # List all items
+pw get github              # Get password
+pw get github username     # Get specific field
+pw otp github              # Get TOTP code
+pw copy aws                # Copy password to clipboard
+pw search mail             # Search items
+pwf                        # Fuzzy search + copy (requires fzf)
+```
+
+Supports:
+- **1Password** (`op`) - `INSTALL_1PASSWORD="true"`
+- **LastPass** (`lpass`) - `INSTALL_LASTPASS="true"`
+- **Bitwarden** (`bw`) - `INSTALL_BITWARDEN="true"`
+
+## 🖥️ Dynamic MOTD
+
+System info displayed on shell start:
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│ ✦ alee@battlestation                         Mon Dec 15 14:30│
+├──────────────────────────────────────────────────────────────┤
+│ ▲ up:4d 7h   ◆ cpu:12%     ◇ mem:8.2/32G   ⊡ 234G free     │
+├──────────────────────────────────────────────────────────────┤
+│ ◉4 containers  ⎇2 dirty  ↑3 updates  ●dotfiles:✓            │
+└──────────────────────────────────────────────────────────────┘
+```
+
+Configure in `dotfiles.conf`:
+```bash
+ENABLE_MOTD="true"
+MOTD_STYLE="compact"    # compact, mini, or off
+```
 
 ## 🔄 Dotfiles Sync
 

@@ -295,6 +295,89 @@ dotfiles-sync.sh --log        # Show sync history
 
 **Auto-check:** On shell start, you'll be notified of available updates.
 
+### Password Manager Integration
+
+Unified interface for 1Password, LastPass, and Bitwarden:
+
+```bash
+pw list                    # List all items
+pw get <item>              # Get password
+pw get <item> username     # Get specific field
+pw otp <item>              # Get TOTP/2FA code
+pw copy <item>             # Copy password to clipboard
+pw search <query>          # Search items
+pw provider                # Show which CLI is being used
+pw lock                    # Lock session
+```
+
+**Interactive selection (requires fzf):**
+
+```bash
+pwf                        # Fuzzy search items, copy password
+pwof                       # Fuzzy search items, copy OTP
+```
+
+**Configuration in `dotfiles.conf`:**
+
+```bash
+INSTALL_1PASSWORD="ask"    # Install 1Password CLI (op)
+INSTALL_LASTPASS="ask"     # Install LastPass CLI (lpass)
+INSTALL_BITWARDEN="ask"    # Install Bitwarden CLI (bw)
+PASSWORD_MANAGER="auto"    # auto, 1password, lastpass, or bitwarden
+```
+
+**Manual CLI installation:**
+
+```bash
+# 1Password
+brew install --cask 1password-cli  # macOS
+# See: https://1password.com/downloads/command-line/
+
+# LastPass
+brew install lastpass-cli          # macOS
+sudo apt install lastpass-cli      # Ubuntu
+
+# Bitwarden
+brew install bitwarden-cli         # macOS
+npm install -g @bitwarden/cli      # Any platform
+```
+
+### Dynamic MOTD
+
+System information displayed on shell start:
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│ ✦ user@hostname                              Mon Dec 15 14:30│
+├──────────────────────────────────────────────────────────────┤
+│ ▲ up:4d 7h   ◆ cpu:12%     ◇ mem:8.2/32G   ⊡ 234G free     │
+├──────────────────────────────────────────────────────────────┤
+│ ◉4 containers  ⎇2 dirty  ↑3 updates  ●dotfiles:✓            │
+└──────────────────────────────────────────────────────────────┘
+```
+
+**Shows:**
+- Uptime, CPU usage, memory, disk space
+- Docker containers running
+- Git repos with uncommitted changes
+- Available system updates
+- Dotfiles sync status
+
+**Configuration:**
+
+```bash
+ENABLE_MOTD="true"         # Enable MOTD
+MOTD_STYLE="compact"       # compact (box), mini (single line), or off
+```
+
+**Manual commands:**
+
+```bash
+show_motd                  # Show compact MOTD
+show_motd_mini             # Show single-line MOTD
+motd                       # Alias for show_motd
+```
+
 ---
 
 ## Customization

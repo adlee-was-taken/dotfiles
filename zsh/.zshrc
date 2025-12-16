@@ -60,7 +60,7 @@ export EDITOR='vim'
 export VISUAL='vim'
 export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
-export PATH="$HOME/.local/bin:$HOME/.dotfiles/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"
 
 # --- Aliases ---
 
@@ -210,25 +210,14 @@ bindkey "^[[3~" delete-char         # Delete
 
 # --- Custom Widgets ---
 
- reload-zshrc() {
-     echo -n "Re-sourcing ~/.zshrc ... "
-     source ~/.zshrc
-     echo "Done."
-     _adlee_build_prompt
-     zle reset-prompt
- }
- zle -N reload-zshrc
- bindkey "^X@s^[^R" reload-zshrc  # Ctrl+Super+Alt+R
-
- grab-fastfetch() {
-     echo "fastfetch"
-     fastfetch
-     _adlee_build_prompt
-     zle reset-prompt
- }
- zle -N grab-fastfetch
- bindkey "^X@s^[^F" grab-fastfetch  # Ctrl+Super+Alt+F
-
+# Alt+R to reload zsh config
+reload-zsh() {
+    source ~/.zshrc
+    echo "✓ zsh configuration reloaded"
+    zle reset-prompt
+}
+zle -N reload-zsh
+bindkey "^[r" reload-zsh
 
 # Alt+G to show git status
 git-status-widget() {
@@ -330,7 +319,7 @@ fi
 
 if [[ "${DOTFILES_AUTO_SYNC_CHECK:-true}" == "true" ]]; then
     # Quick async check for dotfiles updates
-    ($HOME/.dotfiles/bin/dotfiles-sync.sh --auto 2>/dev/null &)
+    (dotfiles-sync.sh --auto 2>/dev/null &)
 fi
 
 # --- Vault Integration ---
@@ -338,6 +327,26 @@ fi
 # Source vault secrets into environment (if vault exists and has secrets)
 if command -v vault.sh &>/dev/null && [[ -f "$HOME/.dotfiles/vault/secrets.enc" ]]; then
     eval "$(vault.sh shell 2>/dev/null)" || true
+fi
+
+# --- Password Manager Integration ---
+
+if [[ -f "$HOME/.dotfiles/zsh/functions/password-manager.zsh" ]]; then
+    source "$HOME/.dotfiles/zsh/functions/password-manager.zsh"
+fi
+
+# --- MOTD (Message of the Day) ---
+
+if [[ -f "$HOME/.dotfiles/zsh/functions/motd.zsh" ]]; then
+    source "$HOME/.dotfiles/zsh/functions/motd.zsh"
+    
+    # Show MOTD based on style setting
+    case "${MOTD_STYLE:-compact}" in
+        compact) show_motd ;;
+        mini)    show_motd_mini ;;
+        off|false|no) ;;
+        *) show_motd ;;
+    esac
 fi
 
 # --- Local Configuration ---

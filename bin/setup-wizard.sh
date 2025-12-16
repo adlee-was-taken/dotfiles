@@ -312,19 +312,70 @@ step_features() {
     wizard_header "📦 Feature Selection"
     
     echo "Select which features to install."
+    echo "(Use space to select, enter to confirm)"
     echo
     
     local features=(
-        "zsh-plugins: Autosuggestions + Syntax Highlighting"
-        "fzf: Fuzzy finder for files and history"
-        "bat: Better cat with syntax highlighting"
-        "eza: Modern ls replacement with icons"
-        "espanso: Text expander (100+ snippets)"
-        "vault: Encrypted secrets storage"
-        "sync: Auto-sync dotfiles across machines"
+        "zsh-plugins"
+        "fzf"
+        "bat"
+        "eza"
+        "espanso"
+        "vault"
+        "motd"
+        "1password"
+        "lastpass"
+        "bitwarden"
     )
     
-    WIZARD_FEATURES=$(wizard_multichoose "Select features to install:" "${features[@]}")
+    local descriptions=(
+        "Autosuggestions + Syntax Highlighting"
+        "Fuzzy finder for files and history"
+        "Better cat with syntax highlighting"
+        "Modern ls replacement"
+        "Text expander (100+ snippets)"
+        "Encrypted secrets storage"
+        "Dynamic system info on startup"
+        "1Password CLI integration"
+        "LastPass CLI integration"
+        "Bitwarden CLI integration"
+    )
+    
+    if [[ "$HAS_GUM" == true ]]; then
+        # Build display options
+        local display_opts=()
+        for i in "${!features[@]}"; do
+            display_opts+=("${features[$i]}: ${descriptions[$i]}")
+        done
+        
+        WIZARD_FEATURES=$(printf '%s\n' "${display_opts[@]}" | gum choose --no-limit --height=15 \
+            --selected="zsh-plugins: Autosuggestions + Syntax Highlighting,fzf: Fuzzy finder for files and history,vault: Encrypted secrets storage,motd: Dynamic system info on startup")
+    else
+        echo "Available features:"
+        for i in "${!features[@]}"; do
+            echo "  $((i+1)). ${features[$i]}: ${descriptions[$i]}"
+        done
+        echo
+        echo "Enter numbers separated by commas (e.g., 1,2,3) or 'all':"
+        read -p "> " choices
+        choices=${choices:-"1,2,5,7"}
+        
+        WIZARD_FEATURES=""
+        if [[ "$choices" == "all" ]]; then
+            for i in "${!features[@]}"; do
+                WIZARD_FEATURES+="${features[$i]}: ${descriptions[$i]}"$'\n'
+            done
+        else
+            IFS=',' read -ra selected <<< "$choices"
+            for idx in "${selected[@]}"; do
+                idx=$(echo "$idx" | tr -d ' ')
+                local i=$((idx - 1))
+                if [[ $i -ge 0 && $i -lt ${#features[@]} ]]; then
+                    WIZARD_FEATURES+="${features[$i]}: ${descriptions[$i]}"$'\n'
+                fi
+            done
+        fi
+    fi
     
     echo
     echo -e "${GREEN}✓${NC} Features selected"
@@ -405,12 +456,27 @@ step_review() {
     echo "Please review your configuration:"
     echo
     
+    # Format features list - extract just the short names
+    local features_short=""
+    local features_list=""
+    while IFS= read -r feature; do
+        [[ -z "$feature" ]] && continue
+        local short_name="${feature%%:*}"
+        if [[ -z "$features_short" ]]; then
+            features_short="$short_name"
+        else
+            features_short="$features_short, $short_name"
+        fi
+        features_list="${features_list}  • ${feature}\n"
+    done <<< "$WIZARD_FEATURES"
+    
     if [[ "$HAS_GUM" == true ]]; then
         gum style \
             --border normal \
             --border-foreground 240 \
             --padding "1 2" \
             --margin "0 2" \
+            --width 60 \
             "Identity:" \
             "  Name:     $WIZARD_NAME" \
             "  Email:    $WIZARD_EMAIL" \
@@ -420,9 +486,13 @@ step_review() {
             "  Branch:   $WIZARD_GIT_BRANCH" \
             "  Editor:   $WIZARD_GIT_EDITOR" \
             "" \
-            "Theme:      $WIZARD_THEME" \
-            "" \
-            "Features:   $(echo "$WIZARD_FEATURES" | tr '\n' ', ' | sed 's/,$//')"
+            "Theme:      $WIZARD_THEME"
+        
+        echo
+        echo -e "${CYAN}Selected Features:${NC}"
+        echo "$WIZARD_FEATURES" | while IFS= read -r feature; do
+            [[ -n "$feature" ]] && echo -e "  ${GREEN}✓${NC} ${feature%%:*}"
+        done
     else
         echo "  Identity:"
         echo "    Name:     $WIZARD_NAME"
@@ -435,7 +505,10 @@ step_review() {
         echo
         echo "  Theme:      $WIZARD_THEME"
         echo
-        echo "  Features:   $(echo "$WIZARD_FEATURES" | tr '\n' ', ' | sed 's/,$//')"
+        echo "  Features:"
+        echo "$WIZARD_FEATURES" | while IFS= read -r feature; do
+            [[ -n "$feature" ]] && echo "    ✓ ${feature%%:*}"
+        done
     fi
     
     echo
@@ -510,6 +583,11 @@ step_complete() {
 }
 
 generate_config() {
+    # Helper to check if feature is selected
+    _has_feature() {
+        echo "$WIZARD_FEATURES" | grep -qi "^$1:" || echo "$WIZARD_FEATURES" | grep -qi "^$1$"
+    }
+    
     # Generate dotfiles.conf with wizard selections
     cat > "$DOTFILES_DIR/dotfiles.conf.wizard" << EOF
 # ============================================================================
@@ -532,12 +610,21 @@ GIT_CREDENTIAL_HELPER="${WIZARD_GIT_CRED}"
 
 # --- Feature Toggles ---
 INSTALL_DEPS="${WIZARD_INSTALL_DEPS}"
-INSTALL_ZSH_PLUGINS="$(echo "$WIZARD_FEATURES" | grep -q "zsh-plugins" && echo "true" || echo "false")"
-INSTALL_FZF="$(echo "$WIZARD_FEATURES" | grep -q "fzf" && echo "true" || echo "false")"
-INSTALL_BAT="$(echo "$WIZARD_FEATURES" | grep -q "bat" && echo "true" || echo "false")"
-INSTALL_EZA="$(echo "$WIZARD_FEATURES" | grep -q "eza" && echo "true" || echo "false")"
-INSTALL_ESPANSO="$(echo "$WIZARD_FEATURES" | grep -q "espanso" && echo "true" || echo "false")"
+INSTALL_ZSH_PLUGINS="$(echo "$WIZARD_FEATURES" | grep -qi "zsh-plugins" && echo "true" || echo "false")"
+INSTALL_FZF="$(echo "$WIZARD_FEATURES" | grep -qi "fzf" && echo "true" || echo "false")"
+INSTALL_BAT="$(echo "$WIZARD_FEATURES" | grep -qi "bat" && echo "true" || echo "false")"
+INSTALL_EZA="$(echo "$WIZARD_FEATURES" | grep -qi "eza" && echo "true" || echo "false")"
+INSTALL_ESPANSO="$(echo "$WIZARD_FEATURES" | grep -qi "espanso" && echo "true" || echo "false")"
 SET_ZSH_DEFAULT="${WIZARD_SET_DEFAULT_SHELL}"
+
+# --- Password Manager Integration ---
+INSTALL_1PASSWORD="$(echo "$WIZARD_FEATURES" | grep -qi "1password" && echo "true" || echo "false")"
+INSTALL_LASTPASS="$(echo "$WIZARD_FEATURES" | grep -qi "lastpass" && echo "true" || echo "false")"
+INSTALL_BITWARDEN="$(echo "$WIZARD_FEATURES" | grep -qi "bitwarden" && echo "true" || echo "false")"
+
+# --- MOTD ---
+ENABLE_MOTD="$(echo "$WIZARD_FEATURES" | grep -qi "motd" && echo "true" || echo "false")"
+MOTD_STYLE="compact"
 
 # --- Theme ---
 ZSH_THEME_NAME="${WIZARD_THEME}"
@@ -545,8 +632,8 @@ ZSH_THEME_NAME="${WIZARD_THEME}"
 # --- Advanced Features ---
 ENABLE_SHELL_ANALYTICS="${WIZARD_ANALYTICS}"
 ENABLE_SMART_SUGGESTIONS="${WIZARD_SUGGESTIONS}"
-ENABLE_VAULT="$(echo "$WIZARD_FEATURES" | grep -q "vault" && echo "true" || echo "false")"
-ENABLE_SYNC="$(echo "$WIZARD_FEATURES" | grep -q "sync" && echo "true" || echo "false")"
+ENABLE_VAULT="$(echo "$WIZARD_FEATURES" | grep -qi "vault" && echo "true" || echo "false")"
+ENABLE_COMMAND_PALETTE="true"
 EOF
 }
 
