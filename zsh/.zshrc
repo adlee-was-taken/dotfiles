@@ -275,9 +275,10 @@ _deferred_load() {
     [[ -f "$_dotfiles_dir/zsh/functions/password-manager.zsh" ]] && \
         source "$_dotfiles_dir/zsh/functions/password-manager.zsh"
     
-    # Load vault secrets (in background)
-    if [[ -f "$_dotfiles_dir/vault/secrets.enc" ]] && _has_cmd dotfiles-vault.sh; then
-        eval "$(dotfiles-vault.sh shell 2>/dev/null)" || true
+    # Load vault secrets
+    local vault_script="$_dotfiles_dir/bin/dotfiles-vault.sh"
+    if [[ -f "$_dotfiles_dir/vault/secrets.enc" ]] && [[ -x "$vault_script" ]]; then
+        eval "$("$vault_script" shell 2>/dev/null)" || true
     fi
 }
 
@@ -288,7 +289,9 @@ _deferred_load() {
 _background_tasks() {
     # Check for dotfiles updates
     if [[ "${DOTFILES_AUTO_SYNC_CHECK:-true}" == "true" ]]; then
-        dotfiles-sync.sh --auto 2>/dev/null &!
+        # Use full path to avoid command_not_found issues
+        local sync_script="$_dotfiles_dir/bin/dotfiles-sync.sh"
+        [[ -x "$sync_script" ]] && "$sync_script" --auto 2>/dev/null &!
     fi
 }
 

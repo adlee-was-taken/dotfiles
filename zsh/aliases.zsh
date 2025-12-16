@@ -6,44 +6,58 @@
 # Source this file in .zshrc (already included by default)
 # ============================================================================
 
-# --- Core Dotfiles Commands ---
-alias dotfiles='cd ~/.dotfiles'
-alias df='cd ~/.dotfiles'
+# Dotfiles directory
+_df_dir="${DOTFILES_DIR:-$HOME/.dotfiles}"
+_df_bin="$_df_dir/bin"
+
+# Helper to run dotfiles scripts (uses full path with fallback to PATH)
+_df_run() {
+    local script="$1"
+    shift
+    if [[ -x "$_df_bin/$script" ]]; then
+        "$_df_bin/$script" "$@"
+    elif command -v "$script" &>/dev/null; then
+        "$script" "$@"
+    else
+        echo "Error: $script not found" >&2
+        echo "Run the installer: ~/.dotfiles/install.sh" >&2
+        return 1
+    fi
+}
 
 # Doctor - health check
-alias dfd='dotfiles-doctor.sh'
-alias doctor='dotfiles-doctor.sh'
-alias dffix='dotfiles-doctor.sh --fix'
+function dfd()    { _df_run dotfiles-doctor.sh "$@"; }
+function doctor() { _df_run dotfiles-doctor.sh "$@"; }
+function dffix()  { _df_run dotfiles-doctor.sh --fix "$@"; }
 
 # Sync - multi-machine synchronization
-alias dfs='dotfiles-sync.sh'
-alias dfsync='dotfiles-sync.sh'
-alias dfpush='dotfiles-sync.sh --push'
-alias dfpull='dotfiles-sync.sh --pull'
-alias dfstatus='dotfiles-sync.sh --status'
+function dfs()      { _df_run dotfiles-sync.sh "$@"; }
+function dfsync()   { _df_run dotfiles-sync.sh "$@"; }
+function dfpush()   { _df_run dotfiles-sync.sh --push "$@"; }
+function dfpull()   { _df_run dotfiles-sync.sh --pull "$@"; }
+function dfstatus() { _df_run dotfiles-sync.sh --status "$@"; }
 
 # Update - pull latest and reinstall
-alias dfu='dotfiles-update.sh'
-alias dfupdate='dotfiles-update.sh'
+function dfu()      { _df_run dotfiles-update.sh "$@"; }
+function dfupdate() { _df_run dotfiles-update.sh "$@"; }
 
 # Version - check version info
-alias dfv='dotfiles-version.sh'
-alias dfversion='dotfiles-version.sh'
+function dfv()        { _df_run dotfiles-version.sh "$@"; }
+function dfversion()  { _df_run dotfiles-version.sh "$@"; }
 
 # Stats - shell analytics
-alias dfstats='dotfiles-stats.sh'
-alias stats='dotfiles-stats.sh'
-alias tophist='dotfiles-stats.sh --top'
-alias suggest='dotfiles-stats.sh --suggest'
+function dfstats() { _df_run dotfiles-stats.sh "$@"; }
+function tophist() { _df_run dotfiles-stats.sh --top "$@"; }
+function suggest() { _df_run dotfiles-stats.sh --suggest "$@"; }
 
 # Vault - secrets management
-alias vault='dotfiles-vault.sh'
-alias vls='dotfiles-vault.sh list'
-alias vget='dotfiles-vault.sh get'
-alias vset='dotfiles-vault.sh set'
+function vault() { _df_run dotfiles-vault.sh "$@"; }
+function vls()   { _df_run dotfiles-vault.sh list "$@"; }
+function vget()  { _df_run dotfiles-vault.sh get "$@"; }
+function vset()  { _df_run dotfiles-vault.sh set "$@"; }
 
 # Compile - compile zsh files for speed
-alias dfcompile='dotfiles-compile.sh'
+function dfcompile() { _df_run dotfiles-compile.sh "$@"; }
 
 # --- Quick Edit Aliases ---
 alias zshrc='${EDITOR:-vim} ~/.zshrc'
@@ -61,12 +75,13 @@ alias rl='source ~/.zshrc'
 # Dotfiles main command with subcommands
 dotfiles-cli() {
     case "${1:-help}" in
-        doctor|doc|d)   shift; dotfiles-doctor.sh "$@" ;;
-        sync|s)         shift; dotfiles-sync.sh "$@" ;;
-        update|up|u)    shift; dotfiles-update.sh "$@" ;;
-        version|ver|v)  shift; dotfiles-version.sh "$@" ;;
-        stats|st)       shift; dotfiles-stats.sh "$@" ;;
-        vault|vlt)      shift; dotfiles-vault.sh "$@" ;;
+        doctor|doc|d)   shift; _df_run dotfiles-doctor.sh "$@" ;;
+        sync|s)         shift; _df_run dotfiles-sync.sh "$@" ;;
+        update|up|u)    shift; _df_run dotfiles-update.sh "$@" ;;
+        version|ver|v)  shift; _df_run dotfiles-version.sh "$@" ;;
+        stats|st)       shift; _df_run dotfiles-stats.sh "$@" ;;
+        vault|vlt)      shift; _df_run dotfiles-vault.sh "$@" ;;
+        compile|comp)   shift; _df_run dotfiles-compile.sh "$@" ;;
         edit|e)         cd ~/.dotfiles && ${EDITOR:-vim} . ;;
         cd)             cd ~/.dotfiles ;;
         help|--help|-h|*)
@@ -81,6 +96,7 @@ dotfiles-cli() {
             echo "  version, v    Show version info"
             echo "  stats, st     Shell analytics dashboard"
             echo "  vault, vlt    Secrets management"
+            echo "  compile       Compile zsh files for speed"
             echo "  edit, e       Open dotfiles in editor"
             echo "  cd            Change to dotfiles directory"
             echo
