@@ -50,11 +50,14 @@ for arg in "$@"; do
             CHECK_ONLY=true
             ;;
         --help|-h)
-            echo "Usage: $0 [OPTIONS]"
+            echo "Usage: dotfiles-version.sh [OPTIONS]"
             echo
             echo "Options:"
             echo "  --check    Only check for updates (exit 1 if behind)"
             echo "  --help     Show this help message"
+            echo
+            echo "Aliases:"
+            echo "  dfv, dfversion   Show version info"
             echo
             exit 0
             ;;
@@ -214,9 +217,8 @@ main() {
         echo -e "  Commits:  ${YELLOW}⚠ ${commits_behind} commit(s) behind${NC}"
         echo
         echo -e "${YELLOW}To update:${NC}"
-        echo "  cd ~/.dotfiles && git pull && ./install.sh"
-        echo "  # or"
-        echo "  update-dotfiles.sh"
+        echo "  dfu                          # Alias"
+        echo "  dotfiles-update.sh           # Full command"
     elif [[ "$commits_behind" == "0" ]]; then
         echo -e "  Commits:  ${GREEN}✓ Up to date${NC}"
     fi

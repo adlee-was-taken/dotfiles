@@ -434,7 +434,8 @@ vault_status() {
 # ============================================================================
 
 show_help() {
-    echo "Usage: vault <command> [args]"
+    echo "Usage: dotfiles-vault.sh <command> [args]"
+    echo "       vault <command> [args]"
     echo
     echo "Commands:"
     echo "  set <key> [value]    Store a secret (prompts for value if not given)"
@@ -448,10 +449,17 @@ show_help() {
     echo "  init                 Initialize vault"
     echo "  help                 Show this help"
     echo
+    echo "Aliases:"
+    echo "  vault                Main command (alias for dotfiles-vault.sh)"
+    echo "  vls                  List secrets"
+    echo "  vget <key>           Get secret"
+    echo "  vset <key>           Set secret"
+    echo
     echo "Examples:"
     echo "  vault set GITHUB_TOKEN ghp_xxxxxxxxxxxx"
     echo "  vault set AWS_SECRET_KEY   # Will prompt for value"
-    echo "  vault get GITHUB_TOKEN"
+    echo "  vget GITHUB_TOKEN"
+    echo "  vls"
     echo "  eval \$(vault shell)       # Export all to current shell"
     echo
     echo "The vault uses ${CYAN}age${NC} or ${CYAN}gpg${NC} for encryption."

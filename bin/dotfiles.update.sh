@@ -5,9 +5,11 @@
 # Updates dotfiles from the git repository and relinks files
 #
 # Usage:
-#   update-dotfiles.sh              # Pull and re-run install
-#   update-dotfiles.sh --skip-deps  # Pull and re-run install without deps
-#   update-dotfiles.sh --pull-only  # Only git pull, don't re-run install
+#   dotfiles-update.sh              # Pull and re-run install
+#   dotfiles-update.sh --skip-deps  # Pull and re-run install without deps
+#   dotfiles-update.sh --pull-only  # Only git pull, don't re-run install
+#
+# Aliases: dfu, dfupdate
 # ============================================================================
 
 set -e
@@ -31,13 +33,16 @@ for arg in "$@"; do
             PULL_ONLY=true
             ;;
         --help|-h)
-            echo "Usage: $0 [OPTIONS]"
+            echo "Usage: dotfiles-update.sh [OPTIONS]"
             echo
             echo "Options:"
             echo "  --skip-deps    Skip dependency check (default for updates)"
             echo "  --with-deps    Run full dependency check"
             echo "  --pull-only    Only git pull, don't re-run install script"
             echo "  --help         Show this help message"
+            echo
+            echo "Aliases:"
+            echo "  dfu, dfupdate  Update dotfiles"
             echo
             exit 0
             ;;
@@ -71,6 +76,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 NC='\033[0m'
 
 print_success() {
@@ -131,7 +137,7 @@ if [ $? -eq 0 ]; then
 
     echo
     print_success "Update complete!"
-    echo "Reload your shell with: source ~/.zshrc"
+    echo -e "Reload your shell: ${CYAN}reload${NC} or ${CYAN}source ~/.zshrc${NC}"
 else
     print_error "Failed to update dotfiles"
     exit 1

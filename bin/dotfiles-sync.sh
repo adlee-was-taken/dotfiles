@@ -319,13 +319,13 @@ do_auto() {
     
     if [[ $behind -gt 0 ]]; then
         echo -e "${YELLOW}⚠ Dotfiles: $behind update(s) available${NC}"
-        echo -e "  Run: ${CYAN}dotfiles-sync.sh --pull${NC}"
+        echo -e "  Run: ${CYAN}dfpull${NC} or ${CYAN}dotfiles-sync.sh --pull${NC}"
     fi
     
     if has_local_changes; then
         local changed=$(git status --short 2>/dev/null | wc -l | tr -d ' ')
         echo -e "${YELLOW}⚠ Dotfiles: $changed local change(s) not pushed${NC}"
-        echo -e "  Run: ${CYAN}dotfiles-sync.sh --push${NC}"
+        echo -e "  Run: ${CYAN}dfpush${NC} or ${CYAN}dotfiles-sync.sh --push${NC}"
     fi
 }
 
@@ -382,7 +382,7 @@ show_conflicts() {
 # ============================================================================
 
 show_help() {
-    echo "Usage: $0 [COMMAND] [OPTIONS]"
+    echo "Usage: dotfiles-sync.sh [COMMAND] [OPTIONS]"
     echo
     echo "Commands:"
     echo "  (none)        Interactive sync"
@@ -396,10 +396,17 @@ show_help() {
     echo "  --conflicts   Show merge conflicts"
     echo "  --help        Show this help"
     echo
+    echo "Aliases:"
+    echo "  dfs, dfsync   Interactive sync"
+    echo "  dfpush        Push local changes"
+    echo "  dfpull        Pull remote changes"
+    echo "  dfstatus      Show sync status"
+    echo
     echo "Examples:"
-    echo "  $0                          # Interactive sync"
-    echo "  $0 --push 'Added aliases'   # Push with message"
-    echo "  $0 --watch 60               # Sync every 60 seconds"
+    echo "  dfs                           # Interactive sync"
+    echo "  dfpush                        # Push changes"
+    echo "  dotfiles-sync.sh --push 'Added aliases'"
+    echo "  dotfiles-sync.sh --watch 60   # Sync every 60 seconds"
     echo
 }
 

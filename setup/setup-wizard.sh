@@ -559,15 +559,27 @@ step_complete() {
             "" \
             "Next steps:" \
             "  1. Restart your terminal or run: exec zsh" \
-            "  2. Run 'dotfiles-doctor.sh' to verify installation" \
-            "  3. Customize settings in ~/.dotfiles/dotfiles.conf"
+            "  2. Run 'dfd' or 'doctor' to verify installation" \
+            "  3. Customize settings in ~/.dotfiles/dotfiles.conf" \
+            "" \
+            "Useful commands:" \
+            "  dfd / doctor    - Health check" \
+            "  dfs / dfsync    - Sync dotfiles" \
+            "  dfstats / stats - Shell analytics" \
+            "  vault           - Secrets manager"
     else
         echo -e "${GREEN}Your dotfiles have been installed successfully!${NC}"
         echo
         echo "Next steps:"
         echo "  1. Restart your terminal or run: exec zsh"
-        echo "  2. Run 'dotfiles-doctor.sh' to verify installation"
+        echo "  2. Run 'dfd' or 'doctor' to verify installation"
         echo "  3. Customize settings in ~/.dotfiles/dotfiles.conf"
+        echo
+        echo "Useful commands:"
+        echo "  dfd / doctor    - Health check"
+        echo "  dfs / dfsync    - Sync dotfiles"
+        echo "  dfstats / stats - Shell analytics"
+        echo "  vault           - Secrets manager"
     fi
     
     echo

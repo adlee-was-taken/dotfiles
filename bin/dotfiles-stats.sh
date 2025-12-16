@@ -419,7 +419,7 @@ show_heatmap() {
 # ============================================================================
 
 show_help() {
-    echo "Usage: $0 [COMMAND] [OPTIONS]"
+    echo "Usage: dotfiles-stats.sh [COMMAND] [OPTIONS]"
     echo
     echo "Commands:"
     echo "  (none)        Show dashboard"
@@ -433,6 +433,11 @@ show_help() {
     echo "  --docker      Docker command breakdown"
     echo "  --export      Export stats as JSON"
     echo "  --help        Show this help"
+    echo
+    echo "Aliases:"
+    echo "  dfstats, stats   Show dashboard"
+    echo "  tophist          Top commands"
+    echo "  suggest          Suggest aliases"
     echo
 }
 

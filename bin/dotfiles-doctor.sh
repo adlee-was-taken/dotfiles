@@ -28,12 +28,16 @@ for arg in "$@"; do
             QUIET_MODE=true
             ;;
         --help|-h)
-            echo "Usage: $0 [OPTIONS]"
+            echo "Usage: dotfiles-doctor.sh [OPTIONS]"
             echo
             echo "Options:"
             echo "  --fix     Attempt to automatically fix issues"
             echo "  --quiet   Only show errors and warnings"
             echo "  --help    Show this help message"
+            echo
+            echo "Aliases:"
+            echo "  dfd, doctor   Run diagnostics"
+            echo "  dffix         Run with --fix"
             echo
             exit 0
             ;;
@@ -448,7 +452,7 @@ print_summary() {
     else
         echo -e "${RED}✗ Some issues found.${NC}"
         if [[ "$FIX_MODE" != true ]]; then
-            echo -e "  Run with ${CYAN}--fix${NC} to attempt automatic fixes."
+            echo -e "  Run ${CYAN}dffix${NC} or ${CYAN}dotfiles-doctor.sh --fix${NC} to attempt automatic fixes."
         fi
     fi
     echo
