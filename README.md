@@ -58,19 +58,26 @@ dotfiles/
 ├── dotfiles.conf              # Central configuration
 ├── zsh/
 │   ├── .zshrc                 # Shell config
+│   ├── aliases.zsh            # Dotfiles command aliases
 │   ├── themes/adlee.zsh-theme
 │   └── functions/
 │       ├── snapper.zsh        # Btrfs snapshots
 │       ├── smart-suggest.zsh  # Typo correction
-│       └── command-palette.zsh
+│       ├── command-palette.zsh
+│       ├── motd.zsh           # Dynamic MOTD
+│       └── password-manager.zsh
 ├── espanso/                   # Text expansion
 │   └── match/base.yml         # 100+ snippets
-├── bin/                       # Utility scripts
-│   ├── setup-wizard.sh        # TUI installer
+├── bin/                       # Core scripts (linked to ~/.local/bin)
 │   ├── dotfiles-doctor.sh     # Health checker
 │   ├── dotfiles-sync.sh       # Multi-machine sync
-│   ├── shell-stats.sh         # Analytics
-│   └── vault.sh               # Secrets manager
+│   ├── dotfiles-stats.sh      # Shell analytics
+│   ├── dotfiles-update.sh     # Update dotfiles
+│   ├── dotfiles-vault.sh      # Secrets manager
+│   └── dotfiles-version.sh    # Version info
+├── setup/                     # Setup scripts (not linked)
+│   ├── setup-wizard.sh        # TUI installer
+│   └── setup-espanso.sh       # Espanso personalization
 ├── git/.gitconfig.template
 ├── vim/.vimrc
 ├── tmux/.tmux.conf
@@ -142,7 +149,10 @@ Running: git status
 ## 📊 Shell Analytics
 
 ```bash
-shell-stats.sh
+dotfiles-stats.sh
+# or use aliases:
+dfstats
+stats
 ```
 
 ```
@@ -160,10 +170,10 @@ shell-stats.sh
 ```
 
 ```bash
-shell-stats.sh --suggest    # Alias suggestions
-shell-stats.sh --heatmap    # Activity by hour
-shell-stats.sh --git        # Git breakdown
-shell-stats.sh --dirs       # Most visited directories
+dotfiles-stats.sh --suggest    # Alias suggestions
+dotfiles-stats.sh --heatmap    # Activity by hour
+dotfiles-stats.sh --git        # Git breakdown
+dotfiles-stats.sh --dirs       # Most visited directories
 ```
 
 ## 🔐 Secrets Vault
@@ -176,6 +186,7 @@ vault set AWS_SECRET_KEY              # Prompts (hidden input)
 vault get GITHUB_TOKEN
 vault list                            # Shows keys only
 vault delete OLD_KEY
+# Full command: dotfiles-vault.sh
 ```
 
 Export to environment:
@@ -275,6 +286,7 @@ Full list: [docs/ESPANSO.md](docs/ESPANSO.md)
 ```bash
 dotfiles-doctor.sh              # Run diagnostics
 dotfiles-doctor.sh --fix        # Auto-fix issues
+# Aliases: dfd, doctor, dffix
 ```
 
 ```
@@ -318,16 +330,36 @@ DOTFILES_AUTO_SYNC_CHECK="true"
 ## 🔄 Updating
 
 ```bash
-cd ~/.dotfiles && git pull && ./install.sh
-# or
-update-dotfiles.sh
+dotfiles-update.sh
+# or aliases:
+dfu
+dfupdate
 ```
 
 Check version:
 
 ```bash
 dotfiles-version.sh
+# or: dfv
 ```
+
+## 🎯 Command Aliases
+
+All dotfiles commands have convenient aliases:
+
+| Alias | Command | Description |
+|-------|---------|-------------|
+| `dfd` | `dotfiles-doctor.sh` | Health check |
+| `dffix` | `dotfiles-doctor.sh --fix` | Auto-fix issues |
+| `dfs` | `dotfiles-sync.sh` | Sync dotfiles |
+| `dfpush` | `dotfiles-sync.sh --push` | Push changes |
+| `dfpull` | `dotfiles-sync.sh --pull` | Pull changes |
+| `dfu` | `dotfiles-update.sh` | Update dotfiles |
+| `dfv` | `dotfiles-version.sh` | Version info |
+| `dfstats` | `dotfiles-stats.sh` | Shell analytics |
+| `vault` | `dotfiles-vault.sh` | Secrets manager |
+| `reload` | `source ~/.zshrc` | Reload shell |
+| `dfc` | `dotfiles-cli` | CLI with subcommands |
 
 ## 🗑️ Uninstalling
 

@@ -254,14 +254,20 @@ fuck                      # Re-run last command with typo fixed
 ### Shell Analytics
 
 ```bash
-shell-stats.sh            # Full dashboard
-shell-stats.sh --top 20   # Top 20 commands
-shell-stats.sh --suggest  # Alias recommendations
-shell-stats.sh --heatmap  # Activity by hour
-shell-stats.sh --dirs     # Most visited directories
-shell-stats.sh --git      # Git command breakdown
-shell-stats.sh --docker   # Docker command breakdown
-shell-stats.sh --export   # Export as JSON
+dotfiles-stats.sh            # Full dashboard
+dotfiles-stats.sh --top 20   # Top 20 commands
+dotfiles-stats.sh --suggest  # Alias recommendations
+dotfiles-stats.sh --heatmap  # Activity by hour
+dotfiles-stats.sh --dirs     # Most visited directories
+dotfiles-stats.sh --git      # Git command breakdown
+dotfiles-stats.sh --docker   # Docker command breakdown
+dotfiles-stats.sh --export   # Export as JSON
+
+# Aliases
+dfstats                      # Full dashboard
+stats                        # Full dashboard
+tophist                      # Top commands
+suggest                      # Alias suggestions
 ```
 
 ### Secrets Vault
@@ -269,14 +275,22 @@ shell-stats.sh --export   # Export as JSON
 Encrypted storage using `age` or `gpg`:
 
 ```bash
-vault set KEY "value"     # Store (or prompt for value)
-vault get KEY             # Retrieve
-vault list                # Show all keys
-vault delete KEY          # Remove
-vault shell               # Print as export statements
-vault export backup.enc   # Backup encrypted vault
-vault import backup.enc   # Restore vault
-vault status              # Show vault info
+dotfiles-vault.sh set KEY "value"     # Store (or prompt for value)
+dotfiles-vault.sh get KEY             # Retrieve
+dotfiles-vault.sh list                # Show all keys
+dotfiles-vault.sh delete KEY          # Remove
+dotfiles-vault.sh shell               # Print as export statements
+dotfiles-vault.sh export backup.enc   # Backup encrypted vault
+dotfiles-vault.sh import backup.enc   # Restore vault
+dotfiles-vault.sh status              # Show vault info
+
+# Aliases (defined in aliases.zsh)
+vault set KEY "value"
+vault get KEY
+vault list
+vls                                   # vault list
+vget KEY                              # vault get
+vset KEY                              # vault set
 ```
 
 **Auto-loading:** Secrets are automatically loaded into your environment on shell start.
@@ -291,6 +305,13 @@ dotfiles-sync.sh --pull       # Pull remote changes
 dotfiles-sync.sh --diff       # Show local changes
 dotfiles-sync.sh --watch 300  # Auto-sync every 5 minutes
 dotfiles-sync.sh --log        # Show sync history
+
+# Aliases
+dfs                           # Interactive sync
+dfsync                        # Interactive sync
+dfpush                        # Push changes
+dfpull                        # Pull changes
+dfstatus                      # Show status
 ```
 
 **Auto-check:** On shell start, you'll be notified of available updates.
@@ -376,6 +397,63 @@ MOTD_STYLE="compact"       # compact (box), mini (single line), or off
 show_motd                  # Show compact MOTD
 show_motd_mini             # Show single-line MOTD
 motd                       # Alias for show_motd
+```
+
+---
+
+## Command Aliases
+
+All dotfiles commands have convenient aliases defined in `~/.dotfiles/zsh/aliases.zsh`:
+
+### Core Commands
+
+| Alias | Full Command | Description |
+|-------|--------------|-------------|
+| `dotfiles` / `df` | `cd ~/.dotfiles` | Go to dotfiles directory |
+| `dfd` / `doctor` | `dotfiles-doctor.sh` | Run health check |
+| `dffix` | `dotfiles-doctor.sh --fix` | Auto-fix issues |
+| `dfs` / `dfsync` | `dotfiles-sync.sh` | Interactive sync |
+| `dfpush` | `dotfiles-sync.sh --push` | Push local changes |
+| `dfpull` | `dotfiles-sync.sh --pull` | Pull remote changes |
+| `dfstatus` | `dotfiles-sync.sh --status` | Show sync status |
+| `dfu` / `dfupdate` | `dotfiles-update.sh` | Update dotfiles |
+| `dfv` / `dfversion` | `dotfiles-version.sh` | Show version |
+| `dfstats` / `stats` | `dotfiles-stats.sh` | Shell analytics |
+| `tophist` | `dotfiles-stats.sh --top` | Top commands |
+| `suggest` | `dotfiles-stats.sh --suggest` | Alias suggestions |
+
+### Vault Commands
+
+| Alias | Full Command | Description |
+|-------|--------------|-------------|
+| `vault` | `dotfiles-vault.sh` | Vault CLI |
+| `vls` | `dotfiles-vault.sh list` | List secrets |
+| `vget` | `dotfiles-vault.sh get` | Get secret |
+| `vset` | `dotfiles-vault.sh set` | Set secret |
+
+### Quick Edit
+
+| Alias | Description |
+|-------|-------------|
+| `zshrc` | Edit ~/.zshrc |
+| `dfconf` | Edit dotfiles.conf |
+| `dfedit` | Open dotfiles in editor |
+| `reload` / `rl` | Reload shell config |
+
+### CLI Wrapper
+
+The `dotfiles-cli` (alias: `dfc`) provides a unified interface:
+
+```bash
+dfc doctor          # Run health check
+dfc sync            # Sync dotfiles
+dfc update          # Update dotfiles
+dfc version         # Show version
+dfc stats           # Shell analytics
+dfc vault           # Secrets manager
+dfc edit            # Open in editor
+dfc cd              # Go to dotfiles dir
+dfc help            # Show help
 ```
 
 ---
@@ -596,7 +674,42 @@ chsh -s /bin/bash
 | `~/.dotfiles/vim/.vimrc` | `~/.vimrc` |
 | `~/.dotfiles/tmux/.tmux.conf` | `~/.tmux.conf` |
 | `~/.dotfiles/espanso/` | `~/.config/espanso` |
-| `~/.dotfiles/bin/*` | `~/.local/bin/*` |
+| `~/.dotfiles/bin/dotfiles-*.sh` | `~/.local/bin/dotfiles-*.sh` |
+
+### Directory Structure
+
+```
+~/.dotfiles/
+├── bin/                      # Core scripts (symlinked to ~/.local/bin)
+│   ├── dotfiles-doctor.sh
+│   ├── dotfiles-stats.sh
+│   ├── dotfiles-sync.sh
+│   ├── dotfiles-update.sh
+│   ├── dotfiles-vault.sh
+│   └── dotfiles-version.sh
+├── setup/                    # Setup scripts (not symlinked)
+│   ├── setup-wizard.sh
+│   └── setup-espanso.sh
+├── zsh/
+│   ├── .zshrc
+│   ├── aliases.zsh           # Dotfiles command aliases
+│   ├── themes/
+│   │   └── adlee.zsh-theme
+│   └── functions/
+│       ├── command-palette.zsh
+│       ├── motd.zsh
+│       ├── password-manager.zsh
+│       ├── smart-suggest.zsh
+│       └── snapper.zsh
+├── espanso/
+│   └── match/
+│       ├── base.yml
+│       └── personal.yml
+├── vault/                    # Encrypted secrets (gitignored)
+├── docs/
+├── dotfiles.conf
+└── install.sh
+```
 
 ### Key Files
 
@@ -604,9 +717,12 @@ chsh -s /bin/bash
 |------|---------|
 | `dotfiles.conf` | Central configuration |
 | `zsh/.zshrc` | Main shell config |
+| `zsh/aliases.zsh` | Command aliases |
 | `zsh/themes/adlee.zsh-theme` | Prompt theme |
 | `zsh/functions/smart-suggest.zsh` | Typo correction |
 | `zsh/functions/command-palette.zsh` | Fuzzy launcher |
+| `zsh/functions/motd.zsh` | Dynamic MOTD |
+| `zsh/functions/password-manager.zsh` | Password manager integration |
 | `espanso/match/base.yml` | Text expansion snippets |
 | `espanso/match/personal.yml` | Personal snippets |
 | `vault/` | Encrypted secrets (gitignored) |

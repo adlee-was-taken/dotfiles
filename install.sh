@@ -697,6 +697,98 @@ install_optional_tools() {
     fi
 }
 
+install_password_managers() {
+    print_step "Password manager CLI tools"
+
+    # 1Password CLI
+    if ! command -v op &> /dev/null; then
+        if should_install "$INSTALL_1PASSWORD" "1Password CLI (op)"; then
+            case "$OS" in
+                ubuntu|debian)
+                    curl -sS https://downloads.1password.com/linux/keys/1password.asc | sudo gpg --dearmor --output /usr/share/keyrings/1password-archive-keyring.gpg
+                    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/1password-archive-keyring.gpg] https://downloads.1password.com/linux/debian/$(dpkg --print-architecture) stable main" | sudo tee /etc/apt/sources.list.d/1password.list
+                    sudo apt update && sudo apt install -y 1password-cli
+                    ;;
+                fedora|rhel|centos)
+                    sudo rpm --import https://downloads.1password.com/linux/keys/1password.asc
+                    sudo sh -c 'echo -e "[1password]\nname=1Password Stable Channel\nbaseurl=https://downloads.1password.com/linux/rpm/stable/\$basearch\nenabled=1\ngpgcheck=1\nrepo_gpgcheck=1\ngpgkey=https://downloads.1password.com/linux/keys/1password.asc" > /etc/yum.repos.d/1password.repo'
+                    sudo dnf install -y 1password-cli
+                    ;;
+                arch|cachyos)
+                    if command -v paru &>/dev/null; then
+                        paru -S --noconfirm 1password-cli
+                    elif command -v yay &>/dev/null; then
+                        yay -S --noconfirm 1password-cli
+                    else
+                        print_warning "Install 1password-cli from AUR manually"
+                    fi
+                    ;;
+                macos)
+                    brew install --cask 1password-cli
+                    ;;
+            esac
+            command -v op &>/dev/null && print_success "1Password CLI installed"
+        fi
+    else
+        print_success "1Password CLI already installed"
+    fi
+
+    # LastPass CLI
+    if ! command -v lpass &> /dev/null; then
+        if should_install "$INSTALL_LASTPASS" "LastPass CLI (lpass)"; then
+            case "$OS" in
+                ubuntu|debian)
+                    sudo apt-get install -y lastpass-cli
+                    ;;
+                fedora|rhel|centos)
+                    sudo dnf install -y lastpass-cli
+                    ;;
+                arch|cachyos)
+                    sudo pacman -S --noconfirm lastpass-cli
+                    ;;
+                macos)
+                    brew install lastpass-cli
+                    ;;
+            esac
+            command -v lpass &>/dev/null && print_success "LastPass CLI installed"
+        fi
+    else
+        print_success "LastPass CLI already installed"
+    fi
+
+    # Bitwarden CLI
+    if ! command -v bw &> /dev/null; then
+        if should_install "$INSTALL_BITWARDEN" "Bitwarden CLI (bw)"; then
+            case "$OS" in
+                ubuntu|debian|fedora|rhel|centos)
+                    if command -v npm &>/dev/null; then
+                        sudo npm install -g @bitwarden/cli
+                    else
+                        print_warning "Bitwarden CLI requires npm. Install Node.js first."
+                    fi
+                    ;;
+                arch|cachyos)
+                    if command -v paru &>/dev/null; then
+                        paru -S --noconfirm bitwarden-cli
+                    elif command -v yay &>/dev/null; then
+                        yay -S --noconfirm bitwarden-cli
+                    else
+                        sudo pacman -S --noconfirm bitwarden-cli 2>/dev/null || {
+                            [[ -x "$(command -v npm)" ]] && sudo npm install -g @bitwarden/cli
+                        }
+                    fi
+                    ;;
+                macos)
+                    brew install bitwarden-cli
+                    ;;
+            esac
+            command -v bw &>/dev/null && print_success "Bitwarden CLI installed"
+        fi
+    else
+        print_success "Bitwarden CLI already installed"
+    fi
+}
+
 # ============================================================================
 # Main
 # ============================================================================
@@ -736,6 +828,7 @@ main() {
         link_espanso_config
         set_zsh_default
         install_optional_tools
+        install_password_managers
 
         echo
         print_success "Installation complete!"
@@ -744,10 +837,14 @@ main() {
         echo "  1. Restart your terminal or run: exec zsh"
         echo "  2. Your old configs are backed up in: $BACKUP_DIR"
         echo "  3. Customize settings in: $DOTFILES_DIR/dotfiles.conf"
-        echo "  4. Run 'dotfiles-doctor.sh' to verify installation"
+        echo "  4. Run 'dfd' or 'dotfiles-doctor.sh' to verify installation"
         echo
-        echo -e "${BLUE}To update dotfiles in the future:${NC}"
-        echo "  cd ~/.dotfiles && git pull && ./install.sh"
+        echo -e "${BLUE}Useful commands:${NC}"
+        echo "  dfd / doctor      - Health check"
+        echo "  dfs / dfsync      - Sync dotfiles"
+        echo "  dfu / dfupdate    - Update dotfiles"
+        echo "  dfstats / stats   - Shell analytics"
+        echo "  vault             - Secrets manager"
         echo
         echo -e "${BLUE}To uninstall:${NC}"
         echo "  ./install.sh --uninstall"

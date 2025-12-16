@@ -110,11 +110,13 @@ alias di='docker images'
 alias dex='docker exec -it'
 
 # System shortcuts
-alias reload='source ~/.zshrc'
-alias zshconfig='vim ~/.zshrc'
-alias themeconfig='vim ~/.oh-my-zsh/themes/adlee.zsh-theme'
 alias h='history'
 alias c='clear'
+
+# --- Source Dotfiles Aliases ---
+if [[ -f "$HOME/.dotfiles/zsh/aliases.zsh" ]]; then
+    source "$HOME/.dotfiles/zsh/aliases.zsh"
+fi
 
 # Safe operations
 alias rm='rm -i'
@@ -325,8 +327,8 @@ fi
 # --- Vault Integration ---
 
 # Source vault secrets into environment (if vault exists and has secrets)
-if command -v vault.sh &>/dev/null && [[ -f "$HOME/.dotfiles/vault/secrets.enc" ]]; then
-    eval "$(vault.sh shell 2>/dev/null)" || true
+if command -v dotfiles-vault.sh &>/dev/null && [[ -f "$HOME/.dotfiles/vault/secrets.enc" ]]; then
+    eval "$(dotfiles-vault.sh shell 2>/dev/null)" || true
 fi
 
 # --- Password Manager Integration ---
