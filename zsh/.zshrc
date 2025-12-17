@@ -274,7 +274,9 @@ _deferred_load() {
         source "$_dotfiles_dir/zsh/functions/smart-suggest.zsh"
     [[ -f "$_dotfiles_dir/zsh/functions/password-manager.zsh" ]] && \
         source "$_dotfiles_dir/zsh/functions/password-manager.zsh"
-    
+    [[ -f "$_dotfiles_dir/zsh/functions/tmux-workspaces.zsh" ]] && \
+        source "$_dotfiles_dir/zsh/functions/tmux-workspaces.zsh"
+
     # Load vault secrets
     local vault_script="$_dotfiles_dir/bin/dotfiles-vault.sh"
     if [[ -f "$_dotfiles_dir/vault/secrets.enc" ]] && [[ -x "$vault_script" ]]; then
