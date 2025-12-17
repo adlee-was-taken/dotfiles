@@ -50,9 +50,8 @@ dfupdate() { _df_run dotfiles-update.sh "$@"; }
 dfv()        { _df_run dotfiles-version.sh "$@"; }
 dfversion()  { _df_run dotfiles-version.sh "$@"; }
 
-# Stats - shell analytics
+# Stats - shell analytics (removed short 'stats' alias to force explicit usage)
 dfstats() { _df_run dotfiles-stats.sh "$@"; }
-stats()   { _df_run dotfiles-stats.sh "$@"; }
 tophist() { _df_run dotfiles-stats.sh --top "$@"; }
 suggest() { _df_run dotfiles-stats.sh --suggest "$@"; }
 
@@ -108,6 +107,8 @@ dotfiles-cli() {
             echo
             echo "Aliases:"
             echo "  dfd, dffix, dfs, dfpush, dfpull, dfu, dfv, dfstats, vault"
+            echo
+            echo "Note: 'stats' alias removed - use 'dfstats' instead"
             ;;
     esac
 }
