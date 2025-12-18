@@ -276,6 +276,8 @@ _deferred_load() {
         source "$_dotfiles_dir/zsh/functions/password-manager.zsh"
     [[ -f "$_dotfiles_dir/zsh/functions/tmux-workspaces.zsh" ]] && \
         source "$_dotfiles_dir/zsh/functions/tmux-workspaces.zsh"
+    [[ -f "$_dotfiles_dir/zsh/functions/python-templates.zsh" ]] && \
+        source "$_dotfiles_dir/zsh/functions/python-templates.zsh"
 
     # Load vault secrets
     local vault_script="$_dotfiles_dir/bin/dotfiles-vault.sh"
