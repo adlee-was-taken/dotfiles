@@ -119,6 +119,7 @@ alias dfc='dotfiles-cli'
 # Additional quality of life aliases/functions.
 
 # Use glow to "less" Markdown files:
+alias glow='glow -p'
 less() {
     if ! command -v glow &>/dev/null; then
         command less "$@"
