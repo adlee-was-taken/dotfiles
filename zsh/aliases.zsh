@@ -115,3 +115,19 @@ dotfiles-cli() {
 
 # Short alias for the CLI
 alias dfc='dotfiles-cli'
+
+# Additional quality of life aliases/functions.
+
+# Use glow to "less" Markdown files:
+less() {
+    if ! command -v glow &>/dev/null; then
+        command less "$@"
+        return
+    fi
+    
+    if [[ $# -eq 1 && "$1" == *.md ]]; then
+        glow -p "$1"  # -p for pager mode (like less)
+    else
+        command less "$@"
+    fi
+}
