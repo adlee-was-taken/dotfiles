@@ -136,7 +136,7 @@ less() {
 }
 
 # Arch system upgrade with snapper pre/post
-system-update() {
+sys-update() {
     local update_date=$(date -d "today" +"%Y%m%d%H%M")
-    sudo snapper -c root create --description "System Update ${update_date}--command "sudo pacman -Syu"'
+    sudo snapper -c root create --description "System Update ${update_date}" --command "sudo pacman -Syu"
 }
