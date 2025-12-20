@@ -69,7 +69,7 @@ dfcompile() { _df_run dotfiles-compile.sh "$@"; }
 alias zshrc='${EDITOR:-vim} ~/.zshrc'
 alias dfconf='${EDITOR:-vim} ~/.dotfiles/dotfiles.conf'
 alias dfedit='cd ~/.dotfiles && ${EDITOR:-vim} .'
-alias dfalias='${EDITOR:-vim} ~/.dotfiles/aliases.zsh'
+alias dfalias='${EDITOR:-vim} ~/.dotfiles/zsh/aliases.zsh'
 
 # --- Reload Aliases ---
 alias reload='source ~/.zshrc'
@@ -136,4 +136,7 @@ less() {
 }
 
 # Arch system upgrade with snapper pre/post
-alias system-update='sudo snapper -c root create --command "sudo pacman -Syu"'
+system-update() {
+    local update_date=$(date -d "today" +"%Y%m%d%H%M")
+    sudo snapper -c root create --description "System Update ${update_date}--command "sudo pacman -Syu"'
+}
