@@ -118,10 +118,10 @@ show_motd() {
     echo "${_M_GREY}├${hline}┤${_M_RESET}"
     
     # Stats line - build with exact spacing
-    local s1="▲ up:${uptime}"
-    local s2="◆ load:${load}"
-    local s3="◇ mem:${mem}"
-    local s4="⊡ ${disk}"
+    local s1="${_M_YELLOW}▲ up:${_M_RESET}${uptime}"
+    local s2="${_M_CYAN}◆ load:${_M_RESET}${load}"
+    local s3="${_M_GREEN}◇ mem:${_M_RESET}${mem}"
+    local s4="${_M_BLUE}⊡${_M_RESET} ${disk}"
     local stats_content="${s1}  ${s2}  ${s3}  ${s4}"
     local stats_pad=$((inner - ${#stats_content} - 1))
     local stats_spaces=""
