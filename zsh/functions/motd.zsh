@@ -17,7 +17,7 @@
 # MOTD Width, adjust if needed.
 # ============================================================================
 
-_M_WIDTH=64
+_M_WIDTH=62
 
 # ============================================================================
 # Colors (ANSI escape codes)
@@ -128,7 +128,7 @@ show_motd() {
     local s2="${_M_CYAN}◆ load:${_M_RESET}${load}"
     local s3="${_M_GREEN}◇ mem:${_M_RESET}${mem}"
     local s4="${_M_BLUE}⊡${_M_RESET} ${disk}"
-    echo "${_M_GREY} 𜸾𜸥 ${_M_RESET}${s1}${_M_DIM}  ${s2}${_M_DIM}  ${s3}${_M_DIM}  ${s4}${_M_DIM}${_M_GREY} 𜸞𜹃${_M_RESET}"
+    echo "${_M_GREY} ⟫  ${_M_RESET}${s1}${_M_DIM}   ${s2}${_M_DIM}   ${s3}${_M_DIM}   ${s4}${_M_DIM}${_M_GREY}  ⟪${_M_RESET}"
     
     ## Bottom border
     #echo "${_M_GREY}╘${hline}𜲂${_M_RESET}"
