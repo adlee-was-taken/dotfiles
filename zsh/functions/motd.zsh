@@ -59,7 +59,7 @@ _motd_disk() {
 # ============================================================================
 
 # Fixed box width
-_M_WIDTH=62
+_M_WIDTH=78
 
 _motd_line() {
     local char="$1"
@@ -115,7 +115,7 @@ show_motd() {
     echo "${_M_GREY}│${_M_RESET} ${_M_BOLD}${_M_BLUE}✦${_M_RESET} ${_M_BOLD}${hostname}${_M_RESET}${h_spaces}${_M_DIM}${datetime}${_M_RESET} ${_M_GREY}│${_M_RESET}"
     
     # Separator
-    echo "${_M_GREY}├${hline}┤${_M_RESET}"
+    echo "${_M_GREY}╞${hline}╛${_M_RESET}"
     
     # Stats line - build with exact spacing
     local s1="${_M_YELLOW}▲ up:${_M_RESET}${uptime}"
@@ -126,10 +126,10 @@ show_motd() {
     local stats_pad=$((inner - ${#stats_content} - 1))
     local stats_spaces=""
     for ((i=0; i<stats_pad; i++)); do stats_spaces+=" "; done
-    echo "${_M_GREY}│${_M_RESET} ${_M_DIM}${s1}  ${_M_DIM}${s2}  ${_M_DIM}${s3}  ${_M_DIM}${s4}${stats_spaces}${_M_GREY}  │${_M_RESET}"
+    echo "${_M_GREY}│${_M_RESET} ${_M_DIM}${s1}  ${_M_DIM}${s2}  ${_M_DIM}${s3}  ${_M_DIM}${s4}${stats_spaces}${_M_GREY}${_M_RESET}"
     
     # Bottom border
-    echo "${_M_GREY}╘${hline}╛${_M_RESET}"
+    echo "${_M_GREY}╘${hline}═${_M_RESET}"
     
     echo ""
 }
