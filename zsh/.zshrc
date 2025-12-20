@@ -284,6 +284,17 @@ _deferred_load() {
     if [[ -f "$_dotfiles_dir/vault/secrets.enc" ]] && [[ -x "$vault_script" ]]; then
         eval "$("$vault_script" shell 2>/dev/null)" || true
     fi
+
+    # Load dotfiles.conf env variables.
+    DOTFILES_CONF="$HOME/.dotfiles/dotfiles.conf"
+ 
+    if [[ -f "$DOTFILES_CONF" ]]; then
+        source $DOTFILES_CONF
+    else
+        DOTFILES_DIR="$HOME/.dotfiles"
+        DOTFILES_BRANCH="main"
+    fi
+
 }
 
 # ============================================================================

@@ -23,7 +23,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_CONF="$HOME/.dotfiles/dotfiles.conf"
 
 if [[ -f "$DOTFILES_CONF" ]]; then
-    source "$DOTFILES_CONF"
+    source $DOTFILES_CONF
 else
     DOTFILES_DIR="$HOME/.dotfiles"
     DOTFILES_BRANCH="main"
