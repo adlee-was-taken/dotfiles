@@ -51,7 +51,7 @@ _motd_mem() {
 }
 
 _motd_disk() {
-    df -h / 2>/dev/null | awk 'NR==2 {print $4 " free"}' || echo "N/A"
+    df -h / 2>/dev/null | awk 'NR==2 {print $3 "/" $4}' || echo "N/A"
 }
 
 # ============================================================================
