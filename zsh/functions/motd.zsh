@@ -59,7 +59,7 @@ _motd_disk() {
 # ============================================================================
 
 # Fixed box width
-_M_WIDTH=78
+_M_WIDTH=64
 
 _motd_line() {
     local char="$1"
@@ -97,7 +97,7 @@ show_motd() {
     local load=$(_motd_load)
     local mem=$(_motd_mem)
     local disk=$(_motd_disk)
-
+    local local_ip=$(hostname -i | awk -F" " '{print $1}')
     local hline=$(_motd_line '═')
     local inner=$((_M_WIDTH - 2))
 
@@ -108,11 +108,12 @@ show_motd() {
     
     # Header: hostname + datetime
     local h_left="✦ ${hostname}"
+    local h_center="${local_ip}"
     local h_right="${datetime}"
-    local h_pad=$((inner - ${#h_left} - ${#h_right}))
+    local h_pad=$(((inner - ${#h_left} - ${#h_center} - ${#h_right}) / 2 ))
     local h_spaces=""
     for ((i=0; i<h_pad; i++)); do h_spaces+=" "; done
-    echo "${_M_GREY}│${_M_RESET} ${_M_BOLD}${_M_BLUE}✦${_M_RESET} ${_M_BOLD}${hostname}${_M_RESET}${h_spaces}${_M_DIM}${datetime}${_M_RESET} ${_M_GREY}│${_M_RESET}"
+    echo "${_M_GREY}│${_M_RESET} ${_M_BOLD}${_M_BLUE}${h_left}${_M_RESET}${h_spaces}${_M_DIM}${h_center}${h_spaces}${h_right}${_M_RESET}${_M_GREY} │${_M_RESET}"
     
     # Separator
     echo "${_M_GREY}╘${hline}╛${_M_RESET}"
