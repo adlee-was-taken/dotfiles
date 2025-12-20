@@ -26,8 +26,8 @@ _df_run() {
 }
 
 # --- Core Dotfiles Commands ---
-alias dotfiles='cd ~/.dotfiles'
-alias dfcd='cd ~/.dotfiles'
+alias c.='cd $HOME/.dotfiles'
+
 # Note: 'df' not aliased to avoid conflict with disk free utility
 
 # Doctor - health check
