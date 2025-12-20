@@ -26,6 +26,7 @@ _df_run() {
 }
 
 # --- Core Dotfiles Commands ---
+alias dfdir='cd $HOME/.dotfiles'
 alias c.='cd $HOME/.dotfiles'
 
 # Note: 'df' not aliased to avoid conflict with disk free utility
