@@ -126,7 +126,7 @@ show_motd() {
     local stats_pad=$((inner - ${#stats_content} - 1))
     local stats_spaces=""
     for ((i=0; i<stats_pad; i++)); do stats_spaces+=" "; done
-    echo "${_M_GREY}│${_M_RESET} ${_M_DIM}▲${_M_RESET}up:${uptime}  ${_M_DIM}◆${_M_RESET}load:${load}  ${_M_DIM}◇${_M_RESET}mem:${mem}  ${_M_DIM}⊡${_M_RESET}${disk}${stats_spaces}${_M_GREY}  │${_M_RESET}"
+    echo "${_M_GREY}│${_M_RESET} ${_M_DIM}${s1}  ${_M_DIM}${s2}  ${_M_DIM}${s3}  ${_M_DIM}${s4}${stats_spaces}${_M_GREY}  │${_M_RESET}"
     
     # Bottom border
     echo "${_M_GREY}└${hline}┘${_M_RESET}"
