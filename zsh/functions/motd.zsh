@@ -98,13 +98,13 @@ show_motd() {
     local mem=$(_motd_mem)
     local disk=$(_motd_disk)
 
-    local hline=$(_motd_line '─')
+    local hline=$(_motd_line '═')
     local inner=$((_M_WIDTH - 2))
 
     echo ""
     
     # Top border
-    echo "${_M_GREY}┌${hline}┐${_M_RESET}"
+    echo "${_M_GREY}╒${hline}╕${_M_RESET}"
     
     # Header: hostname + datetime
     local h_left="✦ ${hostname}"
@@ -129,7 +129,7 @@ show_motd() {
     echo "${_M_GREY}│${_M_RESET} ${_M_DIM}${s1}  ${_M_DIM}${s2}  ${_M_DIM}${s3}  ${_M_DIM}${s4}${stats_spaces}${_M_GREY}  │${_M_RESET}"
     
     # Bottom border
-    echo "${_M_GREY}└${hline}┘${_M_RESET}"
+    echo "${_M_GREY}╘${hline}╛${_M_RESET}"
     
     echo ""
 }
