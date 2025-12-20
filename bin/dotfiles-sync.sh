@@ -20,8 +20,7 @@ set -e
 # ============================================================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DOTFILES_CONF="${SCRIPT_DIR}/../dotfiles.conf"
-[[ -f "$DOTFILES_CONF" ]] || DOTFILES_CONF="$HOME/.dotfiles/dotfiles.conf"
+DOTFILES_CONF="$HOME/.dotfiles/dotfiles.conf"
 
 if [[ -f "$DOTFILES_CONF" ]]; then
     source "$DOTFILES_CONF"
@@ -64,24 +63,24 @@ log_sync() {
 
 get_local_status() {
     cd "$DOTFILES_DIR"
-    
+
     local status=""
     local ahead=0
     local behind=0
     local modified=0
     local untracked=0
-    
+
     # Fetch quietly
     git fetch origin --quiet 2>/dev/null || true
-    
+
     # Count commits ahead/behind
     ahead=$(git rev-list HEAD..origin/${DOTFILES_BRANCH} --count 2>/dev/null || echo 0)
     behind=$(git rev-list origin/${DOTFILES_BRANCH}..HEAD --count 2>/dev/null || echo 0)
-    
+
     # Count modified and untracked
     modified=$(git diff --name-only 2>/dev/null | wc -l | tr -d ' ')
     untracked=$(git ls-files --others --exclude-standard 2>/dev/null | wc -l | tr -d ' ')
-    
+
     echo "$ahead|$behind|$modified|$untracked"
 }
 
@@ -103,18 +102,18 @@ has_remote_changes() {
 
 show_status() {
     print_header
-    
+
     echo -e "${CYAN}Machine:${NC} $HOSTNAME"
     echo -e "${CYAN}Branch:${NC}  $DOTFILES_BRANCH"
     echo -e "${CYAN}Path:${NC}    $DOTFILES_DIR"
     echo
-    
+
     cd "$DOTFILES_DIR"
-    
+
     IFS='|' read -r behind ahead modified untracked <<< "$(get_local_status)"
-    
+
     echo -e "${CYAN}Status:${NC}"
-    
+
     # Remote status
     if [[ $behind -gt 0 ]]; then
         echo -e "  ${YELLOW}↓${NC} $behind commit(s) behind remote"
@@ -123,27 +122,27 @@ show_status() {
     else
         echo -e "  ${GREEN}✓${NC} In sync with remote"
     fi
-    
+
     # Local changes
     if [[ $modified -gt 0 ]]; then
         echo -e "  ${YELLOW}●${NC} $modified modified file(s)"
     fi
-    
+
     if [[ $untracked -gt 0 ]]; then
         echo -e "  ${YELLOW}+${NC} $untracked untracked file(s)"
     fi
-    
+
     if [[ $modified -eq 0 && $untracked -eq 0 ]]; then
         echo -e "  ${GREEN}✓${NC} Working directory clean"
     fi
-    
+
     # Show recent changes
     echo
     echo -e "${CYAN}Recent changes:${NC}"
     git log --oneline -5 2>/dev/null | while read -r line; do
         echo -e "  ${DIM}$line${NC}"
     done
-    
+
     # Show modified files
     if [[ $modified -gt 0 || $untracked -gt 0 ]]; then
         echo
@@ -154,7 +153,7 @@ show_status() {
         local total=$((modified + untracked))
         [[ $total -gt 10 ]] && echo -e "  ${DIM}... and $((total - 10)) more${NC}"
     fi
-    
+
     # Show last sync
     if [[ -f "$SYNC_STATE_FILE" ]]; then
         echo
@@ -165,31 +164,31 @@ show_status() {
 
 do_push() {
     local message="${1:-Auto-sync from $HOSTNAME}"
-    
+
     cd "$DOTFILES_DIR"
-    
+
     if ! has_local_changes; then
         echo -e "${GREEN}✓${NC} No local changes to push"
         return 0
     fi
-    
+
     echo -e "${BLUE}==>${NC} Pushing local changes..."
-    
+
     # Stage all changes
     git add -A
-    
+
     # Show what we're committing
     echo -e "${CYAN}Changes:${NC}"
     git diff --cached --stat | head -10
-    
+
     echo
-    
+
     # Commit
     git commit -m "$message" || {
         echo -e "${YELLOW}⚠${NC} Nothing to commit"
         return 0
     }
-    
+
     # Push
     if git push origin "$DOTFILES_BRANCH"; then
         echo -e "${GREEN}✓${NC} Changes pushed successfully"
@@ -203,9 +202,9 @@ do_push() {
 
 do_pull() {
     cd "$DOTFILES_DIR"
-    
+
     echo -e "${BLUE}==>${NC} Pulling remote changes..."
-    
+
     # Stash local changes if any
     local had_changes=false
     if has_local_changes; then
@@ -213,13 +212,13 @@ do_pull() {
         git stash push -m "Auto-stash before pull"
         had_changes=true
     fi
-    
+
     # Pull
     if git pull origin "$DOTFILES_BRANCH"; then
         echo -e "${GREEN}✓${NC} Changes pulled successfully"
         log_sync "pull" "from origin/$DOTFILES_BRANCH"
         date -Iseconds > "$SYNC_STATE_FILE"
-        
+
         # Show what changed
         echo -e "${CYAN}Updates:${NC}"
         git log --oneline ORIG_HEAD..HEAD 2>/dev/null | while read -r line; do
@@ -227,14 +226,14 @@ do_pull() {
         done
     else
         echo -e "${RED}✗${NC} Failed to pull changes"
-        
+
         # Restore stash on failure
         if [[ "$had_changes" == true ]]; then
             git stash pop
         fi
         return 1
     fi
-    
+
     # Restore stash
     if [[ "$had_changes" == true ]]; then
         echo -e "${BLUE}==>${NC} Restoring local changes..."
@@ -249,30 +248,30 @@ do_pull() {
 
 do_sync() {
     print_header
-    
+
     cd "$DOTFILES_DIR"
-    
+
     local has_local=$(has_local_changes && echo "yes" || echo "no")
     local has_remote=$(has_remote_changes && echo "yes" || echo "no")
-    
+
     if [[ "$has_local" == "no" && "$has_remote" == "no" ]]; then
         echo -e "${GREEN}✓${NC} Everything is in sync!"
         return 0
     fi
-    
+
     if [[ "$has_remote" == "yes" ]]; then
         echo -e "${CYAN}Remote changes available${NC}"
         do_pull
         echo
     fi
-    
+
     if [[ "$has_local" == "yes" ]]; then
         echo -e "${CYAN}Local changes detected${NC}"
-        
+
         # Show changes
         git status --short
         echo
-        
+
         read -p "Push these changes? [Y/n]: " confirm
         if [[ "${confirm:-y}" =~ ^[Yy] ]]; then
             read -p "Commit message [Auto-sync from $HOSTNAME]: " msg
@@ -285,25 +284,25 @@ do_watch() {
     echo -e "${BLUE}==>${NC} Starting sync daemon..."
     echo -e "${DIM}Press Ctrl+C to stop${NC}"
     echo
-    
+
     local interval="${1:-300}"  # Default 5 minutes
-    
+
     log_sync "watch_start" "interval=${interval}s"
-    
+
     while true; do
         local timestamp=$(date '+%H:%M:%S')
-        
+
         if has_remote_changes; then
             echo -e "[$timestamp] ${YELLOW}↓${NC} Remote changes detected, pulling..."
             do_pull
         fi
-        
+
         if has_local_changes; then
             echo -e "[$timestamp] ${YELLOW}↑${NC} Local changes detected"
             # In watch mode, auto-commit with timestamp
             do_push "Auto-sync: $(date '+%Y-%m-%d %H:%M') from $HOSTNAME"
         fi
-        
+
         echo -e "[$timestamp] ${DIM}Sleeping ${interval}s...${NC}"
         sleep "$interval"
     done
@@ -312,16 +311,16 @@ do_watch() {
 do_auto() {
     # Quick check for shell startup - minimal output
     cd "$DOTFILES_DIR" 2>/dev/null || return 0
-    
+
     git fetch origin --quiet 2>/dev/null || return 0
-    
+
     local behind=$(git rev-list HEAD..origin/${DOTFILES_BRANCH} --count 2>/dev/null || echo 0)
-    
+
     if [[ $behind -gt 0 ]]; then
         echo -e "${YELLOW}⚠ Dotfiles: $behind update(s) available${NC}"
         echo -e "  Run: ${CYAN}dfpull${NC} or ${CYAN}dotfiles-sync.sh --pull${NC}"
     fi
-    
+
     if has_local_changes; then
         local changed=$(git status --short 2>/dev/null | wc -l | tr -d ' ')
         echo -e "${YELLOW}⚠ Dotfiles: $changed local change(s) not pushed${NC}"
@@ -331,10 +330,10 @@ do_auto() {
 
 show_diff() {
     cd "$DOTFILES_DIR"
-    
+
     echo -e "${CYAN}Local changes:${NC}"
     echo
-    
+
     if command -v delta &>/dev/null; then
         git diff | delta
     elif command -v diff-so-fancy &>/dev/null; then
@@ -346,7 +345,7 @@ show_diff() {
 
 show_log() {
     local count="${1:-20}"
-    
+
     if [[ -f "$SYNC_LOG_FILE" ]]; then
         echo -e "${CYAN}Sync history (last $count entries):${NC}"
         echo
@@ -360,9 +359,9 @@ show_log() {
 
 show_conflicts() {
     cd "$DOTFILES_DIR"
-    
+
     local conflicts=$(git diff --name-only --diff-filter=U 2>/dev/null)
-    
+
     if [[ -n "$conflicts" ]]; then
         echo -e "${RED}Merge conflicts:${NC}"
         echo "$conflicts" | while read -r file; do
@@ -415,7 +414,7 @@ main() {
         echo -e "${RED}✗${NC} Dotfiles directory is not a git repository: $DOTFILES_DIR"
         exit 1
     fi
-    
+
     case "${1:-}" in
         --status|-s)
             show_status
