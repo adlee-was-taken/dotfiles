@@ -70,10 +70,11 @@ vset()  { _df_run dotfiles-vault.sh set "$@"; }
 dfcompile() { _df_run dotfiles-compile.sh "$@"; }
 
 # --- Quick Edit Aliases ---
-alias zshrc='${EDITOR:-vim} ~/.zshrc'
-alias dfconf='${EDITOR:-vim} ~/.dotfiles/dotfiles.conf'
-alias dfedit='cd ~/.dotfiles && ${EDITOR:-vim} .'
-alias dfalias='${EDITOR:-vim} ~/.dotfiles/zsh/aliases.zsh'
+alias v.zshrc='${EDITOR:-vim} ~/.zshrc'
+alias v.conf='${EDITOR:-vim} ~/.dotfiles/dotfiles.conf'
+alias v.edit='cd ~/.dotfiles && ${EDITOR:-vim} .'
+alias v.alias='${EDITOR:-vim} ~/.dotfiles/zsh/aliases.zsh'
+alias v.motd='${EDITOR:-vim} ~/.dotfiles/zsh/motd.zsh'
 
 # --- Reload Aliases ---
 alias reload='source ~/.zshrc'
