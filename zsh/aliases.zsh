@@ -74,7 +74,7 @@ alias v.zshrc='${EDITOR:-vim} ~/.zshrc'
 alias v.conf='${EDITOR:-vim} ~/.dotfiles/dotfiles.conf'
 alias v.edit='cd ~/.dotfiles && ${EDITOR:-vim} .'
 alias v.alias='${EDITOR:-vim} ~/.dotfiles/zsh/aliases.zsh'
-alias v.motd='${EDITOR:-vim} ~/.dotfiles/zsh/motd.zsh'
+alias v.motd='${EDITOR:-vim} ~/.dotfiles/zsh/functions/motd.zsh'
 
 # --- Reload Aliases ---
 alias reload='source ~/.zshrc'
