@@ -312,7 +312,6 @@ _background_tasks() {
     # Check number of available updates and export.
     export UPDATE_PKG_COUNT=$(checkupdates | wc -l)
 
-
 }
 
 # ============================================================================
