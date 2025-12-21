@@ -294,7 +294,7 @@ _deferred_load() {
         DOTFILES_DIR="$HOME/.dotfiles"
         DOTFILES_BRANCH="main"
     fi
-
+    
 }
 
 # ============================================================================
@@ -308,6 +308,11 @@ _background_tasks() {
         local sync_script="$_dotfiles_dir/bin/dotfiles-sync.sh"
         [[ -x "$sync_script" ]] && "$sync_script" --auto 2>/dev/null &!
     fi
+
+    # Check number of available updates and export.
+    export UPDATE_PKG_COUNT=$(checkupdates | wc -l)
+
+
 }
 
 # ============================================================================
