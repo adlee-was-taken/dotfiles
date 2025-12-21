@@ -25,6 +25,10 @@ _df_run() {
     fi
 }
 
+# --- Quality of Life Aliases ---
+alias hist="history"
+
+
 # --- Core Dotfiles Commands ---
 alias dfdir='cd $HOME/.dotfiles'
 alias c.='cd $HOME/.dotfiles'
