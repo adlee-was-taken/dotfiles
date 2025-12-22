@@ -308,12 +308,14 @@ _background_tasks() {
         $_dotfiles_dir/bin/dotfiles-sync.sh status -s 2> /dev/null
         #[[ -x "$sync_script" ]] && "$sync_script" --auto 2>/dev/null &!
     fi
-
-    # Check number of available updates and export.
-    export UPDATE_PKG_COUNT=$(checkupdates | wc -l)
+    _df_check_sys_updates
 
 }
 
+_df_check_sys_updates() {
+    # Check number of available updates and export.
+    export UPDATE_PKG_COUNT=$(checkupdates | wc -l)
+}
 # ============================================================================
 # Initialization Strategy
 # ============================================================================
