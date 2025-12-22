@@ -3,7 +3,8 @@
 # Dotfiles Health Check (Arch/CachyOS)
 # ============================================================================
 
-set -e
+# Note: Not using set -e because arithmetic operations like ((var++)) 
+# return 1 when var was 0, which would cause premature exit
 
 readonly DOTFILES_HOME="${DOTFILES_HOME:-$HOME/.dotfiles}"
 readonly DOTFILES_VERSION="3.0.0"
@@ -36,7 +37,7 @@ print_header() {
         local datetime=$(date '+%a %b %d %H:%M')
         local width=66
         local hline="" && for ((i=0; i<width; i++)); do hline+="═"; done
-
+        
         echo ""
         echo -e "${DF_GREY}╒${hline}╕${DF_NC}"
         echo -e "${DF_GREY}│${DF_NC} ${DF_BOLD}${DF_LIGHT_BLUE}✦ ${user}@${hostname}${DF_NC}      ${DF_DIM}dotfiles-doctor${DF_NC}      ${datetime} ${DF_GREY}│${DF_NC}"
@@ -54,20 +55,20 @@ print_section() {
 }
 
 check_pass() {
-    ((PASSED_CHECKS++))
-    ((TOTAL_CHECKS++))
+    PASSED_CHECKS=$((PASSED_CHECKS + 1))
+    TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
     echo -e "  ${DF_GREEN}✓${DF_NC} $1"
 }
 
 check_fail() {
-    ((FAILED_CHECKS++))
-    ((TOTAL_CHECKS++))
+    FAILED_CHECKS=$((FAILED_CHECKS + 1))
+    TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
     echo -e "  ${DF_RED}✗${DF_NC} $1"
 }
 
 check_warn() {
-    ((WARNING_CHECKS++))
-    ((TOTAL_CHECKS++))
+    WARNING_CHECKS=$((WARNING_CHECKS + 1))
+    TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
     echo -e "  ${DF_YELLOW}⚠${DF_NC} $1"
 }
 
@@ -77,9 +78,9 @@ check_warn() {
 
 check_os() {
     print_section "Operating System"
-
+    
     if [[ "$OSTYPE" == "linux-gnu" ]]; then
-        if grep -qiI "arch\|cachyos" /etc/os-release 2>/dev/null; then
+        if grep -qi "arch\|cachyos" /etc/os-release 2>/dev/null; then
             check_pass "Running on Arch/CachyOS"
         else
             check_fail "Not running on Arch/CachyOS"
@@ -91,13 +92,13 @@ check_os() {
 
 check_shell() {
     print_section "Shell Configuration"
-
+    
     if [[ -f "$HOME/.zshrc" ]]; then
         check_pass "Zsh configuration exists"
     else
         check_fail "Zsh configuration missing"
     fi
-
+    
     if [[ "$SHELL" == *"zsh"* ]]; then
         check_pass "Zsh is default shell"
     else
@@ -107,10 +108,10 @@ check_shell() {
 
 check_symlinks() {
     print_section "Symlinks"
-
+    
     local symlink_count=0
     local broken_count=0
-
+    
     for symlink in ~/.zshrc ~/.gitconfig ~/.vimrc ~/.tmux.conf; do
         if [[ -L "$symlink" ]]; then
             ((symlink_count++))
@@ -122,7 +123,7 @@ check_symlinks() {
             fi
         fi
     done
-
+    
     if [[ $symlink_count -eq 0 ]]; then
         check_warn "No symlinks found (may not be installed yet)"
     fi
@@ -130,14 +131,14 @@ check_symlinks() {
 
 check_vim() {
     print_section "Editor Configuration"
-
+    
     if command -v vim &> /dev/null; then
         local vim_version=$(vim --version | head -1)
         check_pass "Vim installed: $vim_version"
     else
         check_fail "Vim not installed"
     fi
-
+    
     if command -v nvim &> /dev/null; then
         local nvim_version=$(nvim --version | head -1)
         check_pass "Neovim installed: $nvim_version"
@@ -148,17 +149,17 @@ check_vim() {
 
 check_git() {
     print_section "Git Configuration"
-
+    
     if command -v git &> /dev/null; then
         check_pass "Git installed"
-
+        
         if git config --global user.name &> /dev/null; then
             local git_user=$(git config --global user.name)
             check_pass "Git user configured: $git_user"
         else
             check_fail "Git user not configured"
         fi
-
+        
         if git config --global user.email &> /dev/null; then
             local git_email=$(git config --global user.email)
             check_pass "Git email configured: $git_email"
@@ -172,37 +173,37 @@ check_git() {
 
 check_optional_tools() {
     print_section "Optional Tools"
-
+    
     if command -v fzf &> /dev/null; then
         check_pass "fzf installed (fuzzy finder)"
     else
         check_warn "fzf not installed (command palette requires this)"
     fi
-
+    
     if command -v lastpass-cli &> /dev/null || command -v lpass &> /dev/null; then
         check_pass "LastPass CLI installed"
     else
         check_warn "LastPass CLI not installed (password manager)"
     fi
-
+    
     if command -v tmux &> /dev/null; then
         check_pass "Tmux installed"
     else
         check_warn "Tmux not installed (workspaces require this)"
     fi
-
+    
     if command -v age &> /dev/null || command -v gpg &> /dev/null; then
         check_pass "Encryption tool available (age or gpg)"
     else
         check_warn "No encryption tool (vault requires age or gpg)"
     fi
-
+    
     if command -v bat &> /dev/null; then
         check_pass "bat installed (syntax highlighting)"
     else
         check_warn "bat not installed (optional enhancement)"
     fi
-
+    
     if command -v eza &> /dev/null; then
         check_pass "eza installed (ls replacement)"
     else
@@ -212,7 +213,7 @@ check_optional_tools() {
 
 check_pacman() {
     print_section "Package Manager"
-
+    
     if command -v pacman &> /dev/null; then
         check_pass "Pacman available"
     else
@@ -222,7 +223,7 @@ check_pacman() {
 
 check_permissions() {
     print_section "File Permissions"
-
+    
     if [[ -f "$DOTFILES_HOME/install.sh" ]]; then
         if [[ -x "$DOTFILES_HOME/install.sh" ]]; then
             check_pass "install.sh is executable"
@@ -230,7 +231,7 @@ check_permissions() {
             check_fail "install.sh is not executable"
         fi
     fi
-
+    
     if [[ -d "$DOTFILES_HOME/bin" ]]; then
         local non_exec=$(find "$DOTFILES_HOME/bin" -type f ! -perm /u+x 2>/dev/null | wc -l)
         if [[ $non_exec -eq 0 ]]; then
@@ -243,22 +244,22 @@ check_permissions() {
 
 check_zsh_plugins() {
     print_section "Zsh Plugins"
-
+    
     if [[ -d "$HOME/.oh-my-zsh" ]]; then
         check_pass "Oh My Zsh installed"
-
+        
         if [[ -d "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions" ]]; then
             check_pass "zsh-autosuggestions installed"
         else
             check_warn "zsh-autosuggestions not installed"
         fi
-
+        
         if [[ -d "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting" ]]; then
             check_pass "zsh-syntax-highlighting installed"
         else
             check_warn "zsh-syntax-highlighting not installed"
         fi
-
+        
         if [[ -f "$HOME/.oh-my-zsh/themes/adlee.zsh-theme" ]]; then
             check_pass "adlee theme installed"
         else
@@ -271,20 +272,20 @@ check_zsh_plugins() {
 
 check_dotfiles_dir() {
     print_section "Dotfiles Directory"
-
+    
     if [[ -d "$DOTFILES_HOME" ]]; then
         check_pass "Dotfiles directory found: $DOTFILES_HOME"
     else
         check_fail "Dotfiles directory not found: $DOTFILES_HOME"
         return
     fi
-
+    
     if [[ -f "$DOTFILES_HOME/dotfiles.conf" ]]; then
         check_pass "Configuration file exists"
     else
         check_warn "Configuration file missing"
     fi
-
+    
     if [[ -d "$DOTFILES_HOME/.git" ]]; then
         check_pass "Git repository initialized"
     else
@@ -299,7 +300,7 @@ check_dotfiles_dir() {
 print_summary() {
     echo ""
     printf "${DF_CYAN}─%.0s${DF_NC}" {1..70}; echo ""
-
+    
     if [[ $FAILED_CHECKS -eq 0 ]]; then
         echo -e "${DF_GREEN}✓${DF_NC} All checks passed ($PASSED_CHECKS/$TOTAL_CHECKS)"
     else
@@ -310,9 +311,9 @@ print_summary() {
             echo -e "  ${DF_YELLOW}Warnings:${DF_NC} $WARNING_CHECKS"
         fi
     fi
-
+    
     echo ""
-
+    
     if [[ $FAILED_CHECKS -gt 0 ]]; then
         echo -e "${DF_YELLOW}💡 Tip:${DF_NC} Run 'dotfiles-doctor.sh --fix' to attempt automatic fixes"
         echo ""
@@ -326,7 +327,7 @@ print_summary() {
 
 main() {
     print_header
-
+    
     check_os
     check_pacman
     check_shell
@@ -337,7 +338,7 @@ main() {
     check_zsh_plugins
     check_optional_tools
     check_permissions
-
+    
     print_summary
 }
 
