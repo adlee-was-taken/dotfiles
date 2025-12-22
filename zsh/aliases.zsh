@@ -43,9 +43,9 @@ dffix()  { _df_run dotfiles-doctor.sh --fix "$@"; }
 # Sync - multi-machine synchronization
 dfs()      { _df_run dotfiles-sync.sh "$@"; }
 dfsync()   { _df_run dotfiles-sync.sh "$@"; }
-dfpush()   { _df_run dotfiles-sync.sh --push "$@"; }
-dfpull()   { _df_run dotfiles-sync.sh --pull "$@"; }
-dfstatus() { _df_run dotfiles-sync.sh --status "$@"; }
+dfpush()   { _df_run dotfiles-sync.sh push "${1:-Dotfiles update $(date '+%Y-%m-%d %H:%M')}"; }
+dfpull()   { _df_run dotfiles-sync.sh pull "$@"; }
+dfstatus() { _df_run dotfiles-sync.sh status "$@"; }
 
 # Update - pull latest and reinstall
 dfu()      { _df_run dotfiles-update.sh "$@"; }

@@ -141,6 +141,31 @@ show_status() {
     fi
 }
 
+show_status_short() {
+    cd "$DOTFILES_HOME"
+    
+    # Count local changes
+    local changes=$(git status --porcelain | wc -l)
+    
+    # Check commits ahead/behind
+    local status=$(get_sync_status)
+    local local_commits="${status%:*}"
+    local remote_commits="${status#*:}"
+    
+    if [[ $changes -gt 0 ]]; then
+        echo -e "${YELLOW}⚠${NC} Dotfiles: ${changes} local change(s) not pushed"
+        echo -e "  Run: ${CYAN}dfpush${NC} or ${CYAN}dotfiles-sync.sh push${NC}"
+    elif [[ $local_commits -gt 0 ]]; then
+        echo -e "${YELLOW}⚠${NC} Dotfiles: ${local_commits} commit(s) not pushed"
+        echo -e "  Run: ${CYAN}git push${NC} in ~/.dotfiles"
+    elif [[ $remote_commits -gt 0 ]]; then
+        echo -e "${YELLOW}⚠${NC} Dotfiles: ${remote_commits} commit(s) behind remote"
+        echo -e "  Run: ${CYAN}dfpull${NC} or ${CYAN}dotfiles-sync.sh pull${NC}"
+    else
+        echo -e "${GREEN}✓${NC} Dotfiles: in sync"
+    fi
+}
+
 show_diff() {
     print_section "Local Changes"
     
@@ -175,6 +200,8 @@ pull_changes() {
 }
 
 push_changes() {
+    local commit_msg="$1"
+    
     print_section "Pushing Changes"
     
     cd "$DOTFILES_HOME"
@@ -187,12 +214,15 @@ push_changes() {
     print_status "Staging changes..."
     git add -A
     
-    print_status "Enter commit message (or press Ctrl+C to cancel):"
-    read -p "  > " commit_msg
-    
+    # If no commit message provided, prompt for one
     if [[ -z "$commit_msg" ]]; then
-        print_error "Commit cancelled"
-        return 1
+        print_status "Enter commit message (or press Ctrl+C to cancel):"
+        read -p "  > " commit_msg
+        
+        if [[ -z "$commit_msg" ]]; then
+            print_error "Commit cancelled"
+            return 1
+        fi
     fi
     
     print_status "Committing: $commit_msg"
@@ -241,41 +271,61 @@ watch_sync() {
 # ============================================================================
 
 main() {
-    print_header
-    
     check_git_repo
     check_git_config
     
     case "${1:-status}" in
         status)
-            show_status
-            show_diff
+            if [[ "$2" == "-s" || "$2" == "--short" ]]; then
+                show_status_short
+            else
+                print_header
+                show_status
+                show_diff
+            fi
             ;;
         push)
-            push_changes
+            print_header
+            shift
+            push_changes "$*"
             ;;
         pull)
+            print_header
             pull_changes
             ;;
         diff)
+            print_header
             show_diff
             ;;
         auto)
             auto_sync
             ;;
         watch)
+            print_header
             watch_sync "${2:-300}"
             ;;
+        -s|--short)
+            show_status_short
+            ;;
         *)
-            echo "Usage: $0 {status|push|pull|diff|auto|watch [interval]}"
+            echo "Usage: $0 {status [-s]|push [message]|pull|diff|auto|watch [interval]}"
             echo ""
             echo "Commands:"
-            echo "  status       Show sync status (default)"
-            echo "  push         Push local changes"
-            echo "  pull         Pull remote changes"
-            echo "  diff         Show local changes"
-            echo "  auto         Automatically sync (pull remote)"
-            echo "  watch [sec]  Auto-sync every N seconds (default: 300)"
+            echo "  status            Show sync status (default)"
+            echo "  status -s         Show abbreviated one-line status"
+            echo "  push [message]    Push local changes (prompts if no message)"
+            echo "  pull              Pull remote changes"
+            echo "  diff              Show local changes"
+            echo "  auto              Automatically sync (pull remote)"
+            echo "  watch [sec]       Auto-sync every N seconds (default: 300)"
+            echo ""
+            echo "Options:"
+            echo "  -s, --short       Abbreviated output (one line)"
+            echo ""
+            echo "Examples:"
+            echo "  $0 push \"Updated aliases\""
+            echo "  $0 push                      # Will prompt for message"
+            echo "  $0 status -s                 # Quick status check"
             exit 1
             ;;
     esac

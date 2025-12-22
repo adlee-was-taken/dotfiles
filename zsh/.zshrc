@@ -305,8 +305,8 @@ _background_tasks() {
     # Check for dotfiles updates
     if [[ "${DOTFILES_AUTO_SYNC_CHECK:-true}" == "true" ]]; then
         # Use full path to avoid command_not_found issues
-        local sync_script="$_dotfiles_dir/bin/dotfiles-sync.sh"
-        [[ -x "$sync_script" ]] && "$sync_script" --auto 2>/dev/null &!
+        $_dotfiles_dir/bin/dotfiles-sync.sh status -s 2> /dev/null
+        #[[ -x "$sync_script" ]] && "$sync_script" --auto 2>/dev/null &!
     fi
 
     # Check number of available updates and export.
