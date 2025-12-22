@@ -155,16 +155,17 @@ show_status_short() {
 
     if [[ $changes -gt 0 ]]; then
         echo -e "  ${YELLOW}⚠${NC} Dotfiles: ${changes} local change(s) not pushed"
-        echo -e "   Run: ${CYAN}dfpush${NC} or ${CYAN}dotfiles-sync.sh push${NC}"
+        echo -e "    Run: ${CYAN}dfpush${NC} or ${CYAN}dotfiles-sync.sh push${NC}"
     elif [[ $local_commits -gt 0 ]]; then
         echo -e "  ${YELLOW}⚠${NC} Dotfiles: ${local_commits} commit(s) not pushed"
-        echo -e "   Run: ${CYAN}git push${NC} in ~/.dotfiles"
+        echo -e "    Run: ${CYAN}git push${NC} in ~/.dotfiles"
     elif [[ $remote_commits -gt 0 ]]; then
         echo -e "  ${YELLOW}⚠${NC} Dotfiles: ${remote_commits} commit(s) behind remote"
-        echo -e "   Run: ${CYAN}dfpull${NC} or ${CYAN}dotfiles-sync.sh pull${NC}"
+        echo -e "    Run: ${CYAN}dfpull${NC} or ${CYAN}dotfiles-sync.sh pull${NC}"
     else
         echo -e "  ${GREEN}✓${NC} Dotfiles: in sync"
     fi
+    echo -e ""
 }
 
 show_diff() {
