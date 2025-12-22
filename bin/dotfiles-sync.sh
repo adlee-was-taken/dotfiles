@@ -35,6 +35,7 @@ print_header() {
     local _M_DIM=$'\033[2m'
     local _M_BLUE=$'\033[38;5;39m'
     local _M_GREY=$'\033[38;5;242m'
+    local _M_MAGENTA='\033[0;35m'
 
     # Build horizontal line
     local hline=""
