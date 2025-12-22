@@ -162,8 +162,8 @@ show_status_short() {
     elif [[ $remote_commits -gt 0 ]]; then
         echo -e "  ${YELLOW}⚠${NC} Dotfiles: ${remote_commits} commit(s) behind remote"
         echo -e "    Run: ${CYAN}dfpull${NC} or ${CYAN}dotfiles-sync.sh pull${NC}"
-    else
-        echo -e "  ${GREEN}✓${NC} Dotfiles: in sync"
+    #else
+    #    echo -e "  ${GREEN}✓${NC} Dotfiles: in sync"
     fi
     echo ""
 }
