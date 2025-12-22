@@ -5,52 +5,36 @@
 
 set -e
 
-# Color codes
-readonly RED='\033[0;31m'
-readonly GREEN='\033[0;32m'
-readonly YELLOW='\033[1;33m'
-readonly BLUE='\033[0;34m'
-readonly CYAN='\033[0;36m'
-readonly MAGENTA='\033[0;35m'
-readonly NC='\033[0m'
+readonly DOTFILES_HOME="${DOTFILES_HOME:-$HOME/.dotfiles}"
+
+# Source shared colors
+source "$DOTFILES_HOME/zsh/lib/colors.zsh" 2>/dev/null || {
+    DF_RED=$'\033[0;31m' DF_GREEN=$'\033[0;32m' DF_YELLOW=$'\033[1;33m'
+    DF_BLUE=$'\033[0;34m' DF_CYAN=$'\033[0;36m' DF_MAGENTA=$'\033[0;35m'
+    DF_NC=$'\033[0m' DF_GREY=$'\033[38;5;242m' DF_LIGHT_BLUE=$'\033[38;5;39m'
+    DF_BOLD=$'\033[1m' DF_DIM=$'\033[2m'
+}
 
 # ============================================================================
 # MOTD-style header
 # ============================================================================
 
-_M_WIDTH=66
-
 print_header() {
-    local user="${USER:-root}"
-    local hostname="${HOSTNAME:-$(hostname -s 2>/dev/null)}"
-    local script_name="dotfiles-stats"
-    local datetime=$(date '+%a %b %d %H:%M')
-    
-    # Colors
-    local _M_RESET=$'\033[0m'
-    local _M_BOLD=$'\033[1m'
-    local _M_DIM=$'\033[2m'
-    local _M_BLUE=$'\033[38;5;39m'
-    local _M_GREY=$'\033[38;5;242m'
-    
-    # Build horizontal line
-    local hline=""
-    for ((i=0; i<_M_WIDTH; i++)); do hline+="═"; done
-    local inner=$((_M_WIDTH - 2))
-    
-    # Header content
-    local h_left="✦ ${user}@${hostname}"
-    local h_center="${script_name}"
-    local h_right="${datetime}"
-    local h_pad=$(((inner - ${#h_left} - ${#h_center} - ${#h_right}) / 2))
-    local h_spaces=""
-    for ((i=0; i<h_pad; i++)); do h_spaces+=" "; done
-    
-    echo ""
-    echo -e "${_M_GREY}╒${hline}╕${_M_RESET}"
-    echo -e "${_M_GREY}│${_M_RESET} ${_M_BOLD}${_M_BLUE}${h_left}${_M_RESET}${h_spaces}${_M_DIM}${h_center}${h_spaces}${h_right}${_M_RESET} ${_M_GREY}│${_M_RESET}"
-    echo -e "${_M_GREY}╘${hline}╛${_M_RESET}"
-    echo ""
+    if declare -f df_print_header &>/dev/null; then
+        df_print_header "dotfiles-stats"
+    else
+        local user="${USER:-root}"
+        local hostname="${HOSTNAME:-$(hostname -s 2>/dev/null)}"
+        local datetime=$(date '+%a %b %d %H:%M')
+        local width=66
+        local hline="" && for ((i=0; i<width; i++)); do hline+="═"; done
+        
+        echo ""
+        echo -e "${DF_GREY}╒${hline}╕${DF_NC}"
+        echo -e "${DF_GREY}│${DF_NC} ${DF_BOLD}${DF_LIGHT_BLUE}✦ ${user}@${hostname}${DF_NC}      ${DF_DIM}dotfiles-stats${DF_NC}      ${datetime} ${DF_GREY}│${DF_NC}"
+        echo -e "${DF_GREY}╘${hline}╛${DF_NC}"
+        echo ""
+    fi
 }
 
 # ============================================================================
@@ -59,8 +43,8 @@ print_header() {
 
 print_section() {
     echo ""
-    echo -e "${BLUE}▶${NC} $1"
-    echo -e "${CYAN}─────────────────────────────────────────────────────────────${NC}"
+    echo -e "${DF_BLUE}▶${DF_NC} $1"
+    echo -e "${DF_CYAN}─────────────────────────────────────────────────────────────${DF_NC}"
 }
 
 # Get command history
@@ -83,8 +67,8 @@ show_dashboard() {
     local unique=$(get_history | sort | uniq | wc -l)
     
     echo ""
-    echo -e "  ${CYAN}Total Commands:${NC}  $total"
-    echo -e "  ${CYAN}Unique Commands:${NC} $unique"
+    echo -e "  ${DF_CYAN}Total Commands:${DF_NC}  $total"
+    echo -e "  ${DF_CYAN}Unique Commands:${DF_NC} $unique"
     echo ""
     
     print_section "Top 15 Commands"
@@ -93,7 +77,7 @@ show_dashboard() {
         local percent=$((count * 100 / total))
         local bar_length=$((percent / 5))
         local bar=$(printf '█%.0s' $(seq 1 $bar_length))
-        printf "  %-20s ${GREEN}%5d${NC} ${MAGENTA}%3d%%${NC} ${bar}\n" "$cmd" "$count" "$percent"
+        printf "  %-20s ${DF_GREEN}%5d${DF_NC} ${DF_MAGENTA}%3d%%${DF_NC} ${bar}\n" "$cmd" "$count" "$percent"
     done
     
     echo ""
@@ -109,7 +93,7 @@ show_top_n() {
     get_history | awk '{print $1}' | sort | uniq -c | sort -rn | head -"$n" | \
     while read count cmd; do
         local percent=$((count * 100 / total))
-        printf "  ${YELLOW}%4d${NC}  %-30s  ${CYAN}%3d%%${NC}\n" "$count" "$cmd" "$percent"
+        printf "  ${DF_YELLOW}%4d${DF_NC}  %-30s  ${DF_CYAN}%3d%%${DF_NC}\n" "$count" "$cmd" "$percent"
     done
     
     echo ""
@@ -124,7 +108,7 @@ show_suggestions() {
     get_history | awk '{print $1}' | sort | uniq -c | sort -rn | head -20 | \
     while read count cmd; do
         if [[ $count -gt 50 ]]; then
-            printf "  ${YELLOW}Suggestion:${NC} ${GREEN}alias ${cmd:0:2}='$cmd'${NC}  (used $count times)\n"
+            printf "  ${DF_YELLOW}Suggestion:${DF_NC} ${DF_GREEN}alias ${cmd:0:2}='$cmd'${DF_NC}  (used $count times)\n"
         fi
     done
     
@@ -135,22 +119,22 @@ show_breakdown() {
     print_section "Command Breakdown"
     
     echo ""
-    echo -e "  ${CYAN}Git Commands:${NC}"
+    echo -e "  ${DF_CYAN}Git Commands:${DF_NC}"
     get_history | grep "^git" | wc -l | xargs printf "    %d\n"
     
-    echo -e "  ${CYAN}Navigation (cd):${NC}"
+    echo -e "  ${DF_CYAN}Navigation (cd):${DF_NC}"
     get_history | grep "^cd" | wc -l | xargs printf "    %d\n"
     
-    echo -e "  ${CYAN}File Operations (ls):${NC}"
+    echo -e "  ${DF_CYAN}File Operations (ls):${DF_NC}"
     get_history | grep "^ls" | wc -l | xargs printf "    %d\n"
     
-    echo -e "  ${CYAN}Package Management (pacman/paru/yay):${NC}"
+    echo -e "  ${DF_CYAN}Package Management (pacman/paru/yay):${DF_NC}"
     get_history | grep -E "^(pacman|paru|yay)" | wc -l | xargs printf "    %d\n"
     
-    echo -e "  ${CYAN}Editing (vim/nvim):${NC}"
+    echo -e "  ${DF_CYAN}Editing (vim/nvim):${DF_NC}"
     get_history | grep -E "^(vim|nvim)" | wc -l | xargs printf "    %d\n"
     
-    echo -e "  ${CYAN}Dotfiles Commands (dotfiles-):${NC}"
+    echo -e "  ${DF_CYAN}Dotfiles Commands (dotfiles-):${DF_NC}"
     get_history | grep "^dotfiles-" | wc -l | xargs printf "    %d\n"
     
     echo ""
@@ -161,15 +145,14 @@ show_heatmap() {
     
     echo ""
     if [[ -f "$HOME/.zsh_history" ]]; then
-        # Extract hour from zsh history timestamp
         grep "^:" "$HOME/.zsh_history" | awk -F'[: ]' '{print $2}' | \
         date -f - "+%H" 2>/dev/null | sort | uniq -c | sort -k2n | while read count hour; do
             local bar_length=$((count / 5))
             local bar=$(printf '█%.0s' $(seq 1 $bar_length))
-            printf "  ${CYAN}%02d:00${NC}  ${MAGENTA}%5d${NC}  ${GREEN}${bar}${NC}\n" "$hour" "$count"
+            printf "  ${DF_CYAN}%02d:00${DF_NC}  ${DF_MAGENTA}%5d${DF_NC}  ${DF_GREEN}${bar}${DF_NC}\n" "$hour" "$count"
         done
     else
-        echo "  ${YELLOW}⚠${NC} Zsh history file required for hourly breakdown"
+        echo "  ${DF_YELLOW}⚠${DF_NC} Zsh history file required for hourly breakdown"
     fi
     
     echo ""
@@ -182,10 +165,10 @@ show_dirs() {
     if [[ -f "$HOME/.zsh_history" ]]; then
         grep "cd " "$HOME/.zsh_history" | awk '{print $NF}' | sort | uniq -c | \
         sort -rn | head -15 | while read count dir; do
-            printf "  ${CYAN}%4d${NC}  ${YELLOW}%s${NC}\n" "$count" "$dir"
+            printf "  ${DF_CYAN}%4d${DF_NC}  ${DF_YELLOW}%s${DF_NC}\n" "$count" "$dir"
         done
     else
-        echo "  ${YELLOW}⚠${NC} Zsh history file required"
+        echo "  ${DF_YELLOW}⚠${DF_NC} Zsh history file required"
     fi
     
     echo ""
@@ -198,14 +181,14 @@ show_git_breakdown() {
     local total=$(get_history | grep "^git" | wc -l)
     
     if [[ $total -eq 0 ]]; then
-        echo "  ${YELLOW}No git commands found${NC}"
+        echo "  ${DF_YELLOW}No git commands found${DF_NC}"
         return
     fi
     
     get_history | grep "^git " | awk '{print $2}' | sort | uniq -c | sort -rn | \
     head -10 | while read count subcmd; do
         local percent=$((count * 100 / total))
-        printf "  ${YELLOW}git %-15s${NC}  ${CYAN}%4d${NC} (${MAGENTA}%3d%%${NC})\n" \
+        printf "  ${DF_YELLOW}git %-15s${DF_NC}  ${DF_CYAN}%4d${DF_NC} (${DF_MAGENTA}%3d%%${DF_NC})\n" \
             "$subcmd" "$count" "$percent"
     done
     
@@ -242,7 +225,6 @@ main() {
             show_git_breakdown
             ;;
         export)
-            # Export as JSON
             echo "{"
             echo "  \"total_commands\": $(get_history | wc -l),"
             echo "  \"unique_commands\": $(get_history | sort | uniq | wc -l),"

@@ -12,24 +12,20 @@
 # Only run in interactive shells
 [[ -o interactive ]] || return 0
 
+# Source shared colors (with fallback)
+source "${0:A:h}/../lib/colors.zsh" 2>/dev/null || \
+source "$HOME/.dotfiles/zsh/lib/colors.zsh" 2>/dev/null || {
+    typeset -g DF_RESET=$'\033[0m' DF_BOLD=$'\033[1m' DF_DIM=$'\033[2m'
+    typeset -g DF_BLUE=$'\033[38;5;39m' DF_CYAN=$'\033[38;5;51m'
+    typeset -g DF_GREEN=$'\033[38;5;82m' DF_YELLOW=$'\033[38;5;220m'
+    typeset -g DF_GREY=$'\033[38;5;242m' DF_NC=$'\033[0m'
+}
+
 # ============================================================================
-# MOTD Width, adjust if needed.
+# MOTD Width
 # ============================================================================
 
-_M_WIDTH=66
-
-# ============================================================================
-# Colors (ANSI escape codes)
-# ============================================================================
-
-_M_RESET=$'\033[0m'
-_M_BOLD=$'\033[1m'
-_M_DIM=$'\033[2m'
-_M_BLUE=$'\033[38;5;39m'
-_M_CYAN=$'\033[38;5;51m'
-_M_GREEN=$'\033[38;5;82m'
-_M_YELLOW=$'\033[38;5;220m'
-_M_GREY=$'\033[38;5;242m'
+typeset -g _M_WIDTH=66
 
 # ============================================================================
 # Info Gathering
@@ -64,7 +60,6 @@ _motd_disk() {
 # Box Drawing - Fixed Width
 # ============================================================================
 
-
 _motd_line() {
     local char="$1"
     local i
@@ -76,7 +71,6 @@ _motd_line() {
 }
 
 _motd_pad() {
-    # Pad a plain string to exact width
     local str="$1"
     local width="$2"
     local len=${#str}
@@ -101,14 +95,14 @@ show_motd() {
     local load=$(_motd_load)
     local mem=$(_motd_mem)
     local disk=$(_motd_disk)
-    local local_ip=$(hostname -i | awk -F" " '{print $1}')
+    local local_ip=$(hostname -i 2>/dev/null | awk -F" " '{print $1}' || echo "N/A")
     local hline=$(_motd_line '═')
     local inner=$((_M_WIDTH - 2))
 
     echo ""
     
     # Top border
-    echo "${_M_GREY}╒${hline}╕${_M_RESET}"
+    echo "${DF_GREY}╒${hline}╕${DF_NC}"
     
     # Header: hostname + datetime
     local h_left="✦ ${hostname}"
@@ -117,21 +111,17 @@ show_motd() {
     local h_pad=$(((inner - ${#h_left} - ${#h_center} - ${#h_right}) / 2 ))
     local h_spaces=""
     for ((i=0; i<h_pad; i++)); do h_spaces+=" "; done
-    echo "${_M_GREY}│${_M_RESET} ${_M_BOLD}${_M_BLUE}${h_left}${_M_RESET}${h_spaces}${_M_YELLOW}${h_center}${h_spaces}${_M_RESET}${_M_BOLD}${h_right}${_M_RESET}${_M_GREY} │${_M_RESET}"
+    echo "${DF_GREY}│${DF_NC} ${DF_BOLD}${DF_BLUE}${h_left}${DF_NC}${h_spaces}${DF_YELLOW}${h_center}${h_spaces}${DF_NC}${DF_BOLD}${h_right}${DF_NC}${DF_GREY} │${DF_NC}"
     
     # Separator
-    echo "${_M_GREY}╘${hline}╛${_M_RESET}"
+    echo "${DF_GREY}╘${hline}╛${DF_NC}"
     
-    # Stats line - build with exact spacing
-    local s1="${_M_YELLOW}▲ up:${_M_RESET}${uptime}"
-    local s2="${_M_CYAN}◆ load:${_M_RESET}${load}"
-    local s3="${_M_GREEN}◇ mem:${_M_RESET}${mem}"
-    local s4="${_M_BLUE}⊡${_M_RESET} ${disk}"
-    echo "${_M_GREY}${_M_DIM} 〘${_M_RESET}${s1}${_M_GREY}${_M_DIM}〙⎯〘${s2}${_M_GREY}${_M_DIM}〙⎯〘${s3}${_M_GREY}${_M_DIM}〙⎯〘${s4}${_M_GREY}${_M_DIM}〙 ${_M_RESET}"
-
-    
-    ## Bottom border
-    #echo "${_M_GREY}╘${hline}𜲂${_M_RESET}"
+    # Stats line
+    local s1="${DF_YELLOW}▲ up:${DF_NC}${uptime}"
+    local s2="${DF_CYAN}◆ load:${DF_NC}${load}"
+    local s3="${DF_GREEN}◇ mem:${DF_NC}${mem}"
+    local s4="${DF_BLUE}⊡${DF_NC} ${disk}"
+    echo "${DF_GREY}${DF_DIM} 〘${DF_NC}${s1}${DF_GREY}${DF_DIM}〙⎯〘${s2}${DF_GREY}${DF_DIM}〙⎯〘${s3}${DF_GREY}${DF_DIM}〙⎯〘${s4}${DF_GREY}${DF_DIM}〙 ${DF_NC}"
     
     echo ""
 }
@@ -148,7 +138,7 @@ show_motd_mini() {
     local uptime=$(_motd_uptime)
     local mem=$(_motd_mem)
 
-    echo "${_M_DIM}──${_M_RESET} ${_M_BOLD}${hostname}${_M_RESET} ${_M_DIM}│${_M_RESET} up:${uptime} ${_M_DIM}│${_M_RESET} mem:${mem} ${_M_DIM}──${_M_RESET}"
+    echo "${DF_DIM}──${DF_NC} ${DF_BOLD}${hostname}${DF_NC} ${DF_DIM}│${DF_NC} up:${uptime} ${DF_DIM}│${DF_NC} mem:${mem} ${DF_DIM}──${DF_NC}"
 }
 
 # ============================================================================

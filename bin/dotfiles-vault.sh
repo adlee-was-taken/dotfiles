@@ -5,54 +5,38 @@
 
 set -e
 
+readonly DOTFILES_HOME="${DOTFILES_HOME:-$HOME/.dotfiles}"
 readonly VAULT_DIR="${HOME}/.dotfiles/vault"
 readonly VAULT_FILE="${VAULT_DIR}/secrets.enc"
 
-# Color codes
-readonly RED='\033[0;31m'
-readonly GREEN='\033[0;32m'
-readonly YELLOW='\033[1;33m'
-readonly BLUE='\033[0;34m'
-readonly CYAN='\033[0;36m'
-readonly NC='\033[0m'
+# Source shared colors
+source "$DOTFILES_HOME/zsh/lib/colors.zsh" 2>/dev/null || {
+    DF_RED=$'\033[0;31m' DF_GREEN=$'\033[0;32m' DF_YELLOW=$'\033[1;33m'
+    DF_BLUE=$'\033[0;34m' DF_CYAN=$'\033[0;36m' DF_NC=$'\033[0m'
+    DF_GREY=$'\033[38;5;242m' DF_LIGHT_BLUE=$'\033[38;5;39m'
+    DF_BOLD=$'\033[1m' DF_DIM=$'\033[2m'
+}
 
 # ============================================================================
 # MOTD-style header
 # ============================================================================
 
-_M_WIDTH=66
-
 print_header() {
-    local user="${USER:-root}"
-    local hostname="${HOSTNAME:-$(hostname -s 2>/dev/null)}"
-    local script_name="dotfiles-vault"
-    local datetime=$(date '+%a %b %d %H:%M')
-    
-    # Colors
-    local _M_RESET=$'\033[0m'
-    local _M_BOLD=$'\033[1m'
-    local _M_DIM=$'\033[2m'
-    local _M_BLUE=$'\033[38;5;39m'
-    local _M_GREY=$'\033[38;5;242m'
-    
-    # Build horizontal line
-    local hline=""
-    for ((i=0; i<_M_WIDTH; i++)); do hline+="═"; done
-    local inner=$((_M_WIDTH - 2))
-    
-    # Header content
-    local h_left="✦ ${user}@${hostname}"
-    local h_center="${script_name}"
-    local h_right="${datetime}"
-    local h_pad=$(((inner - ${#h_left} - ${#h_center} - ${#h_right}) / 2))
-    local h_spaces=""
-    for ((i=0; i<h_pad; i++)); do h_spaces+=" "; done
-    
-    echo ""
-    echo -e "${_M_GREY}╒${hline}╕${_M_RESET}"
-    echo -e "${_M_GREY}│${_M_RESET} ${_M_BOLD}${_M_BLUE}${h_left}${_M_RESET}${h_spaces}${_M_DIM}${h_center}${h_spaces}${h_right}${_M_RESET} ${_M_GREY}│${_M_RESET}"
-    echo -e "${_M_GREY}╘${hline}╛${_M_RESET}"
-    echo ""
+    if declare -f df_print_header &>/dev/null; then
+        df_print_header "dotfiles-vault"
+    else
+        local user="${USER:-root}"
+        local hostname="${HOSTNAME:-$(hostname -s 2>/dev/null)}"
+        local datetime=$(date '+%a %b %d %H:%M')
+        local width=66
+        local hline="" && for ((i=0; i<width; i++)); do hline+="═"; done
+        
+        echo ""
+        echo -e "${DF_GREY}╒${hline}╕${DF_NC}"
+        echo -e "${DF_GREY}│${DF_NC} ${DF_BOLD}${DF_LIGHT_BLUE}✦ ${user}@${hostname}${DF_NC}      ${DF_DIM}dotfiles-vault${DF_NC}      ${datetime} ${DF_GREY}│${DF_NC}"
+        echo -e "${DF_GREY}╘${hline}╛${DF_NC}"
+        echo ""
+    fi
 }
 
 # ============================================================================
@@ -60,16 +44,16 @@ print_header() {
 # ============================================================================
 
 print_success() {
-    echo -e "${GREEN}✓${NC} $1"
+    echo -e "${DF_GREEN}✓${DF_NC} $1"
 }
 
 print_error() {
-    echo -e "${RED}✗${NC} $1" >&2
+    echo -e "${DF_RED}✗${DF_NC} $1" >&2
 }
 
 print_section() {
     echo ""
-    echo -e "${BLUE}▶${NC} $1"
+    echo -e "${DF_BLUE}▶${DF_NC} $1"
 }
 
 # ============================================================================
@@ -94,7 +78,6 @@ init_vault() {
     chmod 700 "$VAULT_DIR"
     
     if [[ ! -f "$VAULT_FILE" ]]; then
-        # Create empty encrypted file
         echo "{}" | $(get_cipher) > "$VAULT_FILE"
         print_success "Vault initialized"
     else
@@ -147,24 +130,19 @@ vault_set() {
         exit 1
     fi
     
-    # Get value from stdin if not provided
     if [[ -z "$value" ]]; then
         read -s -p "Enter value for $key: " value
         echo ""
     fi
     
-    # Decrypt current vault
     local current=$(decrypt_vault)
     
-    # Add new key-value pair (using jq if available, otherwise simple replacement)
     if command -v jq &> /dev/null; then
         local updated=$(echo "$current" | jq --arg k "$key" --arg v "$value" '.[$k] = $v')
     else
-        # Simple fallback without jq
         local updated="{\"$key\": \"$value\"}"
     fi
     
-    # Encrypt and save
     encrypt_vault "$updated"
     print_success "Secret stored: $key"
 }
@@ -182,7 +160,6 @@ vault_get() {
     if command -v jq &> /dev/null; then
         echo "$vault" | jq -r ".\"$key\" // \"\"" | grep -v "^$"
     else
-        # Simple grep fallback
         echo "$vault" | grep "\"$key\"" | cut -d'"' -f4
     fi
 }
@@ -194,12 +171,11 @@ vault_list() {
     
     if command -v jq &> /dev/null; then
         echo "$vault" | jq -r 'keys[]' | while read key; do
-            echo -e "  ${CYAN}•${NC} $key"
+            echo -e "  ${DF_CYAN}•${DF_NC} $key"
         done
     else
-        # Simple fallback
         echo "$vault" | grep -o '"[^"]*":' | sed 's/"//g' | sed 's/:$//' | while read key; do
-            echo -e "  ${CYAN}•${NC} $key"
+            echo -e "  ${DF_CYAN}•${DF_NC} $key"
         done
     fi
     
@@ -280,23 +256,23 @@ vault_status() {
     print_section "Vault Status"
     
     if [[ ! -d "$VAULT_DIR" ]]; then
-        echo -e "  ${YELLOW}⚠${NC} Vault not initialized"
+        echo -e "  ${DF_YELLOW}⚠${DF_NC} Vault not initialized"
         return
     fi
     
     if [[ ! -f "$VAULT_FILE" ]]; then
-        echo -e "  ${YELLOW}⚠${NC} Vault file not found"
+        echo -e "  ${DF_YELLOW}⚠${DF_NC} Vault file not found"
         return
     fi
     
     local size=$(du -h "$VAULT_FILE" | cut -f1)
     local modified=$(stat -c %y "$VAULT_FILE" 2>/dev/null | cut -d' ' -f1 || stat -f '%Sm' "$VAULT_FILE" 2>/dev/null)
     
-    echo -e "  ${CYAN}Location:${NC}     $VAULT_FILE"
-    echo -e "  ${CYAN}Size:${NC}         $size"
-    echo -e "  ${CYAN}Modified:${NC}     $modified"
-    echo -e "  ${CYAN}Encryption:${NC}   $(get_cipher)"
-    echo -e "  ${CYAN}Permissions:${NC}  $(stat -c '%a' $VAULT_FILE 2>/dev/null || stat -f '%a' "$VAULT_FILE")"
+    echo -e "  ${DF_CYAN}Location:${DF_NC}     $VAULT_FILE"
+    echo -e "  ${DF_CYAN}Size:${DF_NC}         $size"
+    echo -e "  ${DF_CYAN}Modified:${DF_NC}     $modified"
+    echo -e "  ${DF_CYAN}Encryption:${DF_NC}   $(get_cipher)"
+    echo -e "  ${DF_CYAN}Permissions:${DF_NC}  $(stat -c '%a' $VAULT_FILE 2>/dev/null || stat -f '%a' "$VAULT_FILE")"
     
     echo ""
 }
@@ -308,7 +284,6 @@ vault_status() {
 main() {
     print_header
     
-    # Initialize vault if not exists
     if [[ ! -d "$VAULT_DIR" ]]; then
         init_vault
     fi

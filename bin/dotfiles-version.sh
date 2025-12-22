@@ -2,17 +2,8 @@
 # ============================================================================
 # Dotfiles Version Checker
 # ============================================================================
-# Shows current and remote version info
-#
-# Usage:
-#   dotfiles-version.sh           # Show version info
-#   dotfiles-version.sh --check   # Check for updates (exit 1 if behind)
-# ============================================================================
 
-# ============================================================================
 # Load Configuration
-# ============================================================================
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_CONF="${SCRIPT_DIR}/../dotfiles.conf"
 [[ -f "$DOTFILES_CONF" ]] || DOTFILES_CONF="${SCRIPT_DIR}/dotfiles.conf"
@@ -27,81 +18,50 @@ else
     DOTFILES_RAW_URL="https://raw.githubusercontent.com/adlee-was-taken/dotfiles/main"
 fi
 
-# ============================================================================
-# Colors
-# ============================================================================
-
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-NC='\033[0m'
-
-# ============================================================================
-# MOTD-style header
-# ============================================================================
-
-_M_WIDTH=66
-
-print_header() {
-    local user="${USER:-root}"
-    local hostname="${HOSTNAME:-$(hostname -s 2>/dev/null)}"
-    local script_name="dotfiles-version"
-    local datetime=$(date '+%a %b %d %H:%M')
-    
-    # Colors
-    local _M_RESET=$'\033[0m'
-    local _M_BOLD=$'\033[1m'
-    local _M_DIM=$'\033[2m'
-    local _M_BLUE=$'\033[38;5;39m'
-    local _M_GREY=$'\033[38;5;242m'
-    
-    # Build horizontal line
-    local hline=""
-    for ((i=0; i<_M_WIDTH; i++)); do hline+="═"; done
-    local inner=$((_M_WIDTH - 2))
-    
-    # Header content
-    local h_left="✦ ${user}@${hostname}"
-    local h_center="${script_name}"
-    local h_right="${datetime}"
-    local h_pad=$(((inner - ${#h_left} - ${#h_center} - ${#h_right}) / 2))
-    local h_spaces=""
-    for ((i=0; i<h_pad; i++)); do h_spaces+=" "; done
-    
-    echo ""
-    echo -e "${_M_GREY}╒${hline}╕${_M_RESET}"
-    echo -e "${_M_GREY}│${_M_RESET} ${_M_BOLD}${_M_BLUE}${h_left}${_M_RESET}${h_spaces}${_M_DIM}${h_center}${h_spaces}${h_right}${_M_RESET} ${_M_GREY}│${_M_RESET}"
-    echo -e "${_M_GREY}╘${hline}╛${_M_RESET}"
-    echo ""
+# Source shared colors
+source "$DOTFILES_DIR/zsh/lib/colors.zsh" 2>/dev/null || {
+    DF_GREEN=$'\033[0;32m' DF_YELLOW=$'\033[1;33m' DF_CYAN=$'\033[0;36m'
+    DF_NC=$'\033[0m' DF_GREY=$'\033[38;5;242m' DF_LIGHT_BLUE=$'\033[38;5;39m'
+    DF_BOLD=$'\033[1m' DF_DIM=$'\033[2m'
 }
-
-# ============================================================================
-# Options
-# ============================================================================
 
 CHECK_ONLY=false
 
 for arg in "$@"; do
     case "$arg" in
-        --check|-c)
-            CHECK_ONLY=true
-            ;;
+        --check|-c) CHECK_ONLY=true ;;
         --help|-h)
             echo "Usage: dotfiles-version.sh [OPTIONS]"
-            echo
+            echo ""
             echo "Options:"
             echo "  --check    Only check for updates (exit 1 if behind)"
             echo "  --help     Show this help message"
-            echo
-            echo "Aliases:"
-            echo "  dfv, dfversion   Show version info"
-            echo
             exit 0
             ;;
     esac
 done
+
+# ============================================================================
+# MOTD-style header
+# ============================================================================
+
+print_header() {
+    if declare -f df_print_header &>/dev/null; then
+        df_print_header "dotfiles-version"
+    else
+        local user="${USER:-root}"
+        local hostname="${HOSTNAME:-$(hostname -s 2>/dev/null)}"
+        local datetime=$(date '+%a %b %d %H:%M')
+        local width=66
+        local hline="" && for ((i=0; i<width; i++)); do hline+="═"; done
+        
+        echo ""
+        echo -e "${DF_GREY}╒${hline}╕${DF_NC}"
+        echo -e "${DF_GREY}│${DF_NC} ${DF_BOLD}${DF_LIGHT_BLUE}✦ ${user}@${hostname}${DF_NC}      ${DF_DIM}dotfiles-version${DF_NC}      ${datetime} ${DF_GREY}│${DF_NC}"
+        echo -e "${DF_GREY}╘${hline}╛${DF_NC}"
+        echo ""
+    fi
+}
 
 # ============================================================================
 # Functions
@@ -132,7 +92,6 @@ get_local_date() {
 }
 
 get_remote_version() {
-    # Try to get version from remote dotfiles.conf
     local remote_conf=$(curl -fsSL "${DOTFILES_RAW_URL}/dotfiles.conf" 2>/dev/null)
     if [[ -n "$remote_conf" ]]; then
         echo "$remote_conf" | grep -oP 'DOTFILES_VERSION="\K[^"]+' || echo "unknown"
@@ -176,7 +135,6 @@ compare_versions() {
     if [[ "$local_v" == "$remote_v" ]]; then
         echo "current"
     else
-        # Simple semver comparison
         local local_parts=(${local_v//./ })
         local remote_parts=(${remote_v//./ })
 
@@ -220,44 +178,44 @@ main() {
 
     print_header
 
-    echo -e "${CYAN}Local:${NC}"
-    echo -e "  Version:  ${GREEN}${local_version}${NC}"
+    echo -e "${DF_CYAN}Local:${DF_NC}"
+    echo -e "  Version:  ${DF_GREEN}${local_version}${DF_NC}"
     echo -e "  Commit:   ${local_commit}"
     echo -e "  Date:     ${local_date}"
     echo -e "  Path:     ${DOTFILES_DIR}"
     echo
 
-    echo -e "${CYAN}Remote:${NC}"
+    echo -e "${DF_CYAN}Remote:${DF_NC}"
     echo -e "  Version:  ${remote_version}"
     echo -e "  Commit:   ${remote_commit}"
     echo -e "  Branch:   ${DOTFILES_BRANCH}"
     echo
 
-    echo -e "${CYAN}Status:${NC}"
+    echo -e "${DF_CYAN}Status:${DF_NC}"
 
     case "$version_status" in
         current)
-            echo -e "  Version:  ${GREEN}✓ Up to date${NC}"
+            echo -e "  Version:  ${DF_GREEN}✓ Up to date${DF_NC}"
             ;;
         behind)
-            echo -e "  Version:  ${YELLOW}⚠ New version available: ${remote_version}${NC}"
+            echo -e "  Version:  ${DF_YELLOW}⚠ New version available: ${remote_version}${DF_NC}"
             ;;
         ahead)
-            echo -e "  Version:  ${CYAN}ℹ Local is ahead of remote${NC}"
+            echo -e "  Version:  ${DF_CYAN}ℹ Local is ahead of remote${DF_NC}"
             ;;
         *)
-            echo -e "  Version:  ${YELLOW}? Cannot determine${NC}"
+            echo -e "  Version:  ${DF_YELLOW}? Cannot determine${DF_NC}"
             ;;
     esac
 
     if [[ "$commits_behind" -gt 0 ]]; then
-        echo -e "  Commits:  ${YELLOW}⚠ ${commits_behind} commit(s) behind${NC}"
+        echo -e "  Commits:  ${DF_YELLOW}⚠ ${commits_behind} commit(s) behind${DF_NC}"
         echo
-        echo -e "${YELLOW}To update:${NC}"
+        echo -e "${DF_YELLOW}To update:${DF_NC}"
         echo "  dfu                          # Alias"
         echo "  dotfiles-update.sh           # Full command"
     elif [[ "$commits_behind" == "0" ]]; then
-        echo -e "  Commits:  ${GREEN}✓ Up to date${NC}"
+        echo -e "  Commits:  ${DF_GREEN}✓ Up to date${DF_NC}"
     fi
 
     echo

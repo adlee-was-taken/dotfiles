@@ -9,24 +9,15 @@
 #   pw otp <item>              # Get OTP/TOTP code
 #   pw search <query>          # Search items
 #   pw copy <item>             # Copy password to clipboard
-#
-# Supported: LastPass (lpass)
-#
-# Add to .zshrc:
-#   source ~/.dotfiles/zsh/functions/password-manager.zsh
 # ============================================================================
 
-# ============================================================================
-# Configuration
-# ============================================================================
-
-# Colors
-typeset -g PW_GREEN=$'\033[0;32m'
-typeset -g PW_BLUE=$'\033[0;34m'
-typeset -g PW_YELLOW=$'\033[1;33m'
-typeset -g PW_CYAN=$'\033[0;36m'
-typeset -g PW_RED=$'\033[0;31m'
-typeset -g PW_NC=$'\033[0m'
+# Source shared colors (with fallback)
+source "${0:A:h}/../lib/colors.zsh" 2>/dev/null || \
+source "$HOME/.dotfiles/zsh/lib/colors.zsh" 2>/dev/null || {
+    typeset -g DF_GREEN=$'\033[0;32m' DF_BLUE=$'\033[0;34m'
+    typeset -g DF_YELLOW=$'\033[1;33m' DF_CYAN=$'\033[0;36m'
+    typeset -g DF_RED=$'\033[0;31m' DF_NC=$'\033[0m'
+}
 
 # ============================================================================
 # LastPass Functions
@@ -78,9 +69,8 @@ pw() {
     local cmd="${1:-help}"
     shift
     
-    # Check if lastpass is installed
     if ! command -v lpass &>/dev/null; then
-        echo -e "${PW_RED}✗${PW_NC} LastPass CLI (lpass) not installed"
+        echo -e "${DF_RED}✗${DF_NC} LastPass CLI (lpass) not installed"
         echo "Install with: yay -S lastpass-cli"
         return 1
     fi
@@ -133,7 +123,7 @@ pw() {
             ;;
         
         help|--help|-h|*)
-            echo -e "${PW_BLUE}Password Manager CLI (LastPass)${PW_NC}"
+            echo -e "${DF_BLUE}Password Manager CLI (LastPass)${DF_NC}"
             echo
             echo "Usage: pw <command> [args]"
             echo
@@ -174,7 +164,6 @@ alias pws='pw search'
 # ============================================================================
 
 if command -v fzf &>/dev/null; then
-    # Interactive password selection and copy
     pwf() {
         if ! command -v lpass &>/dev/null; then
             echo "LastPass CLI not installed"
@@ -188,7 +177,6 @@ if command -v fzf &>/dev/null; then
         fi
     }
     
-    # Interactive OTP selection and copy
     pwof() {
         if ! command -v lpass &>/dev/null; then
             echo "LastPass CLI not installed"

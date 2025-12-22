@@ -5,16 +5,17 @@
 
 set -e
 
-readonly DOTFILES_HOME="${DOTFILES_HOME:-.}"
+readonly DOTFILES_HOME="${DOTFILES_HOME:-$HOME/.dotfiles}"
 readonly DOTFILES_VERSION="3.0.0"
 
-# Color codes
-readonly RED='\033[0;31m'
-readonly GREEN='\033[0;32m'
-readonly YELLOW='\033[1;33m'
-readonly BLUE='\033[0;34m'
-readonly CYAN='\033[0;36m'
-readonly NC='\033[0m'
+# Source shared colors
+source "$DOTFILES_HOME/zsh/lib/colors.zsh" 2>/dev/null || {
+    # Fallback if colors.zsh not found
+    DF_RED=$'\033[0;31m' DF_GREEN=$'\033[0;32m' DF_YELLOW=$'\033[1;33m'
+    DF_BLUE=$'\033[0;34m' DF_CYAN=$'\033[0;36m' DF_NC=$'\033[0m'
+    DF_GREY=$'\033[38;5;242m' DF_LIGHT_BLUE=$'\033[38;5;39m'
+    DF_BOLD=$'\033[1m' DF_DIM=$'\033[2m'
+}
 
 # Track results
 TOTAL_CHECKS=0
@@ -26,39 +27,22 @@ WARNING_CHECKS=0
 # MOTD-style header
 # ============================================================================
 
-_M_WIDTH=66
-
 print_header() {
-    local user="${USER:-root}"
-    local hostname="${HOSTNAME:-$(hostname -s 2>/dev/null)}"
-    local script_name="dotfiles-doctor"
-    local datetime=$(date '+%a %b %d %H:%M')
-    
-    # Colors
-    local _M_RESET=$'\033[0m'
-    local _M_BOLD=$'\033[1m'
-    local _M_DIM=$'\033[2m'
-    local _M_BLUE=$'\033[38;5;39m'
-    local _M_GREY=$'\033[38;5;242m'
-    
-    # Build horizontal line
-    local hline=""
-    for ((i=0; i<_M_WIDTH; i++)); do hline+="═"; done
-    local inner=$((_M_WIDTH - 2))
-    
-    # Header content
-    local h_left="✦ ${user}@${hostname}"
-    local h_center="${script_name}"
-    local h_right="${datetime}"
-    local h_pad=$(((inner - ${#h_left} - ${#h_center} - ${#h_right}) / 2))
-    local h_spaces=""
-    for ((i=0; i<h_pad; i++)); do h_spaces+=" "; done
-    
-    echo ""
-    echo -e "${_M_GREY}╒${hline}╕${_M_RESET}"
-    echo -e "${_M_GREY}│${_M_RESET} ${_M_BOLD}${_M_BLUE}${h_left}${_M_RESET}${h_spaces}${_M_DIM}${h_center}${h_spaces}${h_right}${_M_RESET} ${_M_GREY}│${_M_RESET}"
-    echo -e "${_M_GREY}╘${hline}╛${_M_RESET}"
-    echo ""
+    if declare -f df_print_header &>/dev/null; then
+        df_print_header "dotfiles-doctor"
+    else
+        local user="${USER:-root}"
+        local hostname="${HOSTNAME:-$(hostname -s 2>/dev/null)}"
+        local datetime=$(date '+%a %b %d %H:%M')
+        local width=66
+        local hline="" && for ((i=0; i<width; i++)); do hline+="═"; done
+        
+        echo ""
+        echo -e "${DF_GREY}╒${hline}╕${DF_NC}"
+        echo -e "${DF_GREY}│${DF_NC} ${DF_BOLD}${DF_LIGHT_BLUE}✦ ${user}@${hostname}${DF_NC}      ${DF_DIM}dotfiles-doctor${DF_NC}      ${datetime} ${DF_GREY}│${DF_NC}"
+        echo -e "${DF_GREY}╘${hline}╛${DF_NC}"
+        echo ""
+    fi
 }
 
 # ============================================================================
@@ -66,25 +50,25 @@ print_header() {
 # ============================================================================
 
 print_section() {
-    echo -e "\n${BLUE}▶${NC} $1"
+    echo -e "\n${DF_BLUE}▶${DF_NC} $1"
 }
 
 check_pass() {
     ((PASSED_CHECKS++))
     ((TOTAL_CHECKS++))
-    echo -e "  ${GREEN}✓${NC} $1"
+    echo -e "  ${DF_GREEN}✓${DF_NC} $1"
 }
 
 check_fail() {
     ((FAILED_CHECKS++))
     ((TOTAL_CHECKS++))
-    echo -e "  ${RED}✗${NC} $1"
+    echo -e "  ${DF_RED}✗${DF_NC} $1"
 }
 
 check_warn() {
     ((WARNING_CHECKS++))
     ((TOTAL_CHECKS++))
-    echo -e "  ${YELLOW}⚠${NC} $1"
+    echo -e "  ${DF_YELLOW}⚠${DF_NC} $1"
 }
 
 # ============================================================================
@@ -314,23 +298,23 @@ check_dotfiles_dir() {
 
 print_summary() {
     echo ""
-    printf "${CYAN}─%.0s${NC}" {1..70}; echo ""
+    printf "${DF_CYAN}─%.0s${DF_NC}" {1..70}; echo ""
     
     if [[ $FAILED_CHECKS -eq 0 ]]; then
-        echo -e "${GREEN}✓${NC} All checks passed ($PASSED_CHECKS/$TOTAL_CHECKS)"
+        echo -e "${DF_GREEN}✓${DF_NC} All checks passed ($PASSED_CHECKS/$TOTAL_CHECKS)"
     else
-        echo -e "${RED}✗${NC} Some checks failed"
-        echo -e "  ${GREEN}Passed:${NC} $PASSED_CHECKS"
-        echo -e "  ${RED}Failed:${NC} $FAILED_CHECKS"
+        echo -e "${DF_RED}✗${DF_NC} Some checks failed"
+        echo -e "  ${DF_GREEN}Passed:${DF_NC} $PASSED_CHECKS"
+        echo -e "  ${DF_RED}Failed:${DF_NC} $FAILED_CHECKS"
         if [[ $WARNING_CHECKS -gt 0 ]]; then
-            echo -e "  ${YELLOW}Warnings:${NC} $WARNING_CHECKS"
+            echo -e "  ${DF_YELLOW}Warnings:${DF_NC} $WARNING_CHECKS"
         fi
     fi
     
     echo ""
     
     if [[ $FAILED_CHECKS -gt 0 ]]; then
-        echo -e "${YELLOW}💡 Tip:${NC} Run 'dotfiles-doctor.sh --fix' to attempt automatic fixes"
+        echo -e "${DF_YELLOW}💡 Tip:${DF_NC} Run 'dotfiles-doctor.sh --fix' to attempt automatic fixes"
         echo ""
         return 1
     fi
