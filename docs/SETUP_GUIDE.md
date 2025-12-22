@@ -1,6 +1,6 @@
 # Setup Guide
 
-Complete guide for installing, configuring, and maintaining your dotfiles.
+Complete guide for installing, configuring, and maintaining your Arch/CachyOS dotfiles.
 
 ## Table of Contents
 
@@ -19,14 +19,16 @@ Complete guide for installing, configuring, and maintaining your dotfiles.
 ## Prerequisites
 
 **Required:**
+- Arch Linux or CachyOS
 - Git
 - Curl
-- Zsh (installed automatically if missing)
+- Pacman (built-in)
 
 **Optional (for full features):**
 - `fzf` - For command palette and fuzzy finding
 - `age` or `gpg` - For secrets vault
-- `gum` - For beautiful setup wizard
+- `lastpass-cli` - For password manager integration
+- `nvim` - For Neovim support (Vim is sufficient)
 
 ---
 
@@ -54,7 +56,7 @@ The wizard will guide you through:
 Quick install with defaults:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/adlee-was-taken/dotfiles/main/install.sh | bash
+git clone https://github.com/adlee-was-taken/dotfiles.git ~/.dotfiles && cd ~/.dotfiles && ./install.sh
 ```
 
 ### Method 3: Standard Install
@@ -73,7 +75,7 @@ cd ~/.dotfiles
 ./install.sh                    # Interactive install
 ./install.sh --wizard           # TUI wizard
 ./install.sh --skip-deps        # Skip dependency installation
-./install.sh --deps-only        # Only install dependencies
+./install.sh --deps-only        # Only install dependencies, then exit
 ./install.sh --uninstall        # Remove symlinks
 ./install.sh --uninstall --purge # Remove everything
 ./install.sh --help             # Show all options
@@ -109,13 +111,13 @@ exec zsh
 # or just close and reopen your terminal
 ```
 
-### 3. Personalize Espanso (Optional)
+### 3. Configure LastPass (Optional)
 
 ```bash
-setup-espanso.sh
+pw list
+# First run will prompt you to login
+# Enter your LastPass email and master password
 ```
-
-This sets up your personal info for text expansion (email, name, signatures).
 
 ### 4. Set Up Secrets Vault (Optional)
 
@@ -155,7 +157,6 @@ USER_GITHUB="yourusername"
 GIT_USER_NAME=""              # Falls back to USER_FULLNAME
 GIT_USER_EMAIL=""             # Falls back to USER_EMAIL
 GIT_DEFAULT_BRANCH="main"
-GIT_CREDENTIAL_HELPER="store"
 
 # ============================================================================
 # Feature Toggles
@@ -167,7 +168,7 @@ INSTALL_ZSH_PLUGINS="true"    # zsh-autosuggestions, syntax-highlighting
 INSTALL_FZF="ask"
 INSTALL_BAT="ask"
 INSTALL_EZA="ask"
-INSTALL_ESPANSO="ask"
+INSTALL_NEOVIM="ask"
 SET_ZSH_DEFAULT="ask"
 
 # ============================================================================
@@ -260,7 +261,6 @@ dotfiles-stats.sh --suggest  # Alias recommendations
 dotfiles-stats.sh --heatmap  # Activity by hour
 dotfiles-stats.sh --dirs     # Most visited directories
 dotfiles-stats.sh --git      # Git command breakdown
-dotfiles-stats.sh --docker   # Docker command breakdown
 dotfiles-stats.sh --export   # Export as JSON
 
 # Aliases
@@ -284,7 +284,7 @@ dotfiles-vault.sh export backup.enc   # Backup encrypted vault
 dotfiles-vault.sh import backup.enc   # Restore vault
 dotfiles-vault.sh status              # Show vault info
 
-# Aliases (defined in aliases.zsh)
+# Aliases
 vault set KEY "value"
 vault get KEY
 vault list
@@ -294,6 +294,32 @@ vset KEY                              # vault set
 ```
 
 **Auto-loading:** Secrets are automatically loaded into your environment on shell start.
+
+### LastPass Integration
+
+Unified interface for LastPass CLI:
+
+```bash
+pw list                    # List all items
+pw get <item>              # Get password
+pw get <item> username     # Get specific field
+pw otp <item>              # Get TOTP/2FA code
+pw copy <item>             # Copy password to clipboard
+pw search <query>          # Search items
+pw lock                    # Logout/lock session
+pwf                        # Fuzzy search items, copy password (requires fzf)
+pwof                       # Fuzzy search items, copy OTP (requires fzf)
+```
+
+**Install LastPass CLI:**
+
+```bash
+# Via AUR with paru (recommended)
+paru -S lastpass-cli
+
+# Or with yay
+yay -S lastpass-cli
+```
 
 ### Dotfiles Sync
 
@@ -316,73 +342,19 @@ dfstatus                      # Show status
 
 **Auto-check:** On shell start, you'll be notified of available updates.
 
-### Password Manager Integration
-
-Unified interface for 1Password, LastPass, and Bitwarden:
-
-```bash
-pw list                    # List all items
-pw get <item>              # Get password
-pw get <item> username     # Get specific field
-pw otp <item>              # Get TOTP/2FA code
-pw copy <item>             # Copy password to clipboard
-pw search <query>          # Search items
-pw provider                # Show which CLI is being used
-pw lock                    # Lock session
-```
-
-**Interactive selection (requires fzf):**
-
-```bash
-pwf                        # Fuzzy search items, copy password
-pwof                       # Fuzzy search items, copy OTP
-```
-
-**Configuration in `dotfiles.conf`:**
-
-```bash
-INSTALL_1PASSWORD="ask"    # Install 1Password CLI (op)
-INSTALL_LASTPASS="ask"     # Install LastPass CLI (lpass)
-INSTALL_BITWARDEN="ask"    # Install Bitwarden CLI (bw)
-PASSWORD_MANAGER="auto"    # auto, 1password, lastpass, or bitwarden
-```
-
-**Manual CLI installation:**
-
-```bash
-# 1Password
-brew install --cask 1password-cli  # macOS
-# See: https://1password.com/downloads/command-line/
-
-# LastPass
-brew install lastpass-cli          # macOS
-sudo apt install lastpass-cli      # Ubuntu
-
-# Bitwarden
-brew install bitwarden-cli         # macOS
-npm install -g @bitwarden/cli      # Any platform
-```
-
 ### Dynamic MOTD
 
-System information displayed on shell start:
+System information displayed on shell startup:
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │ ✦ user@hostname                              Mon Dec 15 14:30│
 ├──────────────────────────────────────────────────────────────┤
-│ ▲ up:4d 7h   ◆ cpu:12%     ◇ mem:8.2/32G   ⊡ 234G free     │
-├──────────────────────────────────────────────────────────────┤
-│ ◉4 containers  ⎇2 dirty  ↑3 updates  ●dotfiles:✓            │
+│ ▲ up:4d 7h   ◆ load:0.45     ◇ mem:8.2/32G   ⊡ 234G free  │
 └──────────────────────────────────────────────────────────────┘
 ```
 
-**Shows:**
-- Uptime, CPU usage, memory, disk space
-- Docker containers running
-- Git repos with uncommitted changes
-- Available system updates
-- Dotfiles sync status
+Shows: uptime, load average, memory, disk space
 
 **Configuration:**
 
@@ -399,119 +371,64 @@ show_motd_mini             # Show single-line MOTD
 motd                       # Alias for show_motd
 ```
 
----
+### Snapper Integration
 
-## Command Aliases
-
-All dotfiles commands have convenient aliases defined in `~/.dotfiles/zsh/aliases.zsh`:
-
-### Core Commands
-
-| Alias | Full Command | Description |
-|-------|--------------|-------------|
-| `dotfiles` / `dfcd` | `cd ~/.dotfiles` | Go to dotfiles directory |
-| `dfd` / `doctor` | `dotfiles-doctor.sh` | Run health check |
-| `dffix` | `dotfiles-doctor.sh --fix` | Auto-fix issues |
-| `dfs` / `dfsync` | `dotfiles-sync.sh` | Interactive sync |
-| `dfpush` | `dotfiles-sync.sh --push` | Push local changes |
-| `dfpull` | `dotfiles-sync.sh --pull` | Pull remote changes |
-| `dfstatus` | `dotfiles-sync.sh --status` | Show sync status |
-| `dfu` / `dfupdate` | `dotfiles-update.sh` | Update dotfiles |
-| `dfv` / `dfversion` | `dotfiles-version.sh` | Show version |
-| `dfstats` / `stats` | `dotfiles-stats.sh` | Shell analytics |
-| `tophist` | `dotfiles-stats.sh --top` | Top commands |
-| `suggest` | `dotfiles-stats.sh --suggest` | Alias suggestions |
-| `dfcompile` | `dotfiles-compile.sh` | Compile zsh for speed |
-
-### Vault Commands
-
-| Alias | Full Command | Description |
-|-------|--------------|-------------|
-| `vault` | `dotfiles-vault.sh` | Vault CLI |
-| `vls` | `dotfiles-vault.sh list` | List secrets |
-| `vget` | `dotfiles-vault.sh get` | Get secret |
-| `vset` | `dotfiles-vault.sh set` | Set secret |
-
-### Quick Edit
-
-| Alias | Description |
-|-------|-------------|
-| `zshrc` | Edit ~/.zshrc |
-| `dfconf` | Edit dotfiles.conf |
-| `dfedit` | Open dotfiles in editor |
-| `reload` / `rl` | Reload shell config |
-
-### CLI Wrapper
-
-The `dotfiles-cli` (alias: `dfc`) provides a unified interface:
+Btrfs snapshot management for Arch/CachyOS with limine bootloader:
 
 ```bash
-dfc doctor          # Run health check
-dfc sync            # Sync dotfiles
-dfc update          # Update dotfiles
-dfc version         # Show version
-dfc stats           # Shell analytics
-dfc vault           # Secrets manager
-dfc compile         # Compile zsh for speed
-dfc edit            # Open in editor
-dfc cd              # Go to dotfiles dir
-dfc help            # Show help
+snap-create "Description"     # Create snapshot with validation
+snap-list [n]                 # Show last n snapshots (default: 10)
+snap-show <num>               # Details for specific snapshot
+snap-delete <num>             # Delete snapshot + update limine
+snap-check-limine             # Verify boot menu sync
+snap-sync                     # Manually trigger sync
+snap-info                     # Detailed breakdown by type
+snap-validate-service         # Check service health
 ```
 
----
-
-## Shell Optimization
-
-The `.zshrc` is optimized for fast startup while maintaining full functionality.
-
-### Measuring Startup Time
+**Install limine-snapper-sync:**
 
 ```bash
-# Quick measurement
-time zsh -i -c exit
-
-# More accurate (requires hyperfine)
-hyperfine 'zsh -i -c exit'
+paru -S limine-snapper-sync
+sudo systemctl enable limine-snapper-sync.service
 ```
 
-### Compile Zsh Files
+See [SNAPPER.md](docs/SNAPPER.md) for comprehensive guide.
 
-Pre-compile `.zsh` files to bytecode for 20-50ms speedup:
+### Tmux Workspace Manager
 
 ```bash
-dfcompile              # Compile all zsh files
-dfcompile --clean      # Remove compiled files
+tw <name>                     # Quick attach or create workspace
+tw-create <name> [template]   # Create from template
+tw-list                       # List all workspaces
+tw-delete <name>              # Delete workspace
+tw-save <name>                # Save current layout as template
+tw-sync                       # Toggle pane synchronization
+twf                           # Fuzzy search workspaces
+tw-templates                  # List available templates
 ```
 
-### Loading Strategy
+**Available Templates:**
+- `dev` - 3 panes: vim (50%), terminal (25%), logs (25%)
+- `ops` - 4-pane monitoring grid
+- `ssh-multi` - 4 panes for multi-server management
+- `debug` - 2 panes: main (70%), helper (30%)
+- `full` - Single full-screen pane
+- `review` - Side-by-side comparison panes
 
-| Phase | What Loads | Timing |
-|-------|------------|--------|
-| **Immediate** | PATH, history, oh-my-zsh, basic aliases, keybindings | Blocks prompt |
-| **Deferred** | Tool aliases (eza, bat), FZF, smart-suggest, snapper, vault | After first prompt |
-| **Background** | Dotfiles sync check | Fully async |
-| **Lazy** | NVM, kubectl, virtualenvwrapper | When first used |
+See [SSH_TMUX_INTEGRATION.md](docs/SSH_TMUX_INTEGRATION.md) for advanced workflows.
 
-### Profiling
+### SSH Session Manager
 
-To debug slow startup, edit `~/.zshrc`:
-
-```zsh
-# Uncomment at the TOP of file:
-zmodload zsh/zprof
-
-# Uncomment at the BOTTOM of file:
-zprof
+```bash
+ssh-save <name> <connection> [port] [key] [options] [description]
+ssh-connect <name>            # Connect with auto-tmux
+ssh-list                      # List all profiles
+sshf                          # Fuzzy search and connect
+ssh-delete <name>             # Delete profile
+ssh-reconnect                 # Quick reconnect
+ssh-sync-dotfiles <name>      # Deploy dotfiles to remote
 ```
-
-Then run `zsh -i -c exit` to see timing breakdown.
-
-### Tips for Fast Startup
-
-1. **Run `dfcompile`** after installation
-2. **Avoid adding** `command -v` checks in `.zshrc` (use `_has_cmd` cache instead)
-3. **Use lazy loading** for heavy tools (NVM, kubectl already lazy-loaded)
-4. **Keep `.zshrc.local`** minimal
 
 ---
 
@@ -534,7 +451,6 @@ Create `~/.zshrc.local` (not tracked by git):
 
 ```bash
 # Work machine
-export CORP_PROXY="http://proxy:8080"
 export WORK_EMAIL="me@company.com"
 
 # Local paths
@@ -628,11 +544,11 @@ dotfiles-doctor.sh --fix
 | Issue | Solution |
 |-------|----------|
 | Theme not loading | Check `ZSH_THEME="adlee"` in .zshrc, run `source ~/.zshrc` |
-| Zsh plugins missing | Run `./install.sh` (auto-installs plugins now) |
-| Command palette not working | Install fzf: `./install.sh` will prompt |
-| Vault errors | Install age: `brew install age` or `pacman -S age` |
-| Espanso not expanding | Run `espanso status`, then `espanso restart` |
-| Sync conflicts | Run `dotfiles-sync.sh --conflicts` to see conflicts |
+| Zsh plugins missing | Run `./install.sh` (auto-installs plugins) |
+| Command palette not working | Install fzf: `paru -S fzf` |
+| Vault errors | Install age: `paru -S age` or gpg: `paru -S gnupg` |
+| LastPass not working | Install: `paru -S lastpass-cli` |
+| Snapper integration broken | Enable service: `sudo systemctl enable limine-snapper-sync.service` |
 | Symlinks broken | Run `./install.sh --skip-deps` to recreate |
 
 ### Manual Fixes
@@ -669,7 +585,7 @@ chmod +x ~/.dotfiles/bin/*
 ./install.sh --help
 vault --help
 dotfiles-sync.sh --help
-shell-stats.sh --help
+dotfiles-stats.sh --help
 ```
 
 ---
@@ -699,10 +615,9 @@ This also removes the `~/.dotfiles` directory.
 
 ```bash
 # Remove symlinks
-rm ~/.zshrc ~/.gitconfig ~/.vimrc ~/.tmux.conf
+rm ~/.zshrc ~/.gitconfig ~/.vimrc ~/.tmux.conf ~/.config/nvim
 rm ~/.oh-my-zsh/themes/adlee.zsh-theme
-rm -rf ~/.config/espanso
-rm ~/.local/bin/dotfiles-*.sh ~/.local/bin/vault.sh ~/.local/bin/shell-stats.sh
+rm ~/.local/bin/dotfiles-*.sh
 
 # Restore backups (if any)
 ls ~/.dotfiles_backup_*
@@ -710,79 +625,9 @@ ls ~/.dotfiles_backup_*
 # Remove dotfiles
 rm -rf ~/.dotfiles
 
-# Optional: Remove oh-my-zsh
-rm -rf ~/.oh-my-zsh
-
 # Change shell back to bash
 chsh -s /bin/bash
 ```
-
----
-
-## File Reference
-
-### Symlinks Created
-
-| Source | Target |
-|--------|--------|
-| `~/.dotfiles/zsh/.zshrc` | `~/.zshrc` |
-| `~/.dotfiles/zsh/themes/adlee.zsh-theme` | `~/.oh-my-zsh/themes/adlee.zsh-theme` |
-| `~/.dotfiles/git/.gitconfig` | `~/.gitconfig` |
-| `~/.dotfiles/vim/.vimrc` | `~/.vimrc` |
-| `~/.dotfiles/tmux/.tmux.conf` | `~/.tmux.conf` |
-| `~/.dotfiles/espanso/` | `~/.config/espanso` |
-| `~/.dotfiles/bin/dotfiles-*.sh` | `~/.local/bin/dotfiles-*.sh` |
-
-### Directory Structure
-
-```
-~/.dotfiles/
-├── bin/                      # Core scripts (symlinked to ~/.local/bin)
-│   ├── dotfiles-doctor.sh
-│   ├── dotfiles-stats.sh
-│   ├── dotfiles-sync.sh
-│   ├── dotfiles-update.sh
-│   ├── dotfiles-vault.sh
-│   └── dotfiles-version.sh
-├── setup/                    # Setup scripts (not symlinked)
-│   ├── setup-wizard.sh
-│   └── setup-espanso.sh
-├── zsh/
-│   ├── .zshrc
-│   ├── aliases.zsh           # Dotfiles command aliases
-│   ├── themes/
-│   │   └── adlee.zsh-theme
-│   └── functions/
-│       ├── command-palette.zsh
-│       ├── motd.zsh
-│       ├── password-manager.zsh
-│       ├── smart-suggest.zsh
-│       └── snapper.zsh
-├── espanso/
-│   └── match/
-│       ├── base.yml
-│       └── personal.yml
-├── vault/                    # Encrypted secrets (gitignored)
-├── docs/
-├── dotfiles.conf
-└── install.sh
-```
-
-### Key Files
-
-| File | Purpose |
-|------|---------|
-| `dotfiles.conf` | Central configuration |
-| `zsh/.zshrc` | Main shell config |
-| `zsh/aliases.zsh` | Command aliases |
-| `zsh/themes/adlee.zsh-theme` | Prompt theme |
-| `zsh/functions/smart-suggest.zsh` | Typo correction |
-| `zsh/functions/command-palette.zsh` | Fuzzy launcher |
-| `zsh/functions/motd.zsh` | Dynamic MOTD |
-| `zsh/functions/password-manager.zsh` | Password manager integration |
-| `espanso/match/base.yml` | Text expansion snippets |
-| `espanso/match/personal.yml` | Personal snippets |
-| `vault/` | Encrypted secrets (gitignored) |
 
 ---
 
@@ -791,5 +636,26 @@ chsh -s /bin/bash
 - `.gitignore` excludes sensitive files (`.env`, `secrets/`, `*.local`, `vault/`)
 - Vault uses strong encryption (age/gpg)
 - Never commit API keys or tokens
-- Review `git/.gitconfig` before pushing (contains email)
 - Personal espanso snippets may contain sensitive info
+- Review `git/.gitconfig` before pushing (contains email)
+
+---
+
+## System Requirements Recap
+
+| Component | Requirement |
+|-----------|-------------|
+| OS | Arch Linux or CachyOS |
+| Shell | Zsh (auto-installed) |
+| Package Manager | Pacman (built-in) |
+| Editor | Vim (required) |
+| Editor | Neovim (optional) |
+| Password Manager | LastPass CLI (optional) |
+| Encryption | age or gpg (optional, for vault) |
+
+---
+
+For more detailed guides, see:
+- [SSH_TMUX_INTEGRATION.md](docs/SSH_TMUX_INTEGRATION.md) - SSH and Tmux integration
+- [SNAPPER.md](docs/SNAPPER.md) - Btrfs snapshot management
+- [ESPANSO.md](docs/ESPANSO.md) - Text expansion snippets

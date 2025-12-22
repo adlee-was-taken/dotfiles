@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 # ============================================================================
-# ADLee's Dotfiles Installation Script
+# ADLee's Dotfiles Installation Script (Arch/CachyOS)
 # ============================================================================
 # Quick install:
-#   curl -fsSL https://raw.githubusercontent.com/adlee-was-taken/dotfiles/main/install.sh | bash
-# Or:
 #   git clone https://github.com/adlee-was-taken/dotfiles.git && cd dotfiles && ./install.sh
 #
 # Options:
@@ -13,7 +11,7 @@
 #   --uninstall    Remove symlinks and optionally restore backups
 #   --help         Show help
 #
-# Fork this repo? Edit dotfiles.conf with your settings.
+# Note: This version is Arch/CachyOS only
 # ============================================================================
 
 set -e
@@ -58,14 +56,12 @@ for arg in "$@"; do
             echo
             echo "Configuration:"
             echo "  Edit dotfiles.conf to customize installation behavior"
-            echo "  Set INSTALL_DEPS=\"false\" to always skip dependencies"
             echo
             echo "Examples:"
             echo "  ./install.sh                    # Full install"
             echo "  ./install.sh --wizard           # Interactive wizard"
             echo "  ./install.sh --skip-deps        # Re-run without checking deps"
             echo "  ./install.sh --uninstall        # Remove symlinks"
-            echo "  ./install.sh --uninstall --purge # Remove everything"
             echo
             exit 0
             ;;
@@ -83,8 +79,8 @@ load_config() {
     if [[ -f "$conf_file" ]]; then
         source "$conf_file"
     else
-        # Fallback defaults for curl|bash install (before clone)
-        DOTFILES_VERSION="${DOTFILES_VERSION:-1.0.0}"
+        # Fallback defaults
+        DOTFILES_VERSION="${DOTFILES_VERSION:-1.2.0}"
         DOTFILES_GITHUB_USER="${DOTFILES_GITHUB_USER:-adlee-was-taken}"
         DOTFILES_REPO_NAME="${DOTFILES_REPO_NAME:-dotfiles}"
         DOTFILES_BRANCH="${DOTFILES_BRANCH:-main}"
@@ -95,10 +91,10 @@ load_config() {
         # Feature toggles
         INSTALL_DEPS="${INSTALL_DEPS:-auto}"
         INSTALL_ZSH_PLUGINS="${INSTALL_ZSH_PLUGINS:-true}"
-        INSTALL_ESPANSO="${INSTALL_ESPANSO:-ask}"
         INSTALL_FZF="${INSTALL_FZF:-ask}"
         INSTALL_BAT="${INSTALL_BAT:-ask}"
         INSTALL_EZA="${INSTALL_EZA:-ask}"
+        INSTALL_NEOVIM="${INSTALL_NEOVIM:-ask}"
         SET_ZSH_DEFAULT="${SET_ZSH_DEFAULT:-ask}"
 
         # Theme settings
@@ -107,8 +103,7 @@ load_config() {
         # Git settings
         GIT_USER_NAME="${GIT_USER_NAME:-}"
         GIT_USER_EMAIL="${GIT_USER_EMAIL:-}"
-        GIT_DEFAULT_BRANCH="${GIT_DEFAULT_BRANCH:-master}"
-        GIT_CREDENTIAL_HELPER="${GIT_CREDENTIAL_HELPER:-store}"
+        GIT_DEFAULT_BRANCH="${GIT_DEFAULT_BRANCH:-main}"
     fi
 }
 
@@ -133,7 +128,7 @@ NC='\033[0m'
 
 print_header() {
     echo -e "\n${BLUE}╔════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║${NC}  Dotfiles Installation  ${CYAN}v${DOTFILES_VERSION}${NC}                          ${BLUE}║${NC}"
+    echo -e "${BLUE}║${NC}  Dotfiles Installation  ${CYAN}v${DOTFILES_VERSION}${NC} (Arch/CachyOS)         ${BLUE}║${NC}"
     echo -e "${BLUE}║${NC}  Repo: ${DOTFILES_GITHUB_USER}/${DOTFILES_REPO_NAME}                        ${BLUE}║${NC}"
     echo -e "${BLUE}╚════════════════════════════════════════════════════════════╝${NC}\n"
 }
@@ -169,7 +164,6 @@ ask_yes_no() {
     [[ "$response" =~ ^[Yy]$ ]]
 }
 
-# Check feature toggle setting
 should_install() {
     local setting="$1"
     local name="$2"
@@ -189,6 +183,35 @@ should_install() {
 }
 
 # ============================================================================
+# OS Detection - Arch/CachyOS Only
+# ============================================================================
+
+detect_os() {
+    print_step "Detecting operating system"
+
+    if [[ ! "$OSTYPE" =~ linux-gnu ]]; then
+        print_error "This dotfiles requires Arch or CachyOS on Linux"
+        exit 1
+    fi
+
+    if [[ ! -f /etc/os-release ]]; then
+        print_error "Cannot determine Linux distribution"
+        exit 1
+    fi
+
+    source /etc/os-release
+    
+    if [[ "$ID" != "arch" && "$ID" != "cachyos" ]]; then
+        print_error "This dotfiles is configured for Arch/CachyOS only"
+        print_error "Detected: $ID $VERSION_ID"
+        exit 1
+    fi
+
+    OS="$ID"
+    print_success "Detected: $OS"
+}
+
+# ============================================================================
 # Uninstall Function
 # ============================================================================
 
@@ -203,9 +226,9 @@ do_uninstall() {
         "$HOME/.zshrc"
         "$HOME/.gitconfig"
         "$HOME/.vimrc"
+        "$HOME/.config/nvim"
         "$HOME/.tmux.conf"
         "$HOME/.oh-my-zsh/themes/${ZSH_THEME_NAME:-adlee}.zsh-theme"
-        "$HOME/.config/espanso"
     )
 
     for link in "${symlinks[@]}"; do
@@ -272,10 +295,6 @@ do_uninstall() {
     echo
     print_success "Uninstallation complete!"
     echo
-    echo "You may also want to:"
-    echo "  - Remove oh-my-zsh: rm -rf ~/.oh-my-zsh"
-    echo "  - Change shell back: chsh -s /bin/bash"
-    echo
     exit 0
 }
 
@@ -283,26 +302,6 @@ do_uninstall() {
 # Installation Functions
 # ============================================================================
 
-detect_os() {
-    print_step "Detecting operating system"
-
-    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        if [ -f /etc/os-release ]; then
-            . /etc/os-release
-            OS=$ID
-            OS_VERSION=$VERSION_ID
-        fi
-        print_success "Detected: Linux ($OS)"
-    elif [[ "$OSTYPE" == "darwin"* ]]; then
-        OS="macos"
-        print_success "Detected: macOS"
-    else
-        OS="unknown"
-        print_warning "Unknown OS: $OSTYPE"
-    fi
-}
-
-# Check if core dependencies are already installed
 check_core_deps() {
     command -v git &>/dev/null && command -v curl &>/dev/null && command -v zsh &>/dev/null
 }
@@ -315,12 +314,12 @@ install_dependencies() {
     fi
 
     # Skip if INSTALL_DEPS=false in config
-    if [[ "${INSTALL_DEPS}" == "false" || "${INSTALL_DEPS}" == "no" || "${INSTALL_DEPS}" == "0" ]]; then
+    if [[ "${INSTALL_DEPS}" == "false" || "${INSTALL_DEPS}" == "no" ]]; then
         print_step "Skipping dependencies (INSTALL_DEPS=false in config)"
         return 0
     fi
 
-    # Auto-detect: skip if deps already installed (default behavior)
+    # Auto-detect: skip if deps already installed
     if [[ "${INSTALL_DEPS}" == "auto" ]] && check_core_deps; then
         print_step "Dependencies check"
         print_success "Core dependencies already installed (git, curl, zsh)"
@@ -329,28 +328,8 @@ install_dependencies() {
 
     print_step "Installing dependencies"
 
-    case "$OS" in
-        ubuntu|debian)
-            sudo apt-get update
-            sudo apt-get install -y git curl zsh
-            ;;
-        fedora|rhel|centos)
-            sudo dnf install -y git curl zsh
-            ;;
-        arch|cachyos)
-            sudo pacman -Sy --noconfirm git curl zsh
-            ;;
-        macos)
-            if ! command -v brew &> /dev/null; then
-                print_warning "Homebrew not found. Installing..."
-                /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-            fi
-            brew install git curl zsh
-            ;;
-        *)
-            print_warning "Please install git, curl, and zsh manually"
-            ;;
-    esac
+    # Arch/CachyOS only
+    sudo pacman -Sy --noconfirm git curl zsh
 
     print_success "Dependencies installed"
 }
@@ -370,7 +349,7 @@ clone_or_update_dotfiles() {
         print_success "Dotfiles cloned to $DOTFILES_DIR"
     fi
 
-    # Reload config after clone (now we have dotfiles.conf)
+    # Reload config after clone
     load_config
 }
 
@@ -442,11 +421,9 @@ install_zsh_plugins() {
 configure_git() {
     print_step "Configuring git"
 
-    # Determine git user info (config > user identity > prompt)
     local git_name="${GIT_USER_NAME:-$USER_FULLNAME}"
     local git_email="${GIT_USER_EMAIL:-$USER_EMAIL}"
 
-    # Prompt if still empty
     if [[ -z "$git_name" ]]; then
         local current_name=$(git config --global user.name 2>/dev/null || echo "")
         if [[ -n "$current_name" ]]; then
@@ -471,12 +448,12 @@ configure_git() {
 
     cat > "$gitconfig_path" << EOF
 [init]
-	defaultBranch = ${GIT_DEFAULT_BRANCH:-master}
+	defaultBranch = ${GIT_DEFAULT_BRANCH:-main}
 [user]
 	email = ${git_email}
 	name = ${git_name}
 [credential]
-	helper = ${GIT_CREDENTIAL_HELPER:-store}
+	helper = store
 [core]
 	editor = vim
 	autocrlf = input
@@ -494,7 +471,7 @@ EOF
 
     print_success "Generated: .gitconfig"
 
-    # Also set git config directly (in case symlink isn't in place yet)
+    # Also set git config directly
     [[ -n "$git_name" ]] && git config --global user.name "$git_name"
     [[ -n "$git_email" ]] && git config --global user.email "$git_email"
 }
@@ -524,6 +501,13 @@ link_dotfiles() {
     if [ -f "$DOTFILES_DIR/vim/.vimrc" ]; then
         ln -sf "$DOTFILES_DIR/vim/.vimrc" "$HOME/.vimrc"
         print_success "Linked: .vimrc"
+    fi
+
+    # Link neovim config (if it exists)
+    if [ -d "$DOTFILES_DIR/nvim" ]; then
+        mkdir -p "$HOME/.config"
+        ln -sf "$DOTFILES_DIR/nvim" "$HOME/.config/nvim"
+        print_success "Linked: nvim config"
     fi
 
     # Link tmux.conf
@@ -569,103 +553,13 @@ set_zsh_default() {
     fi
 }
 
-install_espanso() {
-    if command -v espanso &> /dev/null; then
-        print_success "espanso already installed"
-        return 0
-    fi
-
-    print_step "Installing espanso (text expander)"
-
-    case "$OS" in
-        ubuntu|debian)
-            sudo apt-get install -y wget
-            ESPANSO_VERSION="2.2.1"
-            wget "https://github.com/espanso/espanso/releases/download/v${ESPANSO_VERSION}/espanso-debian-x11-amd64.deb" -O /tmp/espanso.deb
-            sudo apt install /tmp/espanso.deb
-            rm /tmp/espanso.deb
-            espanso service register
-            print_success "espanso installed (X11 version)"
-            ;;
-        fedora|rhel|centos)
-            sudo dnf install -y wget
-            ESPANSO_VERSION="2.2.1"
-            wget "https://github.com/espanso/espanso/releases/download/v${ESPANSO_VERSION}/espanso-fedora-x11-amd64.rpm" -O /tmp/espanso.rpm
-            sudo dnf install /tmp/espanso.rpm
-            rm /tmp/espanso.rpm
-            espanso service register
-            print_success "espanso installed"
-            ;;
-        arch|cachyos)
-            if ! command -v paru &> /dev/null; then
-                print_warning "paru not found, attempting to install..."
-                sudo pacman -S --needed --noconfirm base-devel git
-                cd /tmp
-                git clone https://aur.archlinux.org/paru.git
-                cd paru
-                makepkg -si --noconfirm
-                cd ~
-                rm -rf /tmp/paru
-                print_success "paru installed"
-            fi
-            paru -S --noconfirm espanso-bin
-            espanso service register
-            print_success "espanso installed"
-            ;;
-        macos)
-            brew tap espanso/espanso
-            brew install espanso
-            espanso service register
-            print_success "espanso installed"
-            ;;
-        *)
-            print_warning "Please install espanso manually from: https://espanso.org/install/"
-            return 1
-            ;;
-    esac
-}
-
-link_espanso_config() {
-    print_step "Linking espanso configuration"
-
-    if [ -d "$DOTFILES_DIR/espanso" ]; then
-        if [ -d "$HOME/.config/espanso" ] && [ ! -L "$HOME/.config/espanso" ]; then
-            mkdir -p "$BACKUP_DIR"
-            mv "$HOME/.config/espanso" "$BACKUP_DIR/espanso"
-            print_success "Backed up existing espanso config"
-        fi
-
-        [ -L "$HOME/.config/espanso" ] && rm "$HOME/.config/espanso"
-        mkdir -p "$HOME/.config"
-        ln -sf "$DOTFILES_DIR/espanso" "$HOME/.config/espanso"
-        print_success "Linked: espanso config"
-
-        if command -v espanso &> /dev/null; then
-            espanso restart 2>/dev/null || true
-            print_success "Restarted espanso service"
-        fi
-    else
-        print_warning "No espanso config found in dotfiles"
-    fi
-}
-
 install_optional_tools() {
     print_step "Optional tools"
 
-    # espanso
-    if ! command -v espanso &> /dev/null; then
-        if should_install "$INSTALL_ESPANSO" "espanso (text expander)"; then
-            install_espanso
-        fi
-    else
-        print_success "espanso already installed"
-    fi
-
     # fzf
-    if ! command -v fzf &> /dev/null; then
+    if ! command -v fzf &>/dev/null; then
         if should_install "$INSTALL_FZF" "fzf (fuzzy finder)"; then
-            git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
-            ~/.fzf/install --all
+            sudo pacman -S --noconfirm fzf
             print_success "fzf installed"
         fi
     else
@@ -673,14 +567,9 @@ install_optional_tools() {
     fi
 
     # bat
-    if ! command -v bat &> /dev/null && ! command -v batcat &> /dev/null; then
+    if ! command -v bat &>/dev/null; then
         if should_install "$INSTALL_BAT" "bat (better cat)"; then
-            case "$OS" in
-                ubuntu|debian) sudo apt-get install -y bat ;;
-                fedora|rhel|centos) sudo dnf install -y bat ;;
-                arch|cachyos) sudo pacman -S --noconfirm bat ;;
-                macos) brew install bat ;;
-            esac
+            sudo pacman -S --noconfirm bat
             print_success "bat installed"
         fi
     else
@@ -688,110 +577,51 @@ install_optional_tools() {
     fi
 
     # eza
-    if ! command -v eza &> /dev/null; then
+    if ! command -v eza &>/dev/null; then
         if should_install "$INSTALL_EZA" "eza (better ls)"; then
-            case "$OS" in
-                ubuntu|debian) sudo apt-get install -y eza ;;
-                fedora|rhel|centos) sudo dnf install -y eza ;;
-                arch|cachyos) sudo pacman -S --noconfirm eza ;;
-                macos) brew install eza ;;
-            esac
+            sudo pacman -S --noconfirm eza
             print_success "eza installed"
         fi
     else
         print_success "eza already installed"
     fi
+
+    # neovim
+    if ! command -v nvim &>/dev/null; then
+        if should_install "$INSTALL_NEOVIM" "neovim"; then
+            sudo pacman -S --noconfirm neovim
+            print_success "neovim installed"
+        fi
+    else
+        print_success "neovim already installed"
+    fi
 }
 
-install_password_managers() {
-    print_step "Password manager CLI tools"
-
-    # 1Password CLI
-    if ! command -v op &> /dev/null; then
-        if should_install "$INSTALL_1PASSWORD" "1Password CLI (op)"; then
-            case "$OS" in
-                ubuntu|debian)
-                    curl -sS https://downloads.1password.com/linux/keys/1password.asc | sudo gpg --dearmor --output /usr/share/keyrings/1password-archive-keyring.gpg
-                    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/1password-archive-keyring.gpg] https://downloads.1password.com/linux/debian/$(dpkg --print-architecture) stable main" | sudo tee /etc/apt/sources.list.d/1password.list
-                    sudo apt update && sudo apt install -y 1password-cli
-                    ;;
-                fedora|rhel|centos)
-                    sudo rpm --import https://downloads.1password.com/linux/keys/1password.asc
-                    sudo sh -c 'echo -e "[1password]\nname=1Password Stable Channel\nbaseurl=https://downloads.1password.com/linux/rpm/stable/\$basearch\nenabled=1\ngpgcheck=1\nrepo_gpgcheck=1\ngpgkey=https://downloads.1password.com/linux/keys/1password.asc" > /etc/yum.repos.d/1password.repo'
-                    sudo dnf install -y 1password-cli
-                    ;;
-                arch|cachyos)
-                    if command -v paru &>/dev/null; then
-                        paru -S --noconfirm 1password-cli
-                    elif command -v yay &>/dev/null; then
-                        yay -S --noconfirm 1password-cli
-                    else
-                        print_warning "Install 1password-cli from AUR manually"
-                    fi
-                    ;;
-                macos)
-                    brew install --cask 1password-cli
-                    ;;
-            esac
-            command -v op &>/dev/null && print_success "1Password CLI installed"
-        fi
-    else
-        print_success "1Password CLI already installed"
-    fi
-
-    # LastPass CLI
-    if ! command -v lpass &> /dev/null; then
-        if should_install "$INSTALL_LASTPASS" "LastPass CLI (lpass)"; then
-            case "$OS" in
-                ubuntu|debian)
-                    sudo apt-get install -y lastpass-cli
-                    ;;
-                fedora|rhel|centos)
-                    sudo dnf install -y lastpass-cli
-                    ;;
-                arch|cachyos)
-                    sudo pacman -S --noconfirm lastpass-cli
-                    ;;
-                macos)
-                    brew install lastpass-cli
-                    ;;
-            esac
-            command -v lpass &>/dev/null && print_success "LastPass CLI installed"
-        fi
-    else
+install_lastpass() {
+    if command -v lpass &>/dev/null; then
         print_success "LastPass CLI already installed"
+        return 0
     fi
 
-    # Bitwarden CLI
-    if ! command -v bw &> /dev/null; then
-        if should_install "$INSTALL_BITWARDEN" "Bitwarden CLI (bw)"; then
-            case "$OS" in
-                ubuntu|debian|fedora|rhel|centos)
-                    if command -v npm &>/dev/null; then
-                        sudo npm install -g @bitwarden/cli
-                    else
-                        print_warning "Bitwarden CLI requires npm. Install Node.js first."
-                    fi
-                    ;;
-                arch|cachyos)
-                    if command -v paru &>/dev/null; then
-                        paru -S --noconfirm bitwarden-cli
-                    elif command -v yay &>/dev/null; then
-                        yay -S --noconfirm bitwarden-cli
-                    else
-                        sudo pacman -S --noconfirm bitwarden-cli 2>/dev/null || {
-                            [[ -x "$(command -v npm)" ]] && sudo npm install -g @bitwarden/cli
-                        }
-                    fi
-                    ;;
-                macos)
-                    brew install bitwarden-cli
-                    ;;
-            esac
-            command -v bw &>/dev/null && print_success "Bitwarden CLI installed"
-        fi
+    # Try AUR first
+    if command -v paru &>/dev/null; then
+        paru -S --noconfirm lastpass-cli
+        print_success "LastPass CLI installed via paru"
+        return 0
+    fi
+
+    if command -v yay &>/dev/null; then
+        yay -S --noconfirm lastpass-cli
+        print_success "LastPass CLI installed via yay"
+        return 0
+    fi
+
+    # Fallback to pacman (may not have lastpass-cli)
+    if sudo pacman -S --noconfirm lastpass-cli 2>/dev/null; then
+        print_success "LastPass CLI installed"
     else
-        print_success "Bitwarden CLI already installed"
+        print_warning "LastPass CLI not found in repositories"
+        print_warning "Install manually: yay -S lastpass-cli"
     fi
 }
 
@@ -804,28 +634,6 @@ main() {
     if [[ "$UNINSTALL" == true ]]; then
         load_config
         do_uninstall
-    fi
-
-    # Handle wizard mode
-    if [[ "$RUN_WIZARD" == true ]]; then
-        load_config
-        local wizard_script="$DOTFILES_DIR/setup/setup-wizard.sh"
-        
-        # If dotfiles not yet cloned, clone first
-        if [[ ! -f "$wizard_script" ]]; then
-            detect_os
-            install_dependencies
-            clone_or_update_dotfiles
-            load_config
-            wizard_script="$DOTFILES_DIR/setup/setup-wizard.sh"
-        fi
-        
-        if [[ -f "$wizard_script" ]]; then
-            exec bash "$wizard_script"
-        else
-            print_error "Wizard script not found: $wizard_script"
-            exit 1
-        fi
     fi
 
     print_header
@@ -846,37 +654,30 @@ main() {
         backup_existing_configs
         install_oh_my_zsh
 
-        # Install zsh plugins if enabled
-        if [[ "${INSTALL_ZSH_PLUGINS}" == "true" || "${INSTALL_ZSH_PLUGINS}" == "yes" || "${INSTALL_ZSH_PLUGINS}" == "1" ]]; then
+        if [[ "${INSTALL_ZSH_PLUGINS}" == "true" ]]; then
             install_zsh_plugins
         fi
 
         configure_git
         link_dotfiles
-        link_espanso_config
         set_zsh_default
         install_optional_tools
-        install_password_managers
+        install_lastpass
 
         echo
         print_success "Installation complete!"
         echo
         echo -e "${BLUE}Next steps:${NC}"
         echo "  1. Restart your terminal or run: exec zsh"
-        echo "  2. Your old configs are backed up in: $BACKUP_DIR"
-        echo "  3. Customize settings in: $DOTFILES_DIR/dotfiles.conf"
-        echo "  4. Run 'dfd' or 'dotfiles-doctor.sh' to verify installation"
+        echo "  2. Customize settings in: $DOTFILES_DIR/dotfiles.conf"
+        echo "  3. Run 'dfd' or 'dotfiles-doctor.sh' to verify installation"
         echo
         echo -e "${BLUE}Useful commands:${NC}"
         echo "  dfd / doctor      - Health check"
         echo "  dfs / dfsync      - Sync dotfiles"
         echo "  dfu / dfupdate    - Update dotfiles"
         echo "  dfstats / stats   - Shell analytics"
-        echo "  dfcompile         - Compile zsh for speed"
         echo "  vault             - Secrets manager"
-        echo
-        echo -e "${BLUE}To uninstall:${NC}"
-        echo "  ./install.sh --uninstall"
         echo
     else
         print_warning "Installation cancelled"
