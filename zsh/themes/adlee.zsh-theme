@@ -76,7 +76,7 @@ _adlee_format_elapsed_time() {
 
 _adlee_build_prompt() {
     # %(#.TRUE.FALSE) - red for root, blue for users
-    if [[ -n $var && $var -gt 0 ]];then
+    if [[ -n $UPDATE_PKG_COUNT && $UPDATE_PKG_COUNT -gt 0 ]];then
         PROMPT='%{$FG[239]%}┌[%{$FG[118]%}%n@%m%{$reset_color$FG[239]%}]─[%{$FG[179]%}%~%{$reset_color$FG[239]%}$(git_prompt_info)%{$FG[239]%}]─[%{$FG[179]%}↟${UPDATE_PKG_COUNT}%{$reset_color$FG[239]%}]
 %{$FG[239]%}└%{$FX[bold]%}%(#.%{$FG[196]%}.%{$FG[069]%})%#%{$reset_color%} '
     else
