@@ -51,7 +51,7 @@ print_header() {
 
     echo ""
     echo -e "${_M_GREY}╒${hline}╕${_M_RESET}"
-    echo -e "${_M_GREY}│${_M_RESET} ${_M_BOLD}${_M_BLUE}${h_left}${_M_RESET}${h_spaces}${_M_DIM}${h_center}${h_spaces}${h_right}${_M_RESET} ${_M_GREY}│${_M_RESET}"
+    echo -e "${_M_GREY}│${_M_RESET} ${_M_BOLD}${_M_BLUE}${h_left}${_M_RESET}${h_spaces}${_M_MAGENTA}${h_center}${h_spaces}${h_right}${_M_RESET} ${_M_GREY}│${_M_RESET}"
     echo -e "${_M_GREY}╘${hline}╛${_M_RESET}"
     echo ""
 }
