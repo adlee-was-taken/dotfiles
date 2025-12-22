@@ -55,7 +55,6 @@ print_header() {
     echo -e "${_M_GREY}╒${hline}╕${_M_RESET}"
     echo -e "${_M_GREY}│${_M_RESET} ${_M_BOLD}${_M_BLUE}${h_left}${_M_RESET}${h_spaces}${_M_GREEN}${h_center}${h_spaces}${_M_RESET}${_M_BOLD}${h_right}${_M_RESET} ${_M_GREY}│${_M_RESET}"
     echo -e "${_M_GREY}╘${hline}╛${_M_RESET}"
-    echo ""
 }
 
 # ============================================================================
@@ -166,7 +165,7 @@ show_status_short() {
     else
         echo -e "  ${GREEN}✓${NC} Dotfiles: in sync"
     fi
-    echo -e ""
+    echo ""
 }
 
 show_diff() {
