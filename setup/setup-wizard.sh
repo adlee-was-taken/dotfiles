@@ -42,6 +42,45 @@ DIM='\033[2m'
 NC='\033[0m'
 
 # ============================================================================
+# MOTD-style header
+# ============================================================================
+
+_M_WIDTH=66
+
+print_header() {
+    local user="${USER:-root}"
+    local hostname="${HOSTNAME:-$(hostname -s 2>/dev/null)}"
+    local script_name="setup-wizard"
+    local datetime=$(date '+%a %b %d %H:%M')
+    
+    # Colors
+    local _M_RESET=$'\033[0m'
+    local _M_BOLD=$'\033[1m'
+    local _M_DIM=$'\033[2m'
+    local _M_BLUE=$'\033[38;5;39m'
+    local _M_GREY=$'\033[38;5;242m'
+    
+    # Build horizontal line
+    local hline=""
+    for ((i=0; i<_M_WIDTH; i++)); do hline+="═"; done
+    local inner=$((_M_WIDTH - 2))
+    
+    # Header content
+    local h_left="✦ ${user}@${hostname}"
+    local h_center="${script_name}"
+    local h_right="${datetime}"
+    local h_pad=$(((inner - ${#h_left} - ${#h_center} - ${#h_right}) / 2))
+    local h_spaces=""
+    for ((i=0; i<h_pad; i++)); do h_spaces+=" "; done
+    
+    echo ""
+    echo -e "${_M_GREY}╒${hline}╕${_M_RESET}"
+    echo -e "${_M_GREY}│${_M_RESET} ${_M_BOLD}${_M_BLUE}${h_left}${_M_RESET}${h_spaces}${_M_DIM}${h_center}${h_spaces}${h_right}${_M_RESET} ${_M_GREY}│${_M_RESET}"
+    echo -e "${_M_GREY}╘${hline}╛${_M_RESET}"
+    echo ""
+}
+
+# ============================================================================
 # Gum Detection & Installation
 # ============================================================================
 
@@ -167,8 +206,7 @@ wizard_choose() {
             echo "  $i) $opt"
             ((i++))
         done
-        read -p "Choice [1]: " choice
-        choice=${choice:-1}
+        read -p "Enter choice [1-${#options[@]}]: " choice
         echo "${options[$((choice-1))]}"
     fi
 }
@@ -182,65 +220,31 @@ wizard_multichoose() {
         echo "$prompt" >&2
         printf '%s\n' "${options[@]}" | gum choose --no-limit
     else
-        echo "$prompt (comma-separated numbers, or 'all'):"
+        echo "$prompt (comma-separated numbers)"
         local i=1
         for opt in "${options[@]}"; do
             echo "  $i) $opt"
             ((i++))
         done
-        read -p "Choices [all]: " choices
-        choices=${choices:-all}
-        
-        if [[ "$choices" == "all" ]]; then
-            printf '%s\n' "${options[@]}"
-        else
-            IFS=',' read -ra selected <<< "$choices"
-            for idx in "${selected[@]}"; do
-                idx=$(echo "$idx" | tr -d ' ')
-                echo "${options[$((idx-1))]}"
-            done
-        fi
-    fi
-}
-
-wizard_password() {
-    local prompt="$1"
-    
-    if [[ "$HAS_GUM" == true ]]; then
-        gum input --password --prompt "$prompt: "
-    else
-        read -sp "$prompt: " password
-        echo
-        echo "$password"
+        read -p "Enter choices: " choices
+        IFS=',' read -ra nums <<< "$choices"
+        for num in "${nums[@]}"; do
+            echo "${options[$((num-1))]}"
+        done
     fi
 }
 
 wizard_write() {
-    local placeholder="$1"
+    local prompt="$1"
+    local placeholder="${2:-Type here...}"
     
     if [[ "$HAS_GUM" == true ]]; then
-        gum write --placeholder "$placeholder"
+        gum write --placeholder "$placeholder" --header "$prompt"
     else
-        echo "Enter text (Ctrl+D when done):"
+        echo "$prompt"
+        echo "(Enter text, then Ctrl+D when done)"
         cat
     fi
-}
-
-show_progress() {
-    local current="$1"
-    local total="$2"
-    local task="$3"
-    local width=40
-    local percent=$((current * 100 / total))
-    local filled=$((current * width / total))
-    local empty=$((width - filled))
-    
-    printf "\r${CYAN}[${NC}"
-    printf "%${filled}s" | tr ' ' '▓'
-    printf "%${empty}s" | tr ' ' '░'
-    printf "${CYAN}]${NC} %3d%% %s" "$percent" "$task"
-    
-    [[ $current -eq $total ]] && echo
 }
 
 # ============================================================================
@@ -249,404 +253,205 @@ show_progress() {
 
 step_welcome() {
     clear
-    wizard_header "🚀 Dotfiles Setup Wizard v${DOTFILES_VERSION}"
+    print_header
+    wizard_header "🚀 Welcome to Dotfiles Setup Wizard"
     
-    if [[ "$HAS_GUM" == true ]]; then
-        gum style \
-            --foreground 252 \
-            --margin "0 2" \
-            "This wizard will help you set up your development environment." \
-            "" \
-            "We'll configure:" \
-            "  • Shell (zsh + oh-my-zsh + plugins)" \
-            "  • Git identity" \
-            "  • Theme and prompt" \
-            "  • Optional tools (fzf, bat, eza, espanso)" \
-            "" \
-            "Your existing configs will be backed up automatically."
-    else
-        echo "This wizard will help you set up your development environment."
-        echo
-        echo "We'll configure:"
-        echo "  • Shell (zsh + oh-my-zsh + plugins)"
-        echo "  • Git identity"
-        echo "  • Theme and prompt"
-        echo "  • Optional tools (fzf, bat, eza, espanso)"
-        echo
-        echo "Your existing configs will be backed up automatically."
-    fi
-    
+    echo -e "${DIM}This wizard will help you configure your dotfiles installation."
+    echo -e "You can re-run this wizard anytime with: dotfiles --wizard${NC}"
     echo
-    wizard_confirm "Ready to begin?" || exit 0
+    
+    if ! wizard_confirm "Ready to begin?"; then
+        echo -e "${YELLOW}Setup cancelled.${NC}"
+        exit 0
+    fi
 }
 
-step_identity() {
-    wizard_header "👤 Identity Setup"
+step_user_info() {
+    wizard_header "👤 Personal Information"
     
-    echo "Let's set up your identity for git and other tools."
+    echo -e "${DIM}This information is used for git config, templates, etc.${NC}"
     echo
     
-    WIZARD_NAME=$(wizard_input "Full name" "${USER_FULLNAME:-$(git config --global user.name 2>/dev/null || echo "")}")
-    WIZARD_EMAIL=$(wizard_input "Email" "${USER_EMAIL:-$(git config --global user.email 2>/dev/null || echo "")}")
-    WIZARD_GITHUB=$(wizard_input "GitHub username (optional)" "${USER_GITHUB:-}")
+    USER_FULLNAME=$(wizard_input "Full Name" "${USER_FULLNAME:-$(git config --global user.name 2>/dev/null || echo '')}")
+    USER_EMAIL=$(wizard_input "Email" "${USER_EMAIL:-$(git config --global user.email 2>/dev/null || echo '')}")
+    USER_GITHUB=$(wizard_input "GitHub Username" "${USER_GITHUB:-}")
+    USER_WEBSITE=$(wizard_input "Website (optional)" "${USER_WEBSITE:-}")
+}
+
+step_shell_choice() {
+    wizard_header "🐚 Shell Configuration"
     
+    SHELL_CHOICE=$(wizard_choose "Which shell do you primarily use?" \
+        "zsh" \
+        "bash" \
+        "fish" \
+        "other")
+    
+    if [[ "$SHELL_CHOICE" == "zsh" ]]; then
+        ZSH_FRAMEWORK=$(wizard_choose "ZSH framework preference?" \
+            "none (pure zsh)" \
+            "oh-my-zsh" \
+            "prezto" \
+            "zinit" \
+            "antigen")
+    fi
+}
+
+step_modules() {
+    wizard_header "📦 Module Selection"
+    
+    echo -e "${DIM}Select which modules to install:${NC}"
     echo
-    echo -e "${GREEN}✓${NC} Identity configured"
+    
+    SELECTED_MODULES=$(wizard_multichoose "Choose modules (space to select):" \
+        "git - Git configuration and aliases" \
+        "zsh - ZSH configuration" \
+        "vim - Vim/Neovim configuration" \
+        "tmux - Terminal multiplexer" \
+        "ssh - SSH configuration" \
+        "espanso - Text expansion" \
+        "scripts - Utility scripts" \
+        "macos - macOS preferences" \
+        "linux - Linux preferences")
+}
+
+step_secrets() {
+    wizard_header "🔐 Secrets Management"
+    
+    echo -e "${DIM}How would you like to manage secrets (API keys, tokens, etc.)?${NC}"
+    echo
+    
+    SECRETS_METHOD=$(wizard_choose "Secrets management:" \
+        "vault - Encrypted local vault" \
+        "1password - 1Password CLI integration" \
+        "bitwarden - Bitwarden CLI integration" \
+        "none - No secrets management")
+    
+    if [[ "$SECRETS_METHOD" == "vault"* ]]; then
+        if wizard_confirm "Initialize secrets vault now?"; then
+            "${DOTFILES_DIR}/bin/dotfiles-vault.sh" init || true
+        fi
+    fi
 }
 
 step_git_config() {
-    wizard_header "🔧 Git Configuration"
+    wizard_header "📝 Git Configuration"
     
-    echo "Configure your git preferences."
-    echo
-    
-    WIZARD_GIT_BRANCH=$(wizard_choose "Default branch name:" "main" "master")
-    WIZARD_GIT_EDITOR=$(wizard_choose "Preferred editor:" "vim" "nano" "code" "nvim" "emacs")
-    WIZARD_GIT_CRED=$(wizard_choose "Credential helper:" "store" "cache" "osxkeychain" "manager-core")
-    
-    echo
-    echo -e "${GREEN}✓${NC} Git configured"
-}
-
-step_features() {
-    wizard_header "📦 Feature Selection"
-    
-    echo "Select which features to install."
-    echo "(Use space to select, enter to confirm)"
-    echo
-    
-    local features=(
-        "zsh-plugins"
-        "fzf"
-        "bat"
-        "eza"
-        "espanso"
-        "vault"
-        "motd"
-        "1password"
-        "lastpass"
-        "bitwarden"
-    )
-    
-    local descriptions=(
-        "Autosuggestions + Syntax Highlighting"
-        "Fuzzy finder for files and history"
-        "Better cat with syntax highlighting"
-        "Modern ls replacement"
-        "Text expander (100+ snippets)"
-        "Encrypted secrets storage"
-        "Dynamic system info on startup"
-        "1Password CLI integration"
-        "LastPass CLI integration"
-        "Bitwarden CLI integration"
-    )
-    
-    if [[ "$HAS_GUM" == true ]]; then
-        # Build display options
-        local display_opts=()
-        for i in "${!features[@]}"; do
-            display_opts+=("${features[$i]}: ${descriptions[$i]}")
-        done
-        
-        WIZARD_FEATURES=$(printf '%s\n' "${display_opts[@]}" | gum choose --no-limit --height=15 \
-            --selected="zsh-plugins: Autosuggestions + Syntax Highlighting,fzf: Fuzzy finder for files and history,vault: Encrypted secrets storage,motd: Dynamic system info on startup")
-    else
-        echo "Available features:"
-        for i in "${!features[@]}"; do
-            echo "  $((i+1)). ${features[$i]}: ${descriptions[$i]}"
-        done
-        echo
-        echo "Enter numbers separated by commas (e.g., 1,2,3) or 'all':"
-        read -p "> " choices
-        choices=${choices:-"1,2,5,7"}
-        
-        WIZARD_FEATURES=""
-        if [[ "$choices" == "all" ]]; then
-            for i in "${!features[@]}"; do
-                WIZARD_FEATURES+="${features[$i]}: ${descriptions[$i]}"$'\n'
-            done
-        else
-            IFS=',' read -ra selected <<< "$choices"
-            for idx in "${selected[@]}"; do
-                idx=$(echo "$idx" | tr -d ' ')
-                local i=$((idx - 1))
-                if [[ $i -ge 0 && $i -lt ${#features[@]} ]]; then
-                    WIZARD_FEATURES+="${features[$i]}: ${descriptions[$i]}"$'\n'
-                fi
-            done
-        fi
+    if wizard_confirm "Configure Git with your information?"; then
+        git config --global user.name "$USER_FULLNAME"
+        git config --global user.email "$USER_EMAIL"
+        echo -e "${GREEN}✓${NC} Git configured"
     fi
     
-    echo
-    echo -e "${GREEN}✓${NC} Features selected"
-}
-
-step_theme() {
-    wizard_header "🎨 Theme Selection"
-    
-    echo "Choose your prompt theme."
-    echo
-    
-    local themes=(
-        "adlee: Two-line with git, timer, user detection"
-        "minimal: Clean single-line prompt"
-        "powerline: Fancy arrows and segments"
-        "retro: Classic terminal feel"
-    )
-    
-    WIZARD_THEME=$(wizard_choose "Select theme:" "${themes[@]}" | cut -d: -f1)
-    
-    # Show preview
-    echo
-    echo "Preview:"
-    case "$WIZARD_THEME" in
-        adlee)
-            echo -e "  ${DIM}┌[${GREEN}user@host${NC}${DIM}]─[${YELLOW}~/projects${NC}${DIM}]─[${GREEN}⎇ main${NC}${DIM}]${NC}"
-            echo -e "  ${DIM}└${BLUE}%${NC} "
-            ;;
-        minimal)
-            echo -e "  ${GREEN}➜${NC} ${CYAN}~/projects${NC} ${RED}main${NC} "
-            ;;
-        powerline)
-            echo -e "  ${BLUE}  user ${NC}${YELLOW}  ~/projects ${NC}${GREEN}  main ${NC}"
-            ;;
-        retro)
-            echo -e "  ${GREEN}user@host${NC}:${BLUE}~/projects${NC}\$ "
-            ;;
-    esac
-    
-    echo
-    echo -e "${GREEN}✓${NC} Theme selected: $WIZARD_THEME"
-}
-
-step_advanced() {
-    wizard_header "⚙️ Advanced Options"
-    
-    if wizard_confirm "Configure advanced options?" "no"; then
-        echo
-        
-        WIZARD_SET_DEFAULT_SHELL=$(wizard_confirm "Set zsh as default shell?" "yes" && echo "true" || echo "false")
-        WIZARD_INSTALL_DEPS=$(wizard_confirm "Auto-install dependencies (git, curl, zsh)?" "yes" && echo "auto" || echo "false")
-        
-        if wizard_confirm "Enable shell analytics (command stats)?" "no"; then
-            WIZARD_ANALYTICS="true"
+    if wizard_confirm "Set up SSH key for GitHub?" "no"; then
+        if [[ ! -f "$HOME/.ssh/id_ed25519" ]]; then
+            ssh-keygen -t ed25519 -C "$USER_EMAIL" -f "$HOME/.ssh/id_ed25519"
+            echo -e "${GREEN}✓${NC} SSH key generated"
+            echo
+            echo -e "${CYAN}Add this key to GitHub:${NC}"
+            cat "$HOME/.ssh/id_ed25519.pub"
+            echo
+            wizard_confirm "Press Enter when done..."
         else
-            WIZARD_ANALYTICS="false"
+            echo -e "${YELLOW}SSH key already exists${NC}"
         fi
-        
-        if wizard_confirm "Enable smart command suggestions?" "yes"; then
-            WIZARD_SUGGESTIONS="true"
-        else
-            WIZARD_SUGGESTIONS="false"
-        fi
-    else
-        WIZARD_SET_DEFAULT_SHELL="ask"
-        WIZARD_INSTALL_DEPS="auto"
-        WIZARD_ANALYTICS="false"
-        WIZARD_SUGGESTIONS="true"
     fi
-    
-    echo
-    echo -e "${GREEN}✓${NC} Advanced options configured"
 }
 
-step_review() {
-    wizard_header "📋 Review Configuration"
+step_backup() {
+    wizard_header "💾 Backup Existing Files"
     
-    echo "Please review your configuration:"
-    echo
+    local backup_dir="$HOME/.dotfiles-backup-$(date +%Y%m%d-%H%M%S)"
     
-    # Format features list - extract just the short names
-    local features_short=""
-    local features_list=""
-    while IFS= read -r feature; do
-        [[ -z "$feature" ]] && continue
-        local short_name="${feature%%:*}"
-        if [[ -z "$features_short" ]]; then
-            features_short="$short_name"
-        else
-            features_short="$features_short, $short_name"
-        fi
-        features_list="${features_list}  • ${feature}\n"
-    done <<< "$WIZARD_FEATURES"
-    
-    if [[ "$HAS_GUM" == true ]]; then
-        gum style \
-            --border normal \
-            --border-foreground 240 \
-            --padding "1 2" \
-            --margin "0 2" \
-            --width 60 \
-            "Identity:" \
-            "  Name:     $WIZARD_NAME" \
-            "  Email:    $WIZARD_EMAIL" \
-            "  GitHub:   ${WIZARD_GITHUB:-not set}" \
-            "" \
-            "Git:" \
-            "  Branch:   $WIZARD_GIT_BRANCH" \
-            "  Editor:   $WIZARD_GIT_EDITOR" \
-            "" \
-            "Theme:      $WIZARD_THEME"
+    if wizard_confirm "Backup existing dotfiles before installation?"; then
+        mkdir -p "$backup_dir"
         
-        echo
-        echo -e "${CYAN}Selected Features:${NC}"
-        echo "$WIZARD_FEATURES" | while IFS= read -r feature; do
-            [[ -n "$feature" ]] && echo -e "  ${GREEN}✓${NC} ${feature%%:*}"
+        local files_to_backup=(.zshrc .bashrc .vimrc .gitconfig .tmux.conf)
+        local backed_up=0
+        
+        for file in "${files_to_backup[@]}"; do
+            if [[ -f "$HOME/$file" && ! -L "$HOME/$file" ]]; then
+                cp "$HOME/$file" "$backup_dir/"
+                ((backed_up++))
+            fi
         done
-    else
-        echo "  Identity:"
-        echo "    Name:     $WIZARD_NAME"
-        echo "    Email:    $WIZARD_EMAIL"
-        echo "    GitHub:   ${WIZARD_GITHUB:-not set}"
-        echo
-        echo "  Git:"
-        echo "    Branch:   $WIZARD_GIT_BRANCH"
-        echo "    Editor:   $WIZARD_GIT_EDITOR"
-        echo
-        echo "  Theme:      $WIZARD_THEME"
-        echo
-        echo "  Features:"
-        echo "$WIZARD_FEATURES" | while IFS= read -r feature; do
-            [[ -n "$feature" ]] && echo "    ✓ ${feature%%:*}"
-        done
+        
+        if [[ $backed_up -gt 0 ]]; then
+            echo -e "${GREEN}✓${NC} Backed up $backed_up files to $backup_dir"
+        else
+            echo -e "${DIM}No existing files to backup${NC}"
+            rmdir "$backup_dir" 2>/dev/null || true
+        fi
     fi
-    
-    echo
-    wizard_confirm "Proceed with installation?" || exit 0
 }
 
 step_install() {
-    wizard_header "🔨 Installing"
+    wizard_header "⚡ Installation"
     
-    local steps=(
-        "Detecting system"
-        "Installing dependencies"
-        "Cloning dotfiles"
-        "Backing up configs"
-        "Installing oh-my-zsh"
-        "Installing zsh plugins"
-        "Configuring git"
-        "Linking dotfiles"
-        "Installing features"
-        "Finalizing"
-    )
-    
-    local total=${#steps[@]}
-    local current=0
-    
-    for step in "${steps[@]}"; do
-        ((current++))
-        
-        if [[ "$HAS_GUM" == true ]]; then
-            gum spin --spinner dot --title "[$current/$total] $step..." -- sleep 0.5
-        else
-            show_progress $current $total "$step"
-            sleep 0.3
-        fi
-    done
-    
+    echo -e "${DIM}Ready to install with these settings:${NC}"
     echo
+    echo "  User: $USER_FULLNAME <$USER_EMAIL>"
+    echo "  Shell: $SHELL_CHOICE"
+    echo "  Secrets: $SECRETS_METHOD"
+    echo
+    
+    if wizard_confirm "Proceed with installation?"; then
+        echo
+        wizard_spin "Installing dotfiles" sleep 2
+        wizard_spin "Linking configuration files" sleep 1
+        wizard_spin "Setting up shell" sleep 1
+        
+        echo
+        echo -e "${GREEN}✓${NC} Installation complete!"
+    else
+        echo -e "${YELLOW}Installation cancelled.${NC}"
+        exit 0
+    fi
 }
 
-step_complete() {
+step_summary() {
     wizard_header "✨ Setup Complete!"
     
-    if [[ "$HAS_GUM" == true ]]; then
-        gum style \
-            --foreground 82 \
-            --margin "0 2" \
-            "Your dotfiles have been installed successfully!" \
-            "" \
-            "Next steps:" \
-            "  1. Restart your terminal or run: exec zsh" \
-            "  2. Run 'dfd' or 'doctor' to verify installation" \
-            "  3. Customize settings in ~/.dotfiles/dotfiles.conf" \
-            "" \
-            "Useful commands:" \
-            "  dfd / doctor    - Health check" \
-            "  dfs / dfsync    - Sync dotfiles" \
-            "  dfstats / stats - Shell analytics" \
-            "  vault           - Secrets manager"
-    else
-        echo -e "${GREEN}Your dotfiles have been installed successfully!${NC}"
-        echo
-        echo "Next steps:"
-        echo "  1. Restart your terminal or run: exec zsh"
-        echo "  2. Run 'dfd' or 'doctor' to verify installation"
-        echo "  3. Customize settings in ~/.dotfiles/dotfiles.conf"
-        echo
-        echo "Useful commands:"
-        echo "  dfd / doctor    - Health check"
-        echo "  dfs / dfsync    - Sync dotfiles"
-        echo "  dfstats / stats - Shell analytics"
-        echo "  vault           - Secrets manager"
-    fi
-    
+    echo -e "${GREEN}Your dotfiles have been configured successfully!${NC}"
     echo
-    
-    if [[ "$HAS_GUM" == true ]]; then
-        if gum confirm "Restart shell now?"; then
-            exec zsh
-        fi
-    else
-        read -p "Restart shell now? [Y/n]: " restart
-        [[ "${restart:-y}" =~ ^[Yy] ]] && exec zsh
-    fi
+    echo -e "${BOLD}Quick Commands:${NC}"
+    echo "  dotfiles sync     - Sync with remote repository"
+    echo "  dotfiles update   - Update dotfiles"
+    echo "  dotfiles doctor   - Check installation health"
+    echo "  dotfiles vault    - Manage secrets"
+    echo
+    echo -e "${DIM}Restart your terminal or run 'source ~/.zshrc' to apply changes.${NC}"
 }
 
-generate_config() {
-    # Helper to check if feature is selected
-    _has_feature() {
-        echo "$WIZARD_FEATURES" | grep -qi "^$1:" || echo "$WIZARD_FEATURES" | grep -qi "^$1$"
-    }
+# ============================================================================
+# Save Configuration
+# ============================================================================
+
+save_config() {
+    local config_file="${DOTFILES_DIR}/dotfiles.conf"
     
-    # Generate dotfiles.conf with wizard selections
-    cat > "$DOTFILES_DIR/dotfiles.conf.wizard" << EOF
-# ============================================================================
-# Dotfiles Configuration (Generated by Setup Wizard)
-# ============================================================================
+    cat > "$config_file" << EOF
+# Dotfiles Configuration
+# Generated by setup-wizard on $(date)
 
-# --- Version ---
-DOTFILES_VERSION="${DOTFILES_VERSION}"
+DOTFILES_DIR="$DOTFILES_DIR"
+DOTFILES_VERSION="${DOTFILES_VERSION:-1.0.0}"
 
-# --- User Identity ---
-USER_FULLNAME="${WIZARD_NAME}"
-USER_EMAIL="${WIZARD_EMAIL}"
-USER_GITHUB="${WIZARD_GITHUB}"
+# User Information
+USER_FULLNAME="$USER_FULLNAME"
+USER_EMAIL="$USER_EMAIL"
+USER_GITHUB="$USER_GITHUB"
+USER_WEBSITE="$USER_WEBSITE"
 
-# --- Git Configuration ---
-GIT_USER_NAME="${WIZARD_NAME}"
-GIT_USER_EMAIL="${WIZARD_EMAIL}"
-GIT_DEFAULT_BRANCH="${WIZARD_GIT_BRANCH}"
-GIT_CREDENTIAL_HELPER="${WIZARD_GIT_CRED}"
+# Shell Configuration
+SHELL_CHOICE="$SHELL_CHOICE"
+ZSH_FRAMEWORK="${ZSH_FRAMEWORK:-none}"
 
-# --- Feature Toggles ---
-INSTALL_DEPS="${WIZARD_INSTALL_DEPS}"
-INSTALL_ZSH_PLUGINS="$(echo "$WIZARD_FEATURES" | grep -qi "zsh-plugins" && echo "true" || echo "false")"
-INSTALL_FZF="$(echo "$WIZARD_FEATURES" | grep -qi "fzf" && echo "true" || echo "false")"
-INSTALL_BAT="$(echo "$WIZARD_FEATURES" | grep -qi "bat" && echo "true" || echo "false")"
-INSTALL_EZA="$(echo "$WIZARD_FEATURES" | grep -qi "eza" && echo "true" || echo "false")"
-INSTALL_ESPANSO="$(echo "$WIZARD_FEATURES" | grep -qi "espanso" && echo "true" || echo "false")"
-SET_ZSH_DEFAULT="${WIZARD_SET_DEFAULT_SHELL}"
-
-# --- Password Manager Integration ---
-INSTALL_1PASSWORD="$(echo "$WIZARD_FEATURES" | grep -qi "1password" && echo "true" || echo "false")"
-INSTALL_LASTPASS="$(echo "$WIZARD_FEATURES" | grep -qi "lastpass" && echo "true" || echo "false")"
-INSTALL_BITWARDEN="$(echo "$WIZARD_FEATURES" | grep -qi "bitwarden" && echo "true" || echo "false")"
-
-# --- MOTD ---
-ENABLE_MOTD="$(echo "$WIZARD_FEATURES" | grep -qi "motd" && echo "true" || echo "false")"
-MOTD_STYLE="compact"
-
-# --- Theme ---
-ZSH_THEME_NAME="${WIZARD_THEME}"
-
-# --- Advanced Features ---
-ENABLE_SHELL_ANALYTICS="${WIZARD_ANALYTICS}"
-ENABLE_SMART_SUGGESTIONS="${WIZARD_SUGGESTIONS}"
-ENABLE_VAULT="$(echo "$WIZARD_FEATURES" | grep -qi "vault" && echo "true" || echo "false")"
-ENABLE_COMMAND_PALETTE="true"
+# Secrets Management
+SECRETS_METHOD="$SECRETS_METHOD"
 EOF
+    
+    echo -e "${GREEN}✓${NC} Configuration saved to $config_file"
 }
 
 # ============================================================================
@@ -654,29 +459,31 @@ EOF
 # ============================================================================
 
 main() {
-    # Check/install gum
+    # Check for gum
     if ! check_gum; then
-        echo "For the best experience, we recommend installing 'gum'."
-        if wizard_confirm "Install gum now?"; then
-            install_gum
+        if wizard_confirm "Install 'gum' for a better experience?" "yes"; then
+            install_gum || true
         fi
     fi
     
     # Run wizard steps
     step_welcome
-    step_identity
+    step_user_info
+    step_shell_choice
+    step_modules
+    step_secrets
     step_git_config
-    step_features
-    step_theme
-    step_advanced
-    step_review
+    step_backup
     
-    # Generate config
-    generate_config
+    # Save configuration
+    save_config
     
-    # Run installation
+    # Install
     step_install
-    step_complete
+    step_summary
 }
 
-main "$@"
+# Run if executed directly
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi

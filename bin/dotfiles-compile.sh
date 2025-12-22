@@ -22,6 +22,45 @@ YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
+# ============================================================================
+# MOTD-style header
+# ============================================================================
+
+_M_WIDTH=66
+
+print_header() {
+    local user="${USER:-root}"
+    local hostname="${HOST:-$(hostname -s 2>/dev/null)}"
+    local script_name="dotfiles-compile"
+    local datetime=$(date '+%a %b %d %H:%M')
+    
+    # Colors
+    local _M_RESET=$'\033[0m'
+    local _M_BOLD=$'\033[1m'
+    local _M_DIM=$'\033[2m'
+    local _M_BLUE=$'\033[38;5;39m'
+    local _M_GREY=$'\033[38;5;242m'
+    
+    # Build horizontal line
+    local hline=""
+    for ((i=0; i<_M_WIDTH; i++)); do hline+="═"; done
+    local inner=$((_M_WIDTH - 2))
+    
+    # Header content
+    local h_left="✦ ${user}@${hostname}"
+    local h_center="${script_name}"
+    local h_right="${datetime}"
+    local h_pad=$(((inner - ${#h_left} - ${#h_center} - ${#h_right}) / 2))
+    local h_spaces=""
+    for ((i=0; i<h_pad; i++)); do h_spaces+=" "; done
+    
+    echo ""
+    echo "${_M_GREY}╒${hline}╕${_M_RESET}"
+    echo "${_M_GREY}│${_M_RESET} ${_M_BOLD}${_M_BLUE}${h_left}${_M_RESET}${h_spaces}${_M_DIM}${h_center}${h_spaces}${h_right}${_M_RESET} ${_M_GREY}│${_M_RESET}"
+    echo "${_M_GREY}╘${hline}╛${_M_RESET}"
+    echo ""
+}
+
 compile_file() {
     local file="$1"
     if [[ -f "$file" ]]; then
@@ -110,6 +149,12 @@ show_help() {
     echo "The compiled files (.zwc) are automatically used by zsh"
     echo "and can speed up shell startup by 20-50ms."
 }
+
+# ============================================================================
+# Main
+# ============================================================================
+
+print_header
 
 case "${1:-}" in
     --clean|-c)
