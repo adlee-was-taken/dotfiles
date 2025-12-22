@@ -52,7 +52,7 @@ get_history() {
     if [[ -f "$HOME/.bash_history" ]]; then
         cat "$HOME/.bash_history"
     elif [[ -f "$HOME/.zsh_history" ]]; then
-        grep "^:" "$HOME/.zsh_history" | cut -d';' -f2 || cat "$HOME/.zsh_history"
+        grep -I "^:" "$HOME/.zsh_history" | cut -d';' -f2 || cat "$HOME/.zsh_history"
     fi
 }
 
@@ -120,22 +120,22 @@ show_breakdown() {
 
     echo ""
     echo -e "  ${DF_CYAN}Git Commands:${DF_NC}"
-    get_history | grep "^git" | wc -l | xargs printf "    %d\n"
+    get_history | grep -I "^git" | wc -l | xargs printf "    %d\n"
 
     echo -e "  ${DF_CYAN}Navigation (cd):${DF_NC}"
-    get_history | grep "^cd" | wc -l | xargs printf "    %d\n"
+    get_history | grep -I "^cd" | wc -l | xargs printf "    %d\n"
 
     echo -e "  ${DF_CYAN}File Operations (ls):${DF_NC}"
-    get_history | grep "^ls" | wc -l | xargs printf "    %d\n"
+    get_history | grep -I "^ls" | wc -l | xargs printf "    %d\n"
 
     echo -e "  ${DF_CYAN}Package Management (pacman/paru/yay):${DF_NC}"
-    get_history | grep -E "^(pacman|paru|yay)" | wc -l | xargs printf "    %d\n"
+    get_history | grep -I -E "^(pacman|paru|yay)" | wc -l | xargs printf "    %d\n"
 
     echo -e "  ${DF_CYAN}Editing (vim/nvim):${DF_NC}"
-    get_history | grep -E "^(vim|nvim)" | wc -l | xargs printf "    %d\n"
+    get_history | grep -I -E "^(vim|nvim)" | wc -l | xargs printf "    %d\n"
 
     echo -e "  ${DF_CYAN}Dotfiles Commands (dotfiles-):${DF_NC}"
-    get_history | grep "^dotfiles-" | wc -l | xargs printf "    %d\n"
+    get_history | grep -I "^dotfiles-" | wc -l | xargs printf "    %d\n"
 
     echo ""
 }
@@ -145,7 +145,7 @@ show_heatmap() {
 
     echo ""
     if [[ -f "$HOME/.zsh_history" ]]; then
-        grep "^:" "$HOME/.zsh_history" | awk -F'[: ]' '{print $2}' | \
+        grep -I "^:" "$HOME/.zsh_history" | awk -F'[: ]' '{print $2}' | \
         date -f - "+%H" 2>/dev/null | sort | uniq -c | sort -k2n | while read count hour; do
             local bar_length=$((count / 5))
             local bar=$(printf '█%.0s' $(seq 1 $bar_length))
@@ -163,7 +163,7 @@ show_dirs() {
 
     echo ""
     if [[ -f "$HOME/.zsh_history" ]]; then
-        grep "cd " "$HOME/.zsh_history" | awk '{print $NF}' | sort | uniq -c | \
+        grep -I "cd " "$HOME/.zsh_history" | awk '{print $NF}' | sort | uniq -c | \
         sort -rn | head -15 | while read count dir; do
             printf "  ${DF_CYAN}%4d${DF_NC}  ${DF_YELLOW}%s${DF_NC}\n" "$count" "$dir"
         done
@@ -178,14 +178,14 @@ show_git_breakdown() {
     print_section "Git Command Breakdown"
 
     echo ""
-    local total=$(get_history | grep "^git" | wc -l)
+    local total=$(get_history | grep -I "^git" | wc -l)
 
     if [[ $total -eq 0 ]]; then
         echo "  ${DF_YELLOW}No git commands found${DF_NC}"
         return
     fi
 
-    get_history | grep "^git " | awk '{print $2}' | sort | uniq -c | sort -rn | \
+    get_history | grep -I "^git " | awk '{print $2}' | sort | uniq -c | sort -rn | \
     head -10 | while read count subcmd; do
         local percent=$((count * 100 / total))
         printf "  ${DF_YELLOW}git %-15s${DF_NC}  ${DF_CYAN}%4d${DF_NC} (${DF_MAGENTA}%3d%%${DF_NC})\n" \

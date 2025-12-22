@@ -173,7 +173,7 @@ show_diff() {
 
     cd "$DOTFILES_HOME"
 
-    if git status --porcelain | grep -q .; then
+    if git status --porcelain | grep -I -q .; then
         print_status "Modified files:"
         git status --porcelain | sed 's/^/  /'
     else
@@ -208,7 +208,7 @@ push_changes() {
 
     cd "$DOTFILES_HOME"
 
-    if ! git status --porcelain | grep -q .; then
+    if ! git status --porcelain | grep -I -q .; then
         print_warning "No local changes to push"
         return
     fi
@@ -245,7 +245,7 @@ auto_sync() {
     print_status "Pulling from remote..."
     git fetch origin
 
-    if git status --porcelain | grep -q .; then
+    if git status --porcelain | grep -I -q .; then
         print_status "Resolving conflicts automatically..."
         git pull --strategy=ours
     else
