@@ -280,10 +280,10 @@ _deferred_load() {
         source "$_dotfiles_dir/zsh/functions/python-templates.zsh"
 
     # Load vault secrets
-    local vault_script="$_dotfiles_dir/bin/dotfiles-vault.sh"
-    if [[ -f "$_dotfiles_dir/vault/secrets.enc" ]] && [[ -x "$vault_script" ]]; then
-        eval "$("$vault_script" shell 2>/dev/null)" || true
-    fi
+    #local vault_script="$_dotfiles_dir/bin/dotfiles-vault.sh"
+    #if [[ -f "$_dotfiles_dir/vault/secrets.enc" ]] && [[ -x "$vault_script" ]]; then
+    #    eval "$("$vault_script" shell 2>/dev/null)" || true
+    #fi
 
     # Load dotfiles.conf env variables.
     DOTFILES_CONF="$HOME/.dotfiles/dotfiles.conf"
