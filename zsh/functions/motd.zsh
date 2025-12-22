@@ -117,7 +117,7 @@ show_motd() {
     local h_pad=$(((inner - ${#h_left} - ${#h_center} - ${#h_right}) / 2 ))
     local h_spaces=""
     for ((i=0; i<h_pad; i++)); do h_spaces+=" "; done
-    echo "${_M_GREY}│${_M_RESET} ${_M_BOLD}${_M_BLUE}${h_left}${_M_RESET}${h_spaces}${_M_DIM}${h_center}${h_spaces}${h_right}${_M_RESET}${_M_GREY} │${_M_RESET}"
+    echo "${_M_GREY}│${_M_RESET} ${_M_BOLD}${_M_BLUE}${h_left}${_M_RESET}${h_spaces}${_M_YELLOW}${h_center}${h_spaces}${_M_RESET}${_M_BOLD}${h_right}${_M_RESET}${_M_GREY} │${_M_RESET}"
     
     # Separator
     echo "${_M_GREY}╘${hline}╛${_M_RESET}"
