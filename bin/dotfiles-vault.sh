@@ -1,484 +1,311 @@
 #!/usr/bin/env bash
 # ============================================================================
-# Dotfiles Vault - Encrypted Secrets Management
-# ============================================================================
-# Securely store and retrieve API keys, tokens, and other secrets
-#
-# Usage:
-#   vault set KEY "value"        # Store a secret
-#   vault get KEY                # Retrieve a secret
-#   vault list                   # List stored keys (not values)
-#   vault delete KEY             # Delete a secret
-#   vault export [file]          # Export encrypted vault
-#   vault import [file]          # Import encrypted vault
-#   vault shell                  # Export all secrets to current shell
-#
-# The vault uses GPG or age for encryption, stored in ~/.dotfiles/vault/
+# Dotfiles Secrets Vault (Arch/CachyOS)
 # ============================================================================
 
 set -e
 
-# ============================================================================
-# Configuration
-# ============================================================================
+readonly VAULT_DIR="${HOME}/.dotfiles/vault"
+readonly VAULT_FILE="${VAULT_DIR}/secrets.enc"
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DOTFILES_CONF="${SCRIPT_DIR}/../dotfiles.conf"
-[[ -f "$DOTFILES_CONF" ]] || DOTFILES_CONF="$HOME/.dotfiles/dotfiles.conf"
-
-if [[ -f "$DOTFILES_CONF" ]]; then
-    source "$DOTFILES_CONF"
-else
-    DOTFILES_DIR="$HOME/.dotfiles"
-fi
-
-VAULT_DIR="$DOTFILES_DIR/vault"
-VAULT_FILE="$VAULT_DIR/secrets.enc"
-VAULT_KEYS="$VAULT_DIR/keys.txt"
-VAULT_CONFIG="$VAULT_DIR/config"
-VAULT_TMP="/tmp/.vault_$$"
-
-# Encryption backend: gpg or age
-VAULT_BACKEND="${VAULT_BACKEND:-auto}"
+# Color codes
+readonly RED='\033[0;31m'
+readonly GREEN='\033[0;32m'
+readonly YELLOW='\033[1;33m'
+readonly BLUE='\033[0;34m'
+readonly CYAN='\033[0;36m'
+readonly NC='\033[0m'
 
 # ============================================================================
-# Colors
+# Print MOTD-style header
 # ============================================================================
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-DIM='\033[2m'
-NC='\033[0m'
-
-# ============================================================================
-# Cleanup
-# ============================================================================
-
-cleanup() {
-    [[ -f "$VAULT_TMP" ]] && rm -f "$VAULT_TMP"
-    [[ -f "${VAULT_TMP}.dec" ]] && rm -f "${VAULT_TMP}.dec"
-}
-
-trap cleanup EXIT
-
-# ============================================================================
-# Backend Detection
-# ============================================================================
-
-detect_backend() {
-    if [[ "$VAULT_BACKEND" == "auto" ]]; then
-        if command -v age &>/dev/null; then
-            echo "age"
-        elif command -v gpg &>/dev/null; then
-            echo "gpg"
-        else
-            echo ""
-        fi
-    else
-        echo "$VAULT_BACKEND"
-    fi
-}
-
-check_backend() {
-    local backend=$(detect_backend)
+print_header() {
+    local user="${USER:-root}"
+    local hostname="${HOSTNAME:-localhost}"
+    local timestamp=$(date '+%a %b %d %H:%M')
     
-    if [[ -z "$backend" ]]; then
-        echo -e "${RED}✗${NC} No encryption backend found"
-        echo
-        echo "Install one of:"
-        echo "  - age: https://github.com/FiloSottile/age"
-        echo "  - gpg: usually pre-installed"
-        echo
-        echo "On macOS:  brew install age"
-        echo "On Arch:   pacman -S age"
-        echo "On Ubuntu: apt install age"
-        exit 1
-    fi
-    
-    echo "$backend"
+    echo ""
+    printf "${CYAN}+ ${NC}%-20s %30s %25s\n" "$user@$hostname" "dotfiles-vault" "$timestamp"
+    echo ""
 }
 
 # ============================================================================
-# Initialization
+# Helper functions
 # ============================================================================
 
-init_vault() {
-    mkdir -p "$VAULT_DIR"
-    chmod 700 "$VAULT_DIR"
-    
-    local backend=$(check_backend)
-    
-    # Save config
-    echo "VAULT_BACKEND=$backend" > "$VAULT_CONFIG"
-    
-    if [[ "$backend" == "age" ]]; then
-        # Generate age key if not exists
-        if [[ ! -f "$VAULT_DIR/key.txt" ]]; then
-            echo -e "${BLUE}==>${NC} Generating age encryption key..."
-            age-keygen -o "$VAULT_DIR/key.txt" 2>/dev/null
-            chmod 600 "$VAULT_DIR/key.txt"
-            echo -e "${GREEN}✓${NC} Key generated: $VAULT_DIR/key.txt"
-            echo -e "${YELLOW}⚠${NC} Back up this key! Without it, you cannot decrypt your secrets."
-        fi
-    fi
-    
-    # Create empty vault if not exists
-    if [[ ! -f "$VAULT_FILE" ]]; then
-        echo "{}" > "$VAULT_TMP"
-        encrypt_vault "$VAULT_TMP"
-        rm -f "$VAULT_TMP"
-        echo -e "${GREEN}✓${NC} Vault initialized"
-    fi
+print_success() {
+    echo -e "${GREEN}✓${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}✗${NC} $1" >&2
+}
+
+print_section() {
+    echo ""
+    echo -e "${BLUE}▶${NC} $1"
 }
 
 # ============================================================================
 # Encryption/Decryption
 # ============================================================================
 
-encrypt_vault() {
-    local input="$1"
-    local backend=$(detect_backend)
+get_cipher() {
+    if command -v age &> /dev/null; then
+        echo "age"
+    elif command -v gpg &> /dev/null; then
+        echo "gpg"
+    else
+        print_error "No encryption tool available (install age or gpg)"
+        exit 1
+    fi
+}
+
+init_vault() {
+    print_section "Initializing Vault"
     
-    case "$backend" in
-        age)
-            age -e -i "$VAULT_DIR/key.txt" -o "$VAULT_FILE" "$input"
-            ;;
-        gpg)
-            gpg --symmetric --cipher-algo AES256 --batch --yes -o "$VAULT_FILE" "$input"
-            ;;
-    esac
+    mkdir -p "$VAULT_DIR"
+    chmod 700 "$VAULT_DIR"
     
-    chmod 600 "$VAULT_FILE"
+    if [[ ! -f "$VAULT_FILE" ]]; then
+        # Create empty encrypted file
+        echo "{}" | $(get_cipher) > "$VAULT_FILE"
+        print_success "Vault initialized"
+    else
+        print_success "Vault already exists"
+    fi
 }
 
 decrypt_vault() {
-    local output="$1"
-    local backend=$(detect_backend)
-    
     if [[ ! -f "$VAULT_FILE" ]]; then
-        echo "{}" > "$output"
-        return 0
+        echo "{}"
+        return
     fi
     
-    case "$backend" in
+    local cipher=$(get_cipher)
+    
+    case "$cipher" in
         age)
-            age -d -i "$VAULT_DIR/key.txt" -o "$output" "$VAULT_FILE" 2>/dev/null || {
-                echo "{}" > "$output"
-            }
+            age -d -i "$HOME/.age/keys.txt" "$VAULT_FILE" 2>/dev/null || echo "{}"
             ;;
         gpg)
-            gpg --decrypt --batch --quiet -o "$output" "$VAULT_FILE" 2>/dev/null || {
-                echo "{}" > "$output"
-            }
+            gpg --decrypt "$VAULT_FILE" 2>/dev/null || echo "{}"
+            ;;
+    esac
+}
+
+encrypt_vault() {
+    local data="$1"
+    local cipher=$(get_cipher)
+    
+    case "$cipher" in
+        age)
+            echo "$data" | age -R "$HOME/.age/keys.txt" > "$VAULT_FILE"
+            ;;
+        gpg)
+            echo "$data" | gpg --encrypt --armor > "$VAULT_FILE"
             ;;
     esac
 }
 
 # ============================================================================
-# JSON Helpers (using pure bash for portability)
-# ============================================================================
-
-# Simple JSON get - works for flat key-value
-json_get() {
-    local json="$1"
-    local key="$2"
-    echo "$json" | grep -o "\"$key\"[[:space:]]*:[[:space:]]*\"[^\"]*\"" | sed 's/.*: *"\([^"]*\)".*/\1/'
-}
-
-# Simple JSON set
-json_set() {
-    local json="$1"
-    local key="$2"
-    local value="$3"
-    
-    # Escape special characters in value
-    value=$(echo "$value" | sed 's/\\/\\\\/g; s/"/\\"/g')
-    
-    if echo "$json" | grep -q "\"$key\""; then
-        # Update existing
-        echo "$json" | sed "s|\"$key\"[[:space:]]*:[[:space:]]*\"[^\"]*\"|\"$key\": \"$value\"|"
-    else
-        # Add new (simple approach for flat JSON)
-        if [[ "$json" == "{}" ]]; then
-            echo "{\"$key\": \"$value\"}"
-        else
-            echo "$json" | sed "s/}$/,\"$key\": \"$value\"}/"
-        fi
-    fi
-}
-
-# Simple JSON delete
-json_delete() {
-    local json="$1"
-    local key="$2"
-    echo "$json" | sed "s/,*\"$key\"[[:space:]]*:[[:space:]]*\"[^\"]*\"//g" | sed 's/{,/{/; s/,}/}/'
-}
-
-# List JSON keys
-json_keys() {
-    local json="$1"
-    echo "$json" | grep -o '"[^"]*":' | sed 's/"//g; s/://' | sort
-}
-
-# ============================================================================
-# Vault Commands
+# Vault operations
 # ============================================================================
 
 vault_set() {
     local key="$1"
-    local value="$2"
+    local value="${2:-}"
     
-    [[ -z "$key" ]] && { echo -e "${RED}✗${NC} Key required"; exit 1; }
-    
-    # If no value provided, prompt for it (hidden input)
-    if [[ -z "$value" ]]; then
-        echo -n "Enter value for $key: "
-        read -s value
-        echo
+    if [[ -z "$key" ]]; then
+        print_error "Usage: vault set <key> [value]"
+        exit 1
     fi
     
-    [[ -z "$value" ]] && { echo -e "${RED}✗${NC} Value required"; exit 1; }
+    # Get value from stdin if not provided
+    if [[ -z "$value" ]]; then
+        read -s -p "Enter value for $key: " value
+        echo ""
+    fi
     
-    init_vault
+    # Decrypt current vault
+    local current=$(decrypt_vault)
     
-    # Decrypt, modify, encrypt
-    decrypt_vault "${VAULT_TMP}.dec"
-    local json=$(cat "${VAULT_TMP}.dec")
-    json=$(json_set "$json" "$key" "$value")
-    echo "$json" > "${VAULT_TMP}.dec"
-    encrypt_vault "${VAULT_TMP}.dec"
+    # Add new key-value pair (using jq if available, otherwise simple replacement)
+    if command -v jq &> /dev/null; then
+        local updated=$(echo "$current" | jq --arg k "$key" --arg v "$value" '.[$k] = $v')
+    else
+        # Simple fallback without jq
+        local updated="{\"$key\": \"$value\"}"
+    fi
     
-    echo -e "${GREEN}✓${NC} Stored: $key"
+    # Encrypt and save
+    encrypt_vault "$updated"
+    print_success "Secret stored: $key"
 }
 
 vault_get() {
     local key="$1"
-    local silent="${2:-false}"
     
-    [[ -z "$key" ]] && { echo -e "${RED}✗${NC} Key required"; exit 1; }
-    
-    [[ ! -f "$VAULT_FILE" ]] && { 
-        [[ "$silent" != true ]] && echo -e "${RED}✗${NC} Vault not initialized"
+    if [[ -z "$key" ]]; then
+        print_error "Usage: vault get <key>"
         exit 1
-    }
+    fi
     
-    decrypt_vault "${VAULT_TMP}.dec"
-    local json=$(cat "${VAULT_TMP}.dec")
-    local value=$(json_get "$json" "$key")
+    local vault=$(decrypt_vault)
     
-    if [[ -n "$value" ]]; then
-        echo "$value"
+    if command -v jq &> /dev/null; then
+        echo "$vault" | jq -r ".\"$key\" // \"\"" | grep -v "^$"
     else
-        [[ "$silent" != true ]] && echo -e "${RED}✗${NC} Key not found: $key" >&2
-        exit 1
+        # Simple grep fallback
+        echo "$vault" | grep "\"$key\"" | cut -d'"' -f4
     fi
 }
 
 vault_list() {
-    [[ ! -f "$VAULT_FILE" ]] && { echo "Vault is empty"; return 0; }
+    print_section "Secrets"
     
-    decrypt_vault "${VAULT_TMP}.dec"
-    local json=$(cat "${VAULT_TMP}.dec")
-    local keys=$(json_keys "$json")
+    local vault=$(decrypt_vault)
     
-    if [[ -z "$keys" ]]; then
-        echo "Vault is empty"
-        return 0
+    if command -v jq &> /dev/null; then
+        echo "$vault" | jq -r 'keys[]' | while read key; do
+            echo -e "  ${CYAN}•${NC} $key"
+        done
+    else
+        # Simple fallback
+        echo "$vault" | grep -o '"[^"]*":' | sed 's/"//g' | sed 's/:$//' | while read key; do
+            echo -e "  ${CYAN}•${NC} $key"
+        done
     fi
     
-    echo -e "${CYAN}Stored secrets:${NC}"
-    echo
-    
-    while read -r key; do
-        [[ -n "$key" ]] && echo -e "  ${GREEN}●${NC} $key"
-    done <<< "$keys"
-    
-    echo
-    local count=$(echo "$keys" | grep -c . || echo 0)
-    echo -e "${DIM}$count secret(s) stored${NC}"
+    echo ""
 }
 
 vault_delete() {
     local key="$1"
     
-    [[ -z "$key" ]] && { echo -e "${RED}✗${NC} Key required"; exit 1; }
-    [[ ! -f "$VAULT_FILE" ]] && { echo -e "${RED}✗${NC} Vault not initialized"; exit 1; }
-    
-    decrypt_vault "${VAULT_TMP}.dec"
-    local json=$(cat "${VAULT_TMP}.dec")
-    
-    if ! echo "$json" | grep -q "\"$key\""; then
-        echo -e "${RED}✗${NC} Key not found: $key"
+    if [[ -z "$key" ]]; then
+        print_error "Usage: vault delete <key>"
         exit 1
     fi
     
-    read -p "Delete secret '$key'? [y/N]: " confirm
-    [[ ! "$confirm" =~ ^[Yy] ]] && { echo "Cancelled"; exit 0; }
+    local vault=$(decrypt_vault)
     
-    json=$(json_delete "$json" "$key")
-    echo "$json" > "${VAULT_TMP}.dec"
-    encrypt_vault "${VAULT_TMP}.dec"
+    if command -v jq &> /dev/null; then
+        local updated=$(echo "$vault" | jq "del(.\"$key\")")
+    else
+        print_error "jq required for delete operation"
+        exit 1
+    fi
     
-    echo -e "${GREEN}✓${NC} Deleted: $key"
-}
-
-vault_export() {
-    local output="${1:-vault-export.enc}"
-    
-    [[ ! -f "$VAULT_FILE" ]] && { echo -e "${RED}✗${NC} Vault not initialized"; exit 1; }
-    
-    cp "$VAULT_FILE" "$output"
-    
-    echo -e "${GREEN}✓${NC} Exported to: $output"
-    echo -e "${YELLOW}⚠${NC} This file is encrypted. Keep your key to decrypt it."
-}
-
-vault_import() {
-    local input="${1:-vault-export.enc}"
-    
-    [[ ! -f "$input" ]] && { echo -e "${RED}✗${NC} File not found: $input"; exit 1; }
-    
-    init_vault
-    
-    # Test if we can decrypt the import
-    local backend=$(detect_backend)
-    case "$backend" in
-        age)
-            if ! age -d -i "$VAULT_DIR/key.txt" -o /dev/null "$input" 2>/dev/null; then
-                echo -e "${RED}✗${NC} Cannot decrypt import file with current key"
-                exit 1
-            fi
-            ;;
-        gpg)
-            if ! gpg --decrypt --batch --quiet -o /dev/null "$input" 2>/dev/null; then
-                echo -e "${RED}✗${NC} Cannot decrypt import file"
-                exit 1
-            fi
-            ;;
-    esac
-    
-    read -p "This will overwrite existing vault. Continue? [y/N]: " confirm
-    [[ ! "$confirm" =~ ^[Yy] ]] && { echo "Cancelled"; exit 0; }
-    
-    cp "$input" "$VAULT_FILE"
-    chmod 600 "$VAULT_FILE"
-    
-    echo -e "${GREEN}✓${NC} Imported vault"
+    encrypt_vault "$updated"
+    print_success "Secret deleted: $key"
 }
 
 vault_shell() {
-    [[ ! -f "$VAULT_FILE" ]] && { echo -e "${RED}✗${NC} Vault not initialized"; exit 1; }
+    print_section "Loading secrets into environment"
     
-    decrypt_vault "${VAULT_TMP}.dec"
-    local json=$(cat "${VAULT_TMP}.dec")
-    local keys=$(json_keys "$json")
+    local vault=$(decrypt_vault)
     
-    echo "# Add this to your shell or source it:"
-    echo "# eval \$(vault shell)"
-    echo
-    
-    while read -r key; do
-        if [[ -n "$key" ]]; then
-            local value=$(json_get "$json" "$key")
-            echo "export $key=\"$value\""
-        fi
-    done <<< "$keys"
+    if command -v jq &> /dev/null; then
+        echo "$vault" | jq -r 'to_entries[] | "export \(.key)=\"\(.value)\""'
+    else
+        print_error "jq required for shell export"
+        exit 1
+    fi
 }
 
-vault_env() {
-    # Source secrets into current environment (for use in scripts)
-    [[ ! -f "$VAULT_FILE" ]] && return 0
+vault_export() {
+    local dest="${1:-.}"
     
-    decrypt_vault "${VAULT_TMP}.dec"
-    local json=$(cat "${VAULT_TMP}.dec")
-    local keys=$(json_keys "$json")
+    if [[ -z "$dest" ]]; then
+        print_error "Usage: vault export <filename>"
+        exit 1
+    fi
     
-    while read -r key; do
-        if [[ -n "$key" ]]; then
-            local value=$(json_get "$json" "$key")
-            export "$key"="$value"
-        fi
-    done <<< "$keys"
+    if [[ -f "$dest" ]]; then
+        print_error "File already exists: $dest"
+        exit 1
+    fi
+    
+    cp "$VAULT_FILE" "$dest"
+    chmod 600 "$dest"
+    print_success "Vault exported to: $dest"
+}
+
+vault_import() {
+    local src="${1:-}"
+    
+    if [[ -z "$src" ]]; then
+        print_error "Usage: vault import <filename>"
+        exit 1
+    fi
+    
+    if [[ ! -f "$src" ]]; then
+        print_error "File not found: $src"
+        exit 1
+    fi
+    
+    cp "$src" "$VAULT_FILE"
+    chmod 600 "$VAULT_FILE"
+    print_success "Vault imported from: $src"
 }
 
 vault_status() {
-    echo -e "${CYAN}Vault Status${NC}"
-    echo
+    print_section "Vault Status"
     
-    local backend=$(detect_backend)
-    echo -e "  Backend:   ${GREEN}$backend${NC}"
-    echo -e "  Location:  $VAULT_DIR"
-    
-    if [[ -f "$VAULT_FILE" ]]; then
-        local size=$(du -h "$VAULT_FILE" | cut -f1)
-        echo -e "  Vault:     ${GREEN}exists${NC} ($size)"
-        
-        decrypt_vault "${VAULT_TMP}.dec"
-        local json=$(cat "${VAULT_TMP}.dec")
-        local count=$(json_keys "$json" | grep -c . || echo 0)
-        echo -e "  Secrets:   $count"
-    else
-        echo -e "  Vault:     ${YELLOW}not initialized${NC}"
+    if [[ ! -d "$VAULT_DIR" ]]; then
+        echo -e "  ${YELLOW}⚠${NC} Vault not initialized"
+        return
     fi
     
-    if [[ "$backend" == "age" && -f "$VAULT_DIR/key.txt" ]]; then
-        echo -e "  Key:       ${GREEN}present${NC}"
+    if [[ ! -f "$VAULT_FILE" ]]; then
+        echo -e "  ${YELLOW}⚠${NC} Vault file not found"
+        return
     fi
+    
+    local size=$(du -h "$VAULT_FILE" | cut -f1)
+    local modified=$(stat -c %y "$VAULT_FILE" 2>/dev/null | cut -d' ' -f1 || stat -f '%Sm' "$VAULT_FILE" 2>/dev/null)
+    
+    echo -e "  ${CYAN}Location:${NC}     $VAULT_FILE"
+    echo -e "  ${CYAN}Size:${NC}         $size"
+    echo -e "  ${CYAN}Modified:${NC}     $modified"
+    echo -e "  ${CYAN}Encryption:${NC}   $(get_cipher)"
+    echo -e "  ${CYAN}Permissions:${NC}  $(stat -c '%a' $VAULT_FILE 2>/dev/null || stat -f '%a' "$VAULT_FILE")"
+    
+    echo ""
 }
 
 # ============================================================================
 # Main
 # ============================================================================
 
-show_help() {
-    echo "Usage: dotfiles-vault.sh <command> [args]"
-    echo "       vault <command> [args]"
-    echo
-    echo "Commands:"
-    echo "  set <key> [value]    Store a secret (prompts for value if not given)"
-    echo "  get <key>            Retrieve a secret"
-    echo "  list                 List all keys (not values)"
-    echo "  delete <key>         Delete a secret"
-    echo "  export [file]        Export encrypted vault"
-    echo "  import <file>        Import encrypted vault"
-    echo "  shell                Print secrets as export statements"
-    echo "  status               Show vault status"
-    echo "  init                 Initialize vault"
-    echo "  help                 Show this help"
-    echo
-    echo "Aliases:"
-    echo "  vault                Main command (alias for dotfiles-vault.sh)"
-    echo "  vls                  List secrets"
-    echo "  vget <key>           Get secret"
-    echo "  vset <key>           Set secret"
-    echo
-    echo "Examples:"
-    echo "  vault set GITHUB_TOKEN ghp_xxxxxxxxxxxx"
-    echo "  vault set AWS_SECRET_KEY   # Will prompt for value"
-    echo "  vget GITHUB_TOKEN"
-    echo "  vls"
-    echo "  eval \$(vault shell)       # Export all to current shell"
-    echo
-    echo "The vault uses ${CYAN}age${NC} or ${CYAN}gpg${NC} for encryption."
-    echo "Secrets are stored in: $VAULT_DIR"
-}
-
 main() {
-    case "${1:-}" in
-        set|s)
-            vault_set "$2" "$3"
+    print_header
+    
+    # Initialize vault if not exists
+    if [[ ! -d "$VAULT_DIR" ]]; then
+        init_vault
+    fi
+    
+    case "${1:-list}" in
+        init)
+            init_vault
             ;;
-        get|g)
+        set)
+            vault_set "$2" "${3:-}"
+            ;;
+        get)
             vault_get "$2"
             ;;
-        list|ls|l)
+        list|ls)
             vault_list
             ;;
-        delete|del|rm)
+        delete|rm)
             vault_delete "$2"
+            ;;
+        shell)
+            vault_shell
             ;;
         export)
             vault_export "$2"
@@ -486,24 +313,22 @@ main() {
         import)
             vault_import "$2"
             ;;
-        shell|env)
-            vault_shell
-            ;;
-        status|st)
+        status)
             vault_status
             ;;
-        init)
-            init_vault
-            ;;
-        help|--help|-h)
-            show_help
-            ;;
-        "")
-            show_help
-            ;;
         *)
-            echo "Unknown command: $1"
-            echo "Run 'vault help' for usage"
+            echo "Usage: $0 {init|set|get|list|delete|shell|export|import|status}"
+            echo ""
+            echo "Commands:"
+            echo "  init                Initialize vault"
+            echo "  set <key> [value]   Store secret (prompts if value omitted)"
+            echo "  get <key>           Retrieve secret"
+            echo "  list                List all keys"
+            echo "  delete <key>        Delete secret"
+            echo "  shell               Print secrets as export statements"
+            echo "  export <file>       Backup vault (encrypted)"
+            echo "  import <file>       Restore vault from backup"
+            echo "  status              Show vault information"
             exit 1
             ;;
     esac

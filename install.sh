@@ -127,10 +127,13 @@ NC='\033[0m'
 # ============================================================================
 
 print_header() {
-    echo -e "\n${BLUE}╔════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║${NC}  Dotfiles Installation  ${CYAN}v${DOTFILES_VERSION}${NC} (Arch/CachyOS)         ${BLUE}║${NC}"
-    echo -e "${BLUE}║${NC}  Repo: ${DOTFILES_GITHUB_USER}/${DOTFILES_REPO_NAME}                        ${BLUE}║${NC}"
-    echo -e "${BLUE}╚════════════════════════════════════════════════════════════╝${NC}\n"
+    local user="${USER:-root}"
+    local hostname="${HOSTNAME:-localhost}"
+    local timestamp=$(date '+%a %b %d %H:%M')
+    
+    echo ""
+    printf "${CYAN}+ ${NC}%-20s %30s %25s\n" "$user@$hostname" "install.sh" "$timestamp"
+    echo ""
 }
 
 print_step() {

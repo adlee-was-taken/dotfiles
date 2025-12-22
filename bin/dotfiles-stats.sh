@@ -1,526 +1,241 @@
 #!/usr/bin/env bash
 # ============================================================================
-# Shell Stats - Command Analytics Dashboard
-# ============================================================================
-# Analyzes your shell history to provide insights and suggestions
-#
-# Usage:
-#   shell-stats.sh                # Show dashboard
-#   shell-stats.sh --top [n]      # Top N commands
-#   shell-stats.sh --suggest      # Suggest aliases
-#   shell-stats.sh --hours        # Commands by hour
-#   shell-stats.sh --dirs         # Most used directories
-#   shell-stats.sh --export       # Export stats as JSON
+# Dotfiles Shell Analytics (Arch/CachyOS)
 # ============================================================================
 
 set -e
 
-# ============================================================================
-# Configuration
-# ============================================================================
-
-HISTFILE="${HISTFILE:-$HOME/.zsh_history}"
-BASH_HISTFILE="$HOME/.bash_history"
-STATS_CACHE="$HOME/.cache/shell-stats"
-STATS_FILE="$STATS_CACHE/stats.json"
-
-mkdir -p "$STATS_CACHE"
+# Color codes
+readonly RED='\033[0;31m'
+readonly GREEN='\033[0;32m'
+readonly YELLOW='\033[1;33m'
+readonly BLUE='\033[0;34m'
+readonly CYAN='\033[0;36m'
+readonly MAGENTA='\033[0;35m'
+readonly NC='\033[0m'
 
 # ============================================================================
-# Colors
+# Print MOTD-style header
 # ============================================================================
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-MAGENTA='\033[0;35m'
-DIM='\033[2m'
-BOLD='\033[1m'
-NC='\033[0m'
+print_header() {
+    local user="${USER:-root}"
+    local hostname="${HOSTNAME:-localhost}"
+    local timestamp=$(date '+%a %b %d %H:%M')
+    
+    echo ""
+    printf "${CYAN}+ ${NC}%-20s %30s %25s\n" "$user@$hostname" "dotfiles-stats" "$timestamp"
+    echo ""
+}
 
 # ============================================================================
-# History Parsing
+# Helper functions
 # ============================================================================
 
-get_history_file() {
-    if [[ -f "$HISTFILE" ]]; then
-        echo "$HISTFILE"
-    elif [[ -f "$BASH_HISTFILE" ]]; then
-        echo "$BASH_HISTFILE"
-    else
-        echo ""
+print_section() {
+    echo ""
+    echo -e "${BLUE}▶${NC} $1"
+    echo -e "${CYAN}─────────────────────────────────────────────────────────────${NC}"
+}
+
+# Get command history
+get_history() {
+    if [[ -f "$HOME/.bash_history" ]]; then
+        cat "$HOME/.bash_history"
+    elif [[ -f "$HOME/.zsh_history" ]]; then
+        grep "^:" "$HOME/.zsh_history" | cut -d';' -f2 || cat "$HOME/.zsh_history"
     fi
 }
 
-parse_zsh_history() {
-    # Zsh extended history format: : timestamp:0;command
-    local histfile=$(get_history_file)
-    [[ -z "$histfile" ]] && return
-    
-    if [[ "$histfile" == *"zsh"* ]]; then
-        # Zsh format
-        cat "$histfile" 2>/dev/null | sed 's/^: [0-9]*:[0-9]*;//' | grep -v '^$'
-    else
-        # Bash format
-        cat "$histfile" 2>/dev/null | grep -v '^#' | grep -v '^$'
-    fi
-}
-
-get_command_count() {
-    parse_zsh_history | wc -l | tr -d ' '
-}
-
-get_unique_commands() {
-    parse_zsh_history | awk '{print $1}' | sort -u | wc -l | tr -d ' '
-}
-
 # ============================================================================
-# Analysis Functions
+# Statistics functions
 # ============================================================================
-
-top_commands() {
-    local count="${1:-15}"
-    
-    parse_zsh_history | \
-        awk '{print $1}' | \
-        sort | \
-        uniq -c | \
-        sort -rn | \
-        head -n "$count"
-}
-
-top_full_commands() {
-    local count="${1:-10}"
-    
-    parse_zsh_history | \
-        sort | \
-        uniq -c | \
-        sort -rn | \
-        head -n "$count"
-}
-
-commands_by_hour() {
-    local histfile=$(get_history_file)
-    [[ -z "$histfile" ]] && return
-    
-    # Try to extract timestamps from zsh history
-    if [[ "$histfile" == *"zsh"* ]]; then
-        grep '^:' "$histfile" 2>/dev/null | \
-            sed 's/^: \([0-9]*\):.*/\1/' | \
-            while read -r ts; do
-                date -d "@$ts" '+%H' 2>/dev/null || date -r "$ts" '+%H' 2>/dev/null
-            done | \
-            sort | \
-            uniq -c | \
-            sort -k2 -n
-    else
-        echo "Timestamp analysis requires zsh extended history"
-    fi
-}
-
-most_used_dirs() {
-    parse_zsh_history | \
-        grep -E '^cd ' | \
-        sed 's/^cd //' | \
-        sort | \
-        uniq -c | \
-        sort -rn | \
-        head -15
-}
-
-git_commands() {
-    parse_zsh_history | \
-        grep -E '^git ' | \
-        awk '{print $1" "$2}' | \
-        sort | \
-        uniq -c | \
-        sort -rn | \
-        head -15
-}
-
-docker_commands() {
-    parse_zsh_history | \
-        grep -E '^docker ' | \
-        awk '{print $1" "$2}' | \
-        sort | \
-        uniq -c | \
-        sort -rn | \
-        head -10
-}
-
-# ============================================================================
-# Suggestion Engine
-# ============================================================================
-
-suggest_aliases() {
-    echo -e "${CYAN}Suggested Aliases${NC}"
-    echo -e "${DIM}Based on your most-typed commands${NC}"
-    echo
-    
-    # Get commands typed more than 10 times that are longer than 5 chars
-    parse_zsh_history | \
-        awk 'length($0) > 8' | \
-        sort | \
-        uniq -c | \
-        sort -rn | \
-        head -20 | \
-        while read -r count cmd; do
-            # Skip if count is too low
-            [[ $count -lt 5 ]] && continue
-            
-            # Skip single-word commands that are likely already short
-            local words=$(echo "$cmd" | wc -w | tr -d ' ')
-            [[ $words -lt 2 && ${#cmd} -lt 6 ]] && continue
-            
-            # Generate alias suggestion
-            local alias_name=""
-            
-            # Common patterns
-            case "$cmd" in
-                "git status")
-                    alias_name="gs"
-                    ;;
-                "git add .")
-                    alias_name="ga"
-                    ;;
-                "git commit"*)
-                    alias_name="gc"
-                    ;;
-                "git push"*)
-                    alias_name="gp"
-                    ;;
-                "git pull"*)
-                    alias_name="gl"
-                    ;;
-                "docker ps"*)
-                    alias_name="dps"
-                    ;;
-                "docker-compose up"*)
-                    alias_name="dcup"
-                    ;;
-                "docker-compose down"*)
-                    alias_name="dcdown"
-                    ;;
-                "kubectl get"*)
-                    alias_name="kg"
-                    ;;
-                "ls -la"*|"ls -al"*)
-                    alias_name="ll"
-                    ;;
-                "cd ..")
-                    alias_name=".."
-                    ;;
-                *)
-                    # Generate from first letters
-                    alias_name=$(echo "$cmd" | awk '{for(i=1;i<=NF && i<=3;i++) printf substr($i,1,1)}')
-                    ;;
-            esac
-            
-            # Check if alias already exists
-            if alias "$alias_name" &>/dev/null 2>&1; then
-                echo -e "  ${GREEN}✓${NC} ${DIM}$alias_name${NC} already defined (used $count times)"
-            else
-                local saved_chars=$(( (${#cmd} - ${#alias_name}) * count ))
-                echo -e "  ${YELLOW}→${NC} alias ${CYAN}$alias_name${NC}='$cmd'"
-                echo -e "    ${DIM}Used $count times, would save ~$saved_chars keystrokes${NC}"
-            fi
-        done
-}
-
-# ============================================================================
-# Dashboard
-# ============================================================================
-
-draw_bar() {
-    local value=$1
-    local max=$2
-    local width=${3:-30}
-    
-    # Avoid division by zero
-    [[ $max -eq 0 ]] && max=1
-    
-    local filled=$((value * width / max))
-    local empty=$((width - filled))
-    
-    # Build filled portion
-    local filled_bar=""
-    local empty_bar=""
-    local i
-    
-    for ((i=0; i<filled; i++)); do
-        filled_bar+="█"
-    done
-    for ((i=0; i<empty; i++)); do
-        empty_bar+="░"
-    done
-    
-    # Use echo -ne to interpret escape sequences
-    echo -ne "\033[0;32m${filled_bar}\033[2m${empty_bar}\033[0m"
-}
 
 show_dashboard() {
-    clear
+    print_section "Command History Dashboard"
     
-    local total=$(get_command_count)
-    local unique=$(get_unique_commands)
+    local total=$(get_history | wc -l)
+    local unique=$(get_history | sort | uniq | wc -l)
     
-    echo -e "${BLUE}╔═══════════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║${NC}  ${BOLD}Shell Analytics Dashboard${NC}                                       ${BLUE}║${NC}"
-    echo -e "${BLUE}╚═══════════════════════════════════════════════════════════════════╝${NC}"
-    echo
+    echo ""
+    echo -e "  ${CYAN}Total Commands:${NC}  $total"
+    echo -e "  ${CYAN}Unique Commands:${NC} $unique"
+    echo ""
     
-    # Summary stats
-    echo -e "${CYAN}Overview${NC}"
-    echo -e "  Total commands:  ${GREEN}${total}${NC}"
-    echo -e "  Unique commands: ${GREEN}${unique}${NC}"
-    echo -e "  History file:    ${DIM}$(get_history_file)${NC}"
-    echo
+    print_section "Top 15 Commands"
     
-    # Top commands
-    echo -e "${CYAN}Top Commands${NC}"
-    echo
-    
-    local max_count=$(top_commands 1 | awk '{print $1}')
-    
-    top_commands 10 | while read -r count cmd; do
-        printf "  %-12s %5d  " "$cmd" "$count"
-        draw_bar "$count" "$max_count" 25
-        echo
+    get_history | awk '{print $1}' | sort | uniq -c | sort -rn | head -15 | while read count cmd; do
+        local percent=$((count * 100 / total))
+        local bar_length=$((percent / 5))
+        local bar=$(printf '█%.0s' $(seq 1 $bar_length))
+        printf "  %-20s ${GREEN}%5d${NC} ${MAGENTA}%3d%%${NC} ${bar}\n" "$cmd" "$count" "$percent"
     done
     
-    echo
+    echo ""
+}
+
+show_top_n() {
+    local n="${1:-20}"
     
-    # Git breakdown (if git is in top commands)
-    if parse_zsh_history | grep -q '^git '; then
-        echo -e "${CYAN}Git Commands${NC}"
-        echo
-        
-        git_commands | head -5 | while read -r count cmd; do
-            printf "  %-20s %5d\n" "$cmd" "$count"
-        done
-        echo
-    fi
+    print_section "Top $n Commands"
     
-    # Directory usage
-    echo -e "${CYAN}Most Visited Directories${NC}"
-    echo
+    local total=$(get_history | wc -l)
     
-    most_used_dirs | head -5 | while read -r count dir; do
-        printf "  %-35s %5d\n" "$dir" "$count"
+    get_history | awk '{print $1}' | sort | uniq -c | sort -rn | head -"$n" | \
+    while read count cmd; do
+        local percent=$((count * 100 / total))
+        printf "  ${YELLOW}%4d${NC}  %-30s  ${CYAN}%3d%%${NC}\n" "$count" "$cmd" "$percent"
     done
-    echo
     
-    # Quick suggestions
-    echo -e "${CYAN}💡 Quick Tips${NC}"
-    echo
-    
-    # Find most-typed long command
-    local long_cmd=$(parse_zsh_history | awk 'length($0) > 15' | sort | uniq -c | sort -rn | head -1)
-    local long_count=$(echo "$long_cmd" | awk '{print $1}')
-    local long_text=$(echo "$long_cmd" | sed 's/^[[:space:]]*[0-9]*[[:space:]]*//')
-    
-    if [[ $long_count -gt 10 ]]; then
-        echo -e "  ${YELLOW}→${NC} You've typed '${CYAN}$long_text${NC}' $long_count times"
-        echo -e "    Consider creating an alias for it!"
-    fi
-    
-    # Check for common inefficiencies
-    local cd_dots=$(parse_zsh_history | grep -c '^cd \.\.' || echo 0)
-    if [[ $cd_dots -gt 50 ]]; then
-        echo -e "  ${YELLOW}→${NC} You use 'cd ..' a lot ($cd_dots times)"
-        echo -e "    Tip: alias ..='cd ..' and ...='cd ../..'"
-    fi
-    
-    echo
-    echo -e "${DIM}Run 'shell-stats.sh --suggest' for detailed alias suggestions${NC}"
+    echo ""
 }
 
-# ============================================================================
-# Export
-# ============================================================================
-
-export_stats() {
-    local output="${1:-$STATS_FILE}"
+show_suggestions() {
+    print_section "Suggested Aliases"
     
-    echo "{"
-    echo "  \"generated\": \"$(date -Iseconds)\","
-    echo "  \"total_commands\": $(get_command_count),"
-    echo "  \"unique_commands\": $(get_unique_commands),"
-    echo "  \"top_commands\": ["
+    local total=$(get_history | wc -l)
     
-    top_commands 20 | awk 'BEGIN{first=1} {
-        if (!first) printf ",\n"
-        printf "    {\"command\": \"%s\", \"count\": %d}", $2, $1
-        first=0
-    }'
+    echo ""
+    get_history | awk '{print $1}' | sort | uniq -c | sort -rn | head -20 | \
+    while read count cmd; do
+        if [[ $count -gt 50 ]]; then
+            printf "  ${YELLOW}Suggestion:${NC} ${GREEN}alias ${cmd:0:2}='$cmd'${NC}  (used $count times)\n"
+        fi
+    done
     
-    echo
-    echo "  ]"
-    echo "}"
+    echo ""
 }
 
-# ============================================================================
-# Activity Heatmap
-# ============================================================================
+show_breakdown() {
+    print_section "Command Breakdown"
+    
+    echo ""
+    echo -e "  ${CYAN}Git Commands:${NC}"
+    get_history | grep "^git" | wc -l | xargs printf "    %d\n"
+    
+    echo -e "  ${CYAN}Navigation (cd):${NC}"
+    get_history | grep "^cd" | wc -l | xargs printf "    %d\n"
+    
+    echo -e "  ${CYAN}File Operations (ls):${NC}"
+    get_history | grep "^ls" | wc -l | xargs printf "    %d\n"
+    
+    echo -e "  ${CYAN}Package Management (pacman/paru/yay):${NC}"
+    get_history | grep -E "^(pacman|paru|yay)" | wc -l | xargs printf "    %d\n"
+    
+    echo -e "  ${CYAN}Editing (vim/nvim):${NC}"
+    get_history | grep -E "^(vim|nvim)" | wc -l | xargs printf "    %d\n"
+    
+    echo -e "  ${CYAN}Dotfiles Commands (dotfiles-):${NC}"
+    get_history | grep "^dotfiles-" | wc -l | xargs printf "    %d\n"
+    
+    echo ""
+}
 
 show_heatmap() {
-    echo -e "${CYAN}Activity by Hour${NC}"
-    echo
+    print_section "Activity by Hour"
     
-    # Create array for 24 hours
-    declare -a hours
-    for i in {0..23}; do
-        hours[$i]=0
+    echo ""
+    if [[ -f "$HOME/.zsh_history" ]]; then
+        # Extract hour from zsh history timestamp
+        grep "^:" "$HOME/.zsh_history" | awk -F'[: ]' '{print $2}' | \
+        date -f - "+%H" 2>/dev/null | sort | uniq -c | sort -k2n | while read count hour; do
+            local bar_length=$((count / 5))
+            local bar=$(printf '█%.0s' $(seq 1 $bar_length))
+            printf "  ${CYAN}%02d:00${NC}  ${MAGENTA}%5d${NC}  ${GREEN}${bar}${NC}\n" "$hour" "$count"
+        done
+    else
+        echo "  ${YELLOW}⚠${NC} Zsh history file required for hourly breakdown"
+    fi
+    
+    echo ""
+}
+
+show_dirs() {
+    print_section "Most Visited Directories"
+    
+    echo ""
+    if [[ -f "$HOME/.zsh_history" ]]; then
+        grep "cd " "$HOME/.zsh_history" | awk '{print $NF}' | sort | uniq -c | \
+        sort -rn | head -15 | while read count dir; do
+            printf "  ${CYAN}%4d${NC}  ${YELLOW}%s${NC}\n" "$count" "$dir"
+        done
+    else
+        echo "  ${YELLOW}⚠${NC} Zsh history file required"
+    fi
+    
+    echo ""
+}
+
+show_git_breakdown() {
+    print_section "Git Command Breakdown"
+    
+    echo ""
+    local total=$(get_history | grep "^git" | wc -l)
+    
+    if [[ $total -eq 0 ]]; then
+        echo "  ${YELLOW}No git commands found${NC}"
+        return
+    fi
+    
+    get_history | grep "^git " | awk '{print $2}' | sort | uniq -c | sort -rn | \
+    head -10 | while read count subcmd; do
+        local percent=$((count * 100 / total))
+        printf "  ${YELLOW}git %-15s${NC}  ${CYAN}%4d${NC} (${MAGENTA}%3d%%${NC})\n" \
+            "$subcmd" "$count" "$percent"
     done
     
-    # Count commands per hour
-    local histfile=$(get_history_file)
-    if [[ "$histfile" == *"zsh"* && -f "$histfile" ]]; then
-        while IFS= read -r line; do
-            if [[ "$line" =~ ^:\ ([0-9]+): ]]; then
-                local ts="${BASH_REMATCH[1]}"
-                local hour=$(date -d "@$ts" '+%H' 2>/dev/null || date -r "$ts" '+%H' 2>/dev/null)
-                hour=${hour#0}  # Remove leading zero
-                ((hours[$hour]++)) || true
-            fi
-        done < "$histfile"
-        
-        # Find max for scaling
-        local max=1
-        for count in "${hours[@]}"; do
-            [[ $count -gt $max ]] && max=$count
-        done
-        
-        # Draw heatmap
-        echo -n "  "
-        for i in {0..23}; do
-            local intensity=$((hours[$i] * 4 / max))
-            case $intensity in
-                0) echo -ne "${DIM}░${NC}" ;;
-                1) echo -ne "${GREEN}▒${NC}" ;;
-                2) echo -ne "${YELLOW}▓${NC}" ;;
-                3) echo -ne "${RED}█${NC}" ;;
-                *) echo -ne "${MAGENTA}█${NC}" ;;
-            esac
-        done
-        echo
-        
-        echo -ne "  "
-        echo -e "${DIM}0     6     12    18   23${NC}"
-        echo
-        
-        # Peak hours
-        local peak_hour=0
-        local peak_count=0
-        for i in {0..23}; do
-            if [[ ${hours[$i]} -gt $peak_count ]]; then
-                peak_count=${hours[$i]}
-                peak_hour=$i
-            fi
-        done
-        
-        echo -e "  Peak activity: ${GREEN}${peak_hour}:00${NC} ($peak_count commands)"
-    else
-        echo -e "  ${YELLOW}⚠${NC} Heatmap requires zsh with extended history"
-    fi
+    echo ""
 }
 
 # ============================================================================
 # Main
 # ============================================================================
 
-show_help() {
-    echo "Usage: dotfiles-stats.sh [COMMAND] [OPTIONS]"
-    echo
-    echo "Commands:"
-    echo "  (none)        Show dashboard"
-    echo "  --top [n]     Top N commands (default: 15)"
-    echo "  --full [n]    Top N full command lines"
-    echo "  --suggest     Suggest aliases based on usage"
-    echo "  --hours       Show activity by hour"
-    echo "  --heatmap     Show activity heatmap"
-    echo "  --dirs        Most visited directories"
-    echo "  --git         Git command breakdown"
-    echo "  --docker      Docker command breakdown"
-    echo "  --export      Export stats as JSON"
-    echo "  --help        Show this help"
-    echo
-    echo "Aliases:"
-    echo "  dfstats, stats   Show dashboard"
-    echo "  tophist          Top commands"
-    echo "  suggest          Suggest aliases"
-    echo
-}
-
 main() {
-    local histfile=$(get_history_file)
+    print_header
     
-    if [[ -z "$histfile" || ! -f "$histfile" ]]; then
-        echo -e "${RED}✗${NC} No history file found"
-        echo "  Checked: $HISTFILE"
-        echo "  Checked: $BASH_HISTFILE"
-        exit 1
-    fi
-    
-    case "${1:-}" in
-        --top|-t)
-            echo -e "${CYAN}Top Commands${NC}"
-            echo
-            top_commands "${2:-15}" | while read -r count cmd; do
-                printf "  %5d  %s\n" "$count" "$cmd"
-            done
-            ;;
-        --full|-f)
-            echo -e "${CYAN}Top Full Commands${NC}"
-            echo
-            top_full_commands "${2:-10}" | while read -r count cmd; do
-                printf "  %5d  %s\n" "$count" "$cmd"
-            done
-            ;;
-        --suggest|-s)
-            suggest_aliases
-            ;;
-        --hours)
-            commands_by_hour
-            ;;
-        --heatmap|-m)
-            show_heatmap
-            ;;
-        --dirs|-d)
-            echo -e "${CYAN}Most Visited Directories${NC}"
-            echo
-            most_used_dirs | while read -r count dir; do
-                printf "  %5d  %s\n" "$count" "$dir"
-            done
-            ;;
-        --git|-g)
-            echo -e "${CYAN}Git Commands${NC}"
-            echo
-            git_commands | while read -r count cmd; do
-                printf "  %5d  %s\n" "$count" "$cmd"
-            done
-            ;;
-        --docker)
-            echo -e "${CYAN}Docker Commands${NC}"
-            echo
-            docker_commands | while read -r count cmd; do
-                printf "  %5d  %s\n" "$count" "$cmd"
-            done
-            ;;
-        --export|-e)
-            export_stats "${2:-}"
-            ;;
-        --help|-h)
-            show_help
-            ;;
-        "")
+    case "${1:-dashboard}" in
+        dashboard)
             show_dashboard
             ;;
+        top)
+            show_top_n "${2:-20}"
+            ;;
+        suggest)
+            show_suggestions
+            ;;
+        breakdown)
+            show_breakdown
+            ;;
+        heatmap)
+            show_heatmap
+            ;;
+        dirs)
+            show_dirs
+            ;;
+        git)
+            show_git_breakdown
+            ;;
+        export)
+            # Export as JSON
+            echo "{"
+            echo "  \"total_commands\": $(get_history | wc -l),"
+            echo "  \"unique_commands\": $(get_history | sort | uniq | wc -l),"
+            echo "  \"timestamp\": \"$(date -Iseconds)\""
+            echo "}"
+            ;;
         *)
-            echo "Unknown command: $1"
-            show_help
+            echo "Usage: $0 {dashboard|top [n]|suggest|breakdown|heatmap|dirs|git|export}"
+            echo ""
+            echo "Commands:"
+            echo "  dashboard     Show full dashboard (default)"
+            echo "  top [n]       Show top N commands (default: 20)"
+            echo "  suggest       Suggest aliases"
+            echo "  breakdown     Command category breakdown"
+            echo "  heatmap       Activity by hour"
+            echo "  dirs          Most visited directories"
+            echo "  git           Git command breakdown"
+            echo "  export        Export as JSON"
             exit 1
             ;;
     esac
