@@ -15,7 +15,7 @@ Desktop.ini
 *.swo
 
 # --- Compiled zsh stuff ---
-*.jwc
+*.zsh.jwc
 
 # --- Local machine-specific configs ---
 *.local
