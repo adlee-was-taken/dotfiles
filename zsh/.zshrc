@@ -244,15 +244,26 @@ if _has_cmd kubectl; then
 fi
 
 # ============================================================================
-# Dotfiles Functions (deferred loading)
+# Dotfiles Configuration
 # ============================================================================
 
 _dotfiles_dir="$HOME/.dotfiles"
 
+# Load dotfiles.conf first (sets DOTFILES_DIR and other vars)
+if [[ -f "$_dotfiles_dir/dotfiles.conf" ]]; then
+    source "$_dotfiles_dir/dotfiles.conf"
+else
+    DOTFILES_DIR="$HOME/.dotfiles"
+    DOTFILES_BRANCH="main"
+fi
+
+# Source shared colors library
+[[ -f "$_dotfiles_dir/zsh/lib/colors.zsh" ]] && source "$_dotfiles_dir/zsh/lib/colors.zsh"
+
 # Source dotfiles aliases
 [[ -f "$_dotfiles_dir/zsh/aliases.zsh" ]] && source "$_dotfiles_dir/zsh/aliases.zsh"
 
-# These are loaded immediately (small files, needed for keybindings)
+# Load command-palette immediately (needed for keybindings)
 [[ -f "$_dotfiles_dir/zsh/functions/command-palette.zsh" ]] && \
     source "$_dotfiles_dir/zsh/functions/command-palette.zsh"
 
@@ -267,34 +278,24 @@ _deferred_load() {
     # Setup FZF
     _has_cmd fzf && _setup_fzf
     
-    # Source optional function files
-    [[ -f "$_dotfiles_dir/zsh/functions/snapper.zsh" ]] && \
-        source "$_dotfiles_dir/zsh/functions/snapper.zsh"
-    [[ -f "$_dotfiles_dir/zsh/functions/smart-suggest.zsh" ]] && \
-        source "$_dotfiles_dir/zsh/functions/smart-suggest.zsh"
-    [[ -f "$_dotfiles_dir/zsh/functions/password-manager.zsh" ]] && \
-        source "$_dotfiles_dir/zsh/functions/password-manager.zsh"
-    [[ -f "$_dotfiles_dir/zsh/functions/tmux-workspaces.zsh" ]] && \
-        source "$_dotfiles_dir/zsh/functions/tmux-workspaces.zsh"
-    [[ -f "$_dotfiles_dir/zsh/functions/python-templates.zsh" ]] && \
-        source "$_dotfiles_dir/zsh/functions/python-templates.zsh"
-
-    # Load vault secrets
-    #local vault_script="$_dotfiles_dir/bin/dotfiles-vault.sh"
-    #if [[ -f "$_dotfiles_dir/vault/secrets.enc" ]] && [[ -x "$vault_script" ]]; then
-    #    eval "$("$vault_script" shell 2>/dev/null)" || true
-    #fi
-
-    # Load dotfiles.conf env variables.
-    DOTFILES_CONF="$HOME/.dotfiles/dotfiles.conf"
- 
-    if [[ -f "$DOTFILES_CONF" ]]; then
-        source $DOTFILES_CONF
-    else
-        DOTFILES_DIR="$HOME/.dotfiles"
-        DOTFILES_BRANCH="main"
+    # -----------------------------------------------------------------------
+    # Load all function files from functions directory
+    # Excludes command-palette.zsh (already loaded) and motd.zsh (loaded separately)
+    # -----------------------------------------------------------------------
+    local func_dir="$_dotfiles_dir/zsh/functions"
+    if [[ -d "$func_dir" ]]; then
+        for func_file in "$func_dir"/*.zsh; do
+            [[ -f "$func_file" ]] || continue
+            
+            # Skip files that are loaded elsewhere
+            case "${func_file:t}" in
+                command-palette.zsh) continue ;;  # Loaded early for keybindings
+                motd.zsh) continue ;;             # Loaded after prompt
+            esac
+            
+            source "$func_file"
+        done
     fi
-    
 }
 
 # ============================================================================
@@ -304,18 +305,20 @@ _deferred_load() {
 _background_tasks() {
     # Check for dotfiles updates
     if [[ "${DOTFILES_AUTO_SYNC_CHECK:-true}" == "true" ]]; then
-        # Use full path to avoid command_not_found issues
         $_dotfiles_dir/bin/dotfiles-sync.sh status -s 2> /dev/null
-        #[[ -x "$sync_script" ]] && "$sync_script" --auto 2>/dev/null &!
     fi
     _df_check_sys_updates
-
 }
 
 _df_check_sys_updates() {
-    # Check number of available updates and export.
-    export UPDATE_PKG_COUNT=$(checkupdates | wc -l)
+    # Check number of available updates and export
+    if _has_cmd checkupdates; then
+        export UPDATE_PKG_COUNT=$(checkupdates 2>/dev/null | wc -l)
+    else
+        export UPDATE_PKG_COUNT=0
+    fi
 }
+
 # ============================================================================
 # Initialization Strategy
 # ============================================================================
@@ -344,6 +347,7 @@ else
             case "${MOTD_STYLE:-compact}" in
                 compact) show_motd ;;
                 mini) show_motd_mini ;;
+                full) show_motd_full ;;
             esac
         fi
         

@@ -1,0 +1,2 @@
+# SSH Connection Profiles
+# Format: name|user@host|port|key_file|options|description
