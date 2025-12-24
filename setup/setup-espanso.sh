@@ -35,6 +35,8 @@ source "$HOME/.dotfiles/zsh/lib/colors.zsh" 2>/dev/null || {
     typeset -g DF_BLUE=$'\033[38;5;39m' DF_CYAN=$'\033[38;5;51m'
     typeset -g DF_GREEN=$'\033[38;5;82m' DF_YELLOW=$'\033[38;5;220m'
     typeset -g DF_RED=$'\033[38;5;196m' DF_GREY=$'\033[38;5;242m' DF_NC=$'\033[0m'
+    typeset -g DF_LIGHT_BLUE=$'\033[38;5;39m' DF_LIGHT_GREEN=$'\033[38;5;82m'
+
 }
 
 
@@ -63,7 +65,7 @@ print_header() {
 
     echo ""
     echo -e "${DF_GREY}╒${hline}╕${DF_NC}"
-    echo -e "${DF_GREY}│${DF_NC} ${DF_BOLD}${DF_BLUE}${h_left}${DF_NC}${h_spaces}${DF_DIM}${h_center}${h_spaces}${h_right}${DF_NC} ${DF_GREY}│${DF_NC}"
+    echo -e "${DF_GREY}│${DF_NC} ${DF_BOLD}${DF_LIGHT_BLUE}${h_left}${DF_NC}${h_spaces}${DF_LIGHT_GREEN}${h_center}${h_spaces}${DF_NC}${DF_BOLD}${h_right}${DF_NC} ${DF_GREY}│${DF_NC}"
     echo -e "${DF_GREY}╘${hline}╛${DF_NC}"
     echo ""
 }
