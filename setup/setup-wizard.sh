@@ -31,6 +31,18 @@ fi
 # Colors (fallback when gum not available)
 # ============================================================================
 
+ # Source shared colors (with fallback)
+source "${0:A:h}/../lib/colors.zsh" 2>/dev/null || \
+source "$HOME/.dotfiles/zsh/lib/colors.zsh" 2>/dev/null || {
+    typeset -g DF_NC=$'\033[0m' DF_BOLD=$'\033[1m' DF_DIM=$'\033[2m'
+    typeset -g DF_BLUE=$'\033[38;5;39m' DF_CYAN=$'\033[38;5;51m'
+    typeset -g DF_GREEN=$'\033[38;5;82m' DF_YELLOW=$'\033[38;5;220m'
+    typeset -g DF_RED=$'\033[38;5;196m' DF_GREY=$'\033[38;5;242m' DF_NC=$'\033[0m'
+    typeset -g DF_LIGHT_BLUE=$'\033[38;5;39m' DF_LIGHT_GREEN=$'\033[38;5;82m'
+}
+
+
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -45,26 +57,19 @@ NC='\033[0m'
 # MOTD-style header
 # ============================================================================
 
-_M_WIDTH=66
+DF_WIDTH=66
 
 print_header() {
     local user="${USER:-root}"
     local hostname="${HOSTNAME:-$(hostname -s 2>/dev/null)}"
     local script_name="setup-wizard"
     local datetime=$(date '+%a %b %d %H:%M')
-    
-    # Colors
-    local _M_RESET=$'\033[0m'
-    local _M_BOLD=$'\033[1m'
-    local _M_DIM=$'\033[2m'
-    local _M_BLUE=$'\033[38;5;39m'
-    local _M_GREY=$'\033[38;5;242m'
-    
+
     # Build horizontal line
     local hline=""
-    for ((i=0; i<_M_WIDTH; i++)); do hline+="═"; done
-    local inner=$((_M_WIDTH - 2))
-    
+    for ((i=0; i<DF_WIDTH; i++)); do hline+="═"; done
+    local inner=$((DF_WIDTH - 2))
+
     # Header content
     local h_left="✦ ${user}@${hostname}"
     local h_center="${script_name}"
@@ -72,11 +77,11 @@ print_header() {
     local h_pad=$(((inner - ${#h_left} - ${#h_center} - ${#h_right}) / 2))
     local h_spaces=""
     for ((i=0; i<h_pad; i++)); do h_spaces+=" "; done
-    
+
     echo ""
-    echo -e "${_M_GREY}╒${hline}╕${_M_RESET}"
-    echo -e "${_M_GREY}│${_M_RESET} ${_M_BOLD}${_M_BLUE}${h_left}${_M_RESET}${h_spaces}${_M_DIM}${h_center}${h_spaces}${h_right}${_M_RESET} ${_M_GREY}│${_M_RESET}"
-    echo -e "${_M_GREY}╘${hline}╛${_M_RESET}"
+    echo -e "${DF_GREY}╒${hline}╕${DF_RESET}"
+    echo -e "${DF_GREY}│${DF_RESET} ${DF_BOLD}${DF_LIGHT_BLUE}${h_left}${DF_RESET}${h_spaces}${DF_LIGHT_GREEN}${h_center} ${h_spaces}${DF_NC}${DF_BOLD}${h_right}${DF_RESET} ${DF_GREY}│${DF_RESET}"
+    echo -e "${DF_GREY}╘${hline}╛${DF_RESET}"
     echo ""
 }
 
@@ -95,8 +100,8 @@ check_gum() {
 }
 
 install_gum() {
-    echo -e "${CYAN}Installing gum for beautiful prompts...${NC}"
-    
+    echo -e "${DF_CYAN}Installing gum for beautiful prompts...${DF_NC}"
+
     if [[ "$OSTYPE" == "darwin"* ]]; then
         brew install gum
     elif command -v pacman &>/dev/null; then
@@ -115,10 +120,10 @@ gpgcheck=1
 gpgkey=https://repo.charm.sh/yum/gpg.key' | sudo tee /etc/yum.repos.d/charm.repo
         sudo dnf install -y gum
     else
-        echo -e "${YELLOW}Could not auto-install gum. Using fallback prompts.${NC}"
+        echo -e "${DF_YELLOW}Could not auto-install gum. Using fallback prompts.${DF_NC}"
         return 1
     fi
-    
+
     HAS_GUM=true
 }
 
@@ -139,9 +144,9 @@ wizard_header() {
             "$title"
     else
         echo
-        echo -e "${BLUE}╔════════════════════════════════════════════════════════════╗${NC}"
-        echo -e "${BLUE}║${NC}  ${BOLD}$title${NC}"
-        echo -e "${BLUE}╚════════════════════════════════════════════════════════════╝${NC}"
+        echo -e "${BLUE}╔════════════════════════════════════════════════════════════╗${DF_NC}"
+        echo -e "${BLUE}║${DF_NC}  ${BOLD}$title${DF_NC}"
+        echo -e "${BLUE}╚════════════════════════════════════════════════════════════╝${DF_NC}"
         echo
     fi
 }
@@ -154,14 +159,14 @@ wizard_spin() {
     else
         echo -n "$title... "
         "$@" &>/dev/null
-        echo -e "${GREEN}done${NC}"
+        echo -e "${DF_GREEN}done${DF_NC}"
     fi
 }
 
 wizard_confirm() {
     local prompt="$1"
     local default="${2:-yes}"
-    
+
     if [[ "$HAS_GUM" == true ]]; then
         if [[ "$default" == "yes" ]]; then
             gum confirm --default=yes "$prompt"
@@ -171,7 +176,7 @@ wizard_confirm() {
     else
         local yn_prompt="[Y/n]"
         [[ "$default" == "no" ]] && yn_prompt="[y/N]"
-        
+
         read -p "$prompt $yn_prompt: " response
         response=${response:-${default:0:1}}
         [[ "$response" =~ ^[Yy] ]]
@@ -182,7 +187,7 @@ wizard_input() {
     local prompt="$1"
     local default="$2"
     local placeholder="${3:-$default}"
-    
+
     if [[ "$HAS_GUM" == true ]]; then
         gum input --placeholder "$placeholder" --value "$default" --prompt "$prompt: "
     else
@@ -195,7 +200,7 @@ wizard_choose() {
     local prompt="$1"
     shift
     local options=("$@")
-    
+
     if [[ "$HAS_GUM" == true ]]; then
         echo "$prompt" >&2
         printf '%s\n' "${options[@]}" | gum choose
@@ -215,7 +220,7 @@ wizard_multichoose() {
     local prompt="$1"
     shift
     local options=("$@")
-    
+
     if [[ "$HAS_GUM" == true ]]; then
         echo "$prompt" >&2
         printf '%s\n' "${options[@]}" | gum choose --no-limit
@@ -237,7 +242,7 @@ wizard_multichoose() {
 wizard_write() {
     local prompt="$1"
     local placeholder="${2:-Type here...}"
-    
+
     if [[ "$HAS_GUM" == true ]]; then
         gum write --placeholder "$placeholder" --header "$prompt"
     else
@@ -255,23 +260,23 @@ step_welcome() {
     clear
     print_header
     wizard_header "🚀 Welcome to Dotfiles Setup Wizard"
-    
-    echo -e "${DIM}This wizard will help you configure your dotfiles installation."
-    echo -e "You can re-run this wizard anytime with: dotfiles --wizard${NC}"
+
+    echo -e "${DF_DIM}This wizard will help you configure your dotfiles installation."
+    echo -e "You can re-run this wizard anytime with: dotfiles --wizard${DF_NC}"
     echo
-    
+
     if ! wizard_confirm "Ready to begin?"; then
-        echo -e "${YELLOW}Setup cancelled.${NC}"
+        echo -e "${DF_YELLOW}Setup cancelled.${DF_NC}"
         exit 0
     fi
 }
 
 step_user_info() {
     wizard_header "👤 Personal Information"
-    
-    echo -e "${DIM}This information is used for git config, templates, etc.${NC}"
+
+    echo -e "${DF_DIM}This information is used for git config, templates, etc.${DF_NC}"
     echo
-    
+
     USER_FULLNAME=$(wizard_input "Full Name" "${USER_FULLNAME:-$(git config --global user.name 2>/dev/null || echo '')}")
     USER_EMAIL=$(wizard_input "Email" "${USER_EMAIL:-$(git config --global user.email 2>/dev/null || echo '')}")
     USER_GITHUB=$(wizard_input "GitHub Username" "${USER_GITHUB:-}")
@@ -280,13 +285,13 @@ step_user_info() {
 
 step_shell_choice() {
     wizard_header "🐚 Shell Configuration"
-    
+
     SHELL_CHOICE=$(wizard_choose "Which shell do you primarily use?" \
         "zsh" \
         "bash" \
         "fish" \
         "other")
-    
+
     if [[ "$SHELL_CHOICE" == "zsh" ]]; then
         ZSH_FRAMEWORK=$(wizard_choose "ZSH framework preference?" \
             "none (pure zsh)" \
@@ -299,10 +304,10 @@ step_shell_choice() {
 
 step_modules() {
     wizard_header "📦 Module Selection"
-    
-    echo -e "${DIM}Select which modules to install:${NC}"
+
+    echo -e "${DF_DIM}Select which modules to install:${DF_NC}"
     echo
-    
+
     SELECTED_MODULES=$(wizard_multichoose "Choose modules (space to select):" \
         "git - Git configuration and aliases" \
         "zsh - ZSH configuration" \
@@ -317,16 +322,16 @@ step_modules() {
 
 step_secrets() {
     wizard_header "🔐 Secrets Management"
-    
-    echo -e "${DIM}How would you like to manage secrets (API keys, tokens, etc.)?${NC}"
+
+    echo -e "${DF_DIM}How would you like to manage secrets (API keys, tokens, etc.)?${DF_NC}"
     echo
-    
+
     SECRETS_METHOD=$(wizard_choose "Secrets management:" \
         "vault - Encrypted local vault" \
         "1password - 1Password CLI integration" \
         "bitwarden - Bitwarden CLI integration" \
         "none - No secrets management")
-    
+
     if [[ "$SECRETS_METHOD" == "vault"* ]]; then
         if wizard_confirm "Initialize secrets vault now?"; then
             "${DOTFILES_DIR}/bin/dotfiles-vault.sh" init || true
@@ -336,50 +341,50 @@ step_secrets() {
 
 step_git_config() {
     wizard_header "📝 Git Configuration"
-    
+
     if wizard_confirm "Configure Git with your information?"; then
         git config --global user.name "$USER_FULLNAME"
         git config --global user.email "$USER_EMAIL"
-        echo -e "${GREEN}✓${NC} Git configured"
+        echo -e "${DF_GREEN}✓${DF_NC} Git configured"
     fi
-    
+
     if wizard_confirm "Set up SSH key for GitHub?" "no"; then
         if [[ ! -f "$HOME/.ssh/id_ed25519" ]]; then
             ssh-keygen -t ed25519 -C "$USER_EMAIL" -f "$HOME/.ssh/id_ed25519"
-            echo -e "${GREEN}✓${NC} SSH key generated"
+            echo -e "${DF_GREEN}✓${DF_NC} SSH key generated"
             echo
-            echo -e "${CYAN}Add this key to GitHub:${NC}"
+            echo -e "${DF_CYAN}Add this key to GitHub:${DF_NC}"
             cat "$HOME/.ssh/id_ed25519.pub"
             echo
             wizard_confirm "Press Enter when done..."
         else
-            echo -e "${YELLOW}SSH key already exists${NC}"
+            echo -e "${DF_YELLOW}SSH key already exists${DF_NC}"
         fi
     fi
 }
 
 step_backup() {
     wizard_header "💾 Backup Existing Files"
-    
+
     local backup_dir="$HOME/.dotfiles-backup-$(date +%Y%m%d-%H%M%S)"
-    
+
     if wizard_confirm "Backup existing dotfiles before installation?"; then
         mkdir -p "$backup_dir"
-        
+
         local files_to_backup=(.zshrc .bashrc .vimrc .gitconfig .tmux.conf)
         local backed_up=0
-        
+
         for file in "${files_to_backup[@]}"; do
             if [[ -f "$HOME/$file" && ! -L "$HOME/$file" ]]; then
                 cp "$HOME/$file" "$backup_dir/"
                 ((backed_up++))
             fi
         done
-        
+
         if [[ $backed_up -gt 0 ]]; then
-            echo -e "${GREEN}✓${NC} Backed up $backed_up files to $backup_dir"
+            echo -e "${DF_GREEN}✓${DF_NC} Backed up $backed_up files to $backup_dir"
         else
-            echo -e "${DIM}No existing files to backup${NC}"
+            echo -e "${DF_DIM}No existing files to backup${DF_NC}"
             rmdir "$backup_dir" 2>/dev/null || true
         fi
     fi
@@ -387,40 +392,40 @@ step_backup() {
 
 step_install() {
     wizard_header "⚡ Installation"
-    
-    echo -e "${DIM}Ready to install with these settings:${NC}"
+
+    echo -e "${DF_DIM}Ready to install with these settings:${DF_NC}"
     echo
     echo "  User: $USER_FULLNAME <$USER_EMAIL>"
     echo "  Shell: $SHELL_CHOICE"
     echo "  Secrets: $SECRETS_METHOD"
     echo
-    
+
     if wizard_confirm "Proceed with installation?"; then
         echo
         wizard_spin "Installing dotfiles" sleep 2
         wizard_spin "Linking configuration files" sleep 1
         wizard_spin "Setting up shell" sleep 1
-        
+
         echo
-        echo -e "${GREEN}✓${NC} Installation complete!"
+        echo -e "${DF_GREEN}✓${DF_NC} Installation complete!"
     else
-        echo -e "${YELLOW}Installation cancelled.${NC}"
+        echo -e "${DF_YELLOW}Installation cancelled.${DF_NC}"
         exit 0
     fi
 }
 
 step_summary() {
     wizard_header "✨ Setup Complete!"
-    
-    echo -e "${GREEN}Your dotfiles have been configured successfully!${NC}"
+
+    echo -e "${DF_GREEN}Your dotfiles have been configured successfully!${DF_NC}"
     echo
-    echo -e "${BOLD}Quick Commands:${NC}"
+    echo -e "${BOLD}Quick Commands:${DF_NC}"
     echo "  dotfiles sync     - Sync with remote repository"
     echo "  dotfiles update   - Update dotfiles"
     echo "  dotfiles doctor   - Check installation health"
     echo "  dotfiles vault    - Manage secrets"
     echo
-    echo -e "${DIM}Restart your terminal or run 'source ~/.zshrc' to apply changes.${NC}"
+    echo -e "${DF_DIM}Restart your terminal or run 'source ~/.zshrc' to apply changes.${DF_NC}"
 }
 
 # ============================================================================
@@ -429,7 +434,7 @@ step_summary() {
 
 save_config() {
     local config_file="${DOTFILES_DIR}/dotfiles.conf"
-    
+
     cat > "$config_file" << EOF
 # Dotfiles Configuration
 # Generated by setup-wizard on $(date)
@@ -450,8 +455,8 @@ ZSH_FRAMEWORK="${ZSH_FRAMEWORK:-none}"
 # Secrets Management
 SECRETS_METHOD="$SECRETS_METHOD"
 EOF
-    
-    echo -e "${GREEN}✓${NC} Configuration saved to $config_file"
+
+    echo -e "${DF_GREEN}✓${DF_NC} Configuration saved to $config_file"
 }
 
 # ============================================================================
@@ -465,7 +470,7 @@ main() {
             install_gum || true
         fi
     fi
-    
+
     # Run wizard steps
     step_welcome
     step_user_info
@@ -474,10 +479,10 @@ main() {
     step_secrets
     step_git_config
     step_backup
-    
+
     # Save configuration
     save_config
-    
+
     # Install
     step_install
     step_summary
