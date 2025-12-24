@@ -6,7 +6,6 @@
 set -e
 
 readonly DOTFILES_HOME="${DOTFILES_HOME:-.}"
-readonly DOTFILES_VERSION="3.0.0"
 
 # Color codes
 readonly RED='\033[0;31m'
@@ -17,11 +16,21 @@ readonly CYAN='\033[0;36m'
 readonly MAGENTA='\033[0;35m'
 readonly NC='\033[0m'
 
+# Source shared colors
+source "$DOTFILES_HOME/zsh/lib/colors.zsh" 2>/dev/null || {
+     DF_RED=$'\033[0;31m' DF_GREEN=$'\033[0;32m' DF_YELLOW=$'\033[1;33m'
+     DF_BLUE=$'\033[0;34m' DF_CYAN=$'\033[0;36m' DF_NC=$'\033[0m'
+     DF_GREY=$'\033[38;5;242m' DF_LIGHT_BLUE=$'\033[38;5;39m'
+     DF_BOLD=$'\033[1m' DF_DIM=$'\033[2m'
+}
+
+
+
 # ============================================================================
 # MOTD-style header
 # ============================================================================
 
-_M_WIDTH=66
+DF_WIDTH=66
 
 print_header() {
     local user="${USER:-root}"
@@ -29,19 +38,11 @@ print_header() {
     local script_name="dotfiles-sync"
     local datetime=$(date '+%a %b %d %H:%M')
 
-    # Colors
-    local _M_RESET=$'\033[0m'
-    local _M_BOLD=$'\033[1m'
-    local _M_DIM=$'\033[2m'
-    local _M_BLUE=$'\033[38;5;39m'
-    local _M_GREY=$'\033[38;5;242m'
-    local _M_MAGENTA='\033[0;35m'
-    local _M_GREEN='\033[0;32m'
 
     # Build horizontal line
     local hline=""
-    for ((i=0; i<_M_WIDTH; i++)); do hline+="═"; done
-    local inner=$((_M_WIDTH - 2))
+    for ((i=0; i<DF_WIDTH; i++)); do hline+="═"; done
+    local inner=$((DF_WIDTH - 2))
 
     # Header content
     local h_left="✦ ${user}@${hostname}"
@@ -52,9 +53,9 @@ print_header() {
     for ((i=0; i<h_pad; i++)); do h_spaces+=" "; done
 
     echo ""
-    echo -e "${_M_GREY}╒${hline}╕${_M_RESET}"
-    echo -e "${_M_GREY}│${_M_RESET} ${_M_BOLD}${_M_BLUE}${h_left}${_M_RESET}${h_spaces}${_M_GREEN}${h_center}${h_spaces}${_M_RESET}${_M_BOLD}${h_right}${_M_RESET} ${_M_GREY}│${_M_RESET}"
-    echo -e "${_M_GREY}╘${hline}╛${_M_RESET}"
+    echo -e "${DF_GREY}╒${hline}╕${DF_NC}"
+    echo -e "${DF_GREY}│${DF_NC} ${DF_BOLD}${DF_BLUE}${h_left}${DF_NC}${h_spaces}${DF_LIGHT_GREEN}${h_center}${h_spaces}${DF_NC}${DF_BOLD}${h_right}${DF_NC} ${DF_GREY}│${DF_NC}"
+    echo -e "${DF_GREY}╘${hline}╛${DF_NC}"
 }
 
 # ============================================================================

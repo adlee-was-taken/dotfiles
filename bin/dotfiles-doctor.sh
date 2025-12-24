@@ -59,10 +59,10 @@ print_header() {
     local datetime=$(date '+%a %b %d %H:%M')
     local width=66
     local hline="" && for ((i=0; i<width; i++)); do hline+="═"; done
-    
+
     echo ""
     echo -e "${DF_GREY}╒${hline}╕${DF_NC}"
-    echo -e "${DF_GREY}│${DF_NC} ${DF_BOLD}${DF_LIGHT_BLUE}✦ ${user}@${hostname}${DF_NC}      ${DF_DIM}dotfiles-doctor v${DOTFILES_VERSION}${DF_NC}      ${datetime} ${DF_GREY}│${DF_NC}"
+    echo -e "${DF_GREY}│${DF_NC} ${DF_BOLD}${DF_LIGHT_BLUE}✦ ${user}@${hostname}${DF_NC}    ${DF_LIGHT_GREEN}dotfiles-doctor${DF_NC}      ${datetime} ${DF_GREY}│${DF_NC}"
     echo -e "${DF_GREY}╘${hline}╛${DF_NC}"
     echo ""
 }
@@ -104,7 +104,7 @@ check_fixed() {
 
 check_os() {
     print_section "Operating System"
-    
+
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
         if grep -qi "cachyos" /etc/os-release 2>/dev/null; then
             local version=$(grep "VERSION_ID" /etc/os-release 2>/dev/null | cut -d= -f2 | tr -d '"')
@@ -117,7 +117,7 @@ check_os() {
     else
         check_fail "Not running on Linux"
     fi
-    
+
     # Kernel check
     local kernel=$(uname -r)
     if [[ "$kernel" == *"cachyos"* ]]; then
@@ -133,7 +133,7 @@ check_os() {
 
 check_shell() {
     print_section "Shell Configuration"
-    
+
     if [[ -f "$HOME/.zshrc" ]]; then
         check_pass "Zsh configuration exists"
     else
@@ -142,7 +142,7 @@ check_shell() {
             ln -sf "$DOTFILES_HOME/zsh/.zshrc" "$HOME/.zshrc" 2>/dev/null && check_fixed ".zshrc symlink created"
         fi
     fi
-    
+
     if [[ "$SHELL" == *"zsh"* ]]; then
         check_pass "Zsh is default shell"
     else
@@ -151,7 +151,7 @@ check_shell() {
             echo "  Run: chsh -s \$(which zsh)"
         fi
     fi
-    
+
     # Check if zsh is recent version
     if command -v zsh &>/dev/null; then
         local zsh_version=$(zsh --version | awk '{print $2}')
@@ -161,10 +161,10 @@ check_shell() {
 
 check_symlinks() {
     print_section "Symlinks"
-    
+
     local symlink_count=0
     local broken_count=0
-    
+
     for symlink in ~/.zshrc ~/.gitconfig ~/.vimrc ~/.tmux.conf; do
         if [[ -L "$symlink" ]]; then
             symlink_count=$((symlink_count + 1))
@@ -178,7 +178,7 @@ check_symlinks() {
             check_warn "$(basename $symlink) is regular file (not symlink)"
         fi
     done
-    
+
     if [[ $symlink_count -eq 0 ]]; then
         check_warn "No symlinks found (may not be installed yet)"
     fi
@@ -186,14 +186,14 @@ check_symlinks() {
 
 check_vim() {
     print_section "Editor Configuration"
-    
+
     if command -v vim &>/dev/null; then
         local vim_version=$(vim --version | head -1 | awk '{print $5}')
         check_pass "Vim installed: $vim_version"
     else
         check_fail "Vim not installed"
     fi
-    
+
     if command -v nvim &>/dev/null; then
         local nvim_version=$(nvim --version | head -1 | awk '{print $2}')
         check_pass "Neovim installed: $nvim_version"
@@ -204,17 +204,17 @@ check_vim() {
 
 check_git() {
     print_section "Git Configuration"
-    
+
     if command -v git &>/dev/null; then
         check_pass "Git installed"
-        
+
         if git config --global user.name &>/dev/null; then
             local git_user=$(git config --global user.name)
             check_pass "Git user: $git_user"
         else
             check_fail "Git user not configured"
         fi
-        
+
         if git config --global user.email &>/dev/null; then
             check_pass "Git email configured"
         else
@@ -231,14 +231,14 @@ check_git() {
 
 check_pacman() {
     print_section "Package Manager"
-    
+
     if command -v pacman &>/dev/null; then
         check_pass "Pacman available"
     else
         check_fail "Pacman not found"
         return
     fi
-    
+
     # Check for AUR helper
     if command -v paru &>/dev/null; then
         check_pass "AUR helper: paru"
@@ -251,9 +251,9 @@ check_pacman() {
 
 check_pacman_health() {
     [[ "$QUICK_MODE" == true ]] && return
-    
+
     print_section "Pacman Health"
-    
+
     # Check for orphaned packages
     local orphans=$(pacman -Qtdq 2>/dev/null | wc -l)
     if [[ $orphans -eq 0 ]]; then
@@ -264,12 +264,12 @@ check_pacman_health() {
             echo "  Clean: pacman -Qtdq | sudo pacman -Rns -"
         fi
     fi
-    
+
     # Check package cache size
     if [[ -d /var/cache/pacman/pkg ]]; then
         local cache_size=$(du -sh /var/cache/pacman/pkg 2>/dev/null | cut -f1)
         local pkg_count=$(ls /var/cache/pacman/pkg 2>/dev/null | wc -l)
-        
+
         if [[ $pkg_count -gt 500 ]]; then
             check_warn "Package cache: $cache_size ($pkg_count files)"
             if [[ "$DO_FIX" == true ]]; then
@@ -279,7 +279,7 @@ check_pacman_health() {
             check_pass "Package cache: $cache_size"
         fi
     fi
-    
+
     # Check for available updates
     if command -v checkupdates &>/dev/null; then
         local updates=$(checkupdates 2>/dev/null | wc -l)
@@ -293,12 +293,12 @@ check_pacman_health() {
 
 check_systemd() {
     [[ "$QUICK_MODE" == true ]] && return
-    
+
     print_section "Systemd Services"
-    
+
     # Check for failed services
     local failed_count=$(systemctl --failed --no-pager --no-legend 2>/dev/null | wc -l)
-    
+
     if [[ $failed_count -eq 0 ]]; then
         check_pass "No failed system services"
     else
@@ -308,7 +308,7 @@ check_systemd() {
             echo -e "    ${DF_DIM}• $svc${DF_NC}"
         done
     fi
-    
+
     # Check user services
     local user_failed=$(systemctl --user --failed --no-pager --no-legend 2>/dev/null | wc -l)
     if [[ $user_failed -eq 0 ]]; then
@@ -320,19 +320,19 @@ check_systemd() {
 
 check_btrfs() {
     [[ "$QUICK_MODE" == true ]] && return
-    
+
     # Only check if root is btrfs
     local fstype=$(df -T / 2>/dev/null | awk 'NR==2 {print $2}')
     [[ "$fstype" != "btrfs" ]] && return
-    
+
     print_section "Btrfs Filesystem"
-    
+
     check_pass "Root filesystem: btrfs"
-    
+
     # Check for device errors
     local stats=$(sudo btrfs device stats / 2>/dev/null)
     local errors=$(echo "$stats" | grep -v " 0$" | grep -v "^$")
-    
+
     if [[ -z "$errors" ]]; then
         check_pass "No btrfs device errors"
     else
@@ -341,7 +341,7 @@ check_btrfs() {
             echo -e "    ${DF_DIM}$line${DF_NC}"
         done
     fi
-    
+
     # Check last scrub
     local scrub_info=$(sudo btrfs scrub status / 2>/dev/null)
     if echo "$scrub_info" | grep -q "running"; then
@@ -352,7 +352,7 @@ check_btrfs() {
     else
         check_warn "No scrub history (recommend monthly)"
     fi
-    
+
     # Check snapper
     if command -v snapper &>/dev/null && [[ -d "/.snapshots" ]]; then
         local snap_count=$(sudo snapper -c root list 2>/dev/null | tail -n +3 | wc -l)
@@ -366,31 +366,31 @@ check_btrfs() {
 
 check_optional_tools() {
     print_section "Optional Tools"
-    
+
     if command -v fzf &>/dev/null; then
         check_pass "fzf (fuzzy finder)"
     else
         check_warn "fzf not installed (command palette needs this)"
     fi
-    
+
     if command -v bat &>/dev/null; then
         check_pass "bat (syntax highlighting)"
     else
         check_warn "bat not installed"
     fi
-    
+
     if command -v eza &>/dev/null; then
         check_pass "eza (modern ls)"
     else
         check_warn "eza not installed"
     fi
-    
+
     if command -v tmux &>/dev/null; then
         check_pass "tmux (terminal multiplexer)"
     else
         check_warn "tmux not installed"
     fi
-    
+
     if command -v age &>/dev/null || command -v gpg &>/dev/null; then
         check_pass "Encryption available (age/gpg)"
     else
@@ -400,7 +400,7 @@ check_optional_tools() {
 
 check_permissions() {
     print_section "File Permissions"
-    
+
     if [[ -f "$DOTFILES_HOME/install.sh" ]]; then
         if [[ -x "$DOTFILES_HOME/install.sh" ]]; then
             check_pass "install.sh is executable"
@@ -412,7 +412,7 @@ check_permissions() {
             fi
         fi
     fi
-    
+
     if [[ -d "$DOTFILES_HOME/bin" ]]; then
         local non_exec=$(find "$DOTFILES_HOME/bin" -type f ! -perm /u+x 2>/dev/null | wc -l)
         if [[ $non_exec -eq 0 ]]; then
@@ -429,22 +429,22 @@ check_permissions() {
 
 check_zsh_plugins() {
     print_section "Zsh Plugins"
-    
+
     if [[ -d "$HOME/.oh-my-zsh" ]]; then
         check_pass "Oh My Zsh installed"
-        
+
         if [[ -d "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions" ]]; then
             check_pass "zsh-autosuggestions"
         else
             check_warn "zsh-autosuggestions not installed"
         fi
-        
+
         if [[ -d "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting" ]]; then
             check_pass "zsh-syntax-highlighting"
         else
             check_warn "zsh-syntax-highlighting not installed"
         fi
-        
+
         if [[ -f "$HOME/.oh-my-zsh/themes/adlee.zsh-theme" ]]; then
             check_pass "adlee theme"
         else
@@ -457,23 +457,23 @@ check_zsh_plugins() {
 
 check_dotfiles_dir() {
     print_section "Dotfiles Directory"
-    
+
     if [[ -d "$DOTFILES_HOME" ]]; then
         check_pass "Dotfiles: $DOTFILES_HOME"
     else
         check_fail "Dotfiles not found: $DOTFILES_HOME"
         return
     fi
-    
+
     if [[ -f "$DOTFILES_HOME/dotfiles.conf" ]]; then
         check_pass "Config file exists"
     else
         check_warn "Config file missing"
     fi
-    
+
     if [[ -d "$DOTFILES_HOME/.git" ]]; then
         check_pass "Git repo initialized"
-        
+
         # Check for uncommitted changes
         local changes=$(cd "$DOTFILES_HOME" && git status --porcelain 2>/dev/null | wc -l)
         if [[ $changes -gt 0 ]]; then
@@ -491,7 +491,7 @@ check_dotfiles_dir() {
 print_summary() {
     echo ""
     printf "${DF_CYAN}─%.0s${DF_NC}" {1..70}; echo ""
-    
+
     if [[ $FAILED_CHECKS -eq 0 ]]; then
         echo -e "${DF_GREEN}✓${DF_NC} All checks passed ($PASSED_CHECKS/$TOTAL_CHECKS)"
     else
@@ -505,15 +505,15 @@ print_summary() {
             echo -e "  ${DF_CYAN}Fixed:${DF_NC}    $FIXED_CHECKS"
         fi
     fi
-    
+
     echo ""
-    
+
     if [[ $FAILED_CHECKS -gt 0 && "$DO_FIX" != true ]]; then
         echo -e "${DF_YELLOW}💡${DF_NC} Run with --fix to attempt automatic fixes"
         echo ""
         return 1
     fi
-    
+
     if [[ $FIXED_CHECKS -gt 0 ]]; then
         echo -e "${DF_CYAN}ℹ${DF_NC} Fixed $FIXED_CHECKS issue(s). Run again to verify."
         echo ""
@@ -526,14 +526,14 @@ print_summary() {
 
 main() {
     print_header
-    
+
     # Essential checks (always run)
     check_os
     check_pacman
     check_shell
     check_dotfiles_dir
     check_symlinks
-    
+
     # Additional checks (skip in quick mode)
     if [[ "$QUICK_MODE" != true ]]; then
         check_vim
@@ -545,7 +545,7 @@ main() {
         check_systemd
         check_btrfs
     fi
-    
+
     print_summary
 }
 
