@@ -1,97 +1,191 @@
-# ADLee's Dotfiles (Arch/CachyOS)
+# ADLee's Dotfiles
 
-Personal configuration files for a fast, productive dev environment on **Arch Linux** and **CachyOS**.
+Personal configuration files for a fast, productive development environment on **Arch Linux** and **CachyOS**.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Shell](https://img.shields.io/badge/Shell-Zsh-green.svg)](https://www.zsh.org/)
-[![OS](https://img.shields.io/badge/OS-Arch%2FCachyOS-blue.svg)](https://archlinux.org/)
+[![OS](https://img.shields.io/badge/OS-Arch%20%2F%20CachyOS-blue.svg)](https://archlinux.org/)
 
 ```
-┌[alee@battlestation]─[~/.dotfiles ⎇ main]
+┌[alee@battlestation]─[~/.dotfiles ⎇ main]─[⇑3]
 └%
 ```
 
-## ✨ Features
+## Features at a Glance
 
 | Feature | Description |
 |---------|-------------|
-| **Setup Wizard** | Beautiful TUI installer with feature selection |
-| **Dynamic MOTD** | System info on shell start (uptime, CPU, memory, updates) |
-| **Zsh Theme** | Two-line prompt with git status, command timer, root detection |
-| **Command Palette** | Raycast-style fuzzy launcher (Ctrl+Space) |
+| **Dynamic MOTD** | System info on shell start (uptime, load, memory, updates) |
+| **Two-Line Prompt** | Git status, command timer, update indicator, root detection |
+| **Command Palette** | Raycast-style fuzzy launcher (`Ctrl+Space`) |
 | **Smart Suggestions** | Typo correction + alias recommendations |
-| **Shell Analytics** | Track command usage and get insights |
-| **Secrets Vault** | Encrypted storage for API keys and sensitive data |
-| **LastPass CLI** | Unified password manager integration |
-| **Dotfiles Sync** | Keep configuration in sync across machines |
-| **Snapper Integration** | Btrfs snapshot management with limine-snapper-sync |
+| **Systemd Helpers** | Quick service management shortcuts |
+| **Btrfs Helpers** | Filesystem health, scrub, balance commands |
+| **Snapper Integration** | Btrfs snapshots with limine boot menu sync |
+| **Secrets Vault** | Encrypted storage for API keys (age/gpg) |
+| **Password Manager** | LastPass CLI integration |
 | **Tmux Workspaces** | Project templates with pre-configured layouts |
-| **SSH Manager** | Save and manage SSH connections with tmux integration |
+| **SSH Manager** | Save and manage SSH connections with tmux |
+| **Python Templates** | Quick project scaffolding (Django, Flask, FastAPI, etc.) |
+| **Dotfiles Sync** | Keep configuration in sync across machines |
+| **Shell Analytics** | Track command usage and get insights |
 
-## 🚀 Quick Start
+---
 
-### One-liner Install
-```bash
-git clone https://github.com/adlee-was-taken/dotfiles.git ~/.dotfiles && cd ~/.dotfiles && ./install.sh
-```
+## Quick Start
 
-### Interactive Wizard (Recommended)
-```bash
-git clone https://github.com/adlee-was-taken/dotfiles.git ~/.dotfiles
-cd ~/.dotfiles
-./install.sh --wizard
-```
-
-### Standard Install
 ```bash
 git clone https://github.com/adlee-was-taken/dotfiles.git ~/.dotfiles
 cd ~/.dotfiles
 ./install.sh
 ```
 
-## 📋 System Requirements
+See [INSTALL.md](INSTALL.md) for detailed installation instructions.
 
-- **OS:** Arch Linux or CachyOS
-- **Editors:** Vim (required), Neovim (optional)
-- **Password Manager:** LastPass
-- **Shell:** Zsh (installed by script)
-- **Package Manager:** Pacman (built-in)
+---
 
-## 📁 Repository Layout
+## Command Reference
 
+### Dotfiles Management
+
+| Command | Alias | Description |
+|---------|-------|-------------|
+| `dotfiles-doctor.sh` | `dfd`, `doctor` | Health check |
+| `dotfiles-doctor.sh --fix` | `dffix` | Auto-fix issues |
+| `dotfiles-doctor.sh --quick` | - | Quick essential checks |
+| `dotfiles-sync.sh` | `dfs`, `dfsync` | Sync status |
+| `dotfiles-sync.sh push` | `dfpush` | Push changes to remote |
+| `dotfiles-sync.sh pull` | `dfpull` | Pull remote changes |
+| `dotfiles-update.sh` | `dfu`, `dfupdate` | Update dotfiles |
+| `dotfiles-version.sh` | `dfv`, `dfversion` | Version info |
+| `dotfiles-stats.sh` | `dfstats` | Shell analytics |
+| `dotfiles-vault.sh` | `vault` | Secrets manager |
+| `dotfiles-compile.sh` | `dfcompile` | Compile zsh for speed |
+| `source ~/.zshrc` | `reload`, `rl` | Reload shell config |
+
+### Quick Edit Aliases
+
+| Alias | Opens |
+|-------|-------|
+| `v.zshrc` | `~/.zshrc` |
+| `v.conf` | `~/.dotfiles/dotfiles.conf` |
+| `v.alias` | `~/.dotfiles/zsh/aliases.zsh` |
+| `v.motd` | `~/.dotfiles/zsh/functions/motd.zsh` |
+| `v.edit` | `~/.dotfiles` directory in editor |
+
+---
+
+## Systemd Helpers
+
+Quick shortcuts for systemd service management.
+
+### Core Commands
+
+| Command | Description |
+|---------|-------------|
+| `sc <args>` | `sudo systemctl <args>` |
+| `scu <args>` | `systemctl --user <args>` |
+| `scr <service>` | Restart service and show status |
+| `sce <service>` | Enable and start service |
+| `scd <service>` | Disable and stop service |
+| `sclog <service>` | Follow journal logs (`-f`) |
+| `sclogs <service>` | Show recent logs (no follow) |
+
+### Status Commands
+
+| Command | Description |
+|---------|-------------|
+| `sc-failed` | Show failed services (system + user) |
+| `sc-timers` | Show active timers |
+| `sc-recent` | Recently started services |
+| `sc-boot` | Boot time analysis |
+| `sc-search <query>` | Search services by name |
+| `sc-info <service>` | Detailed service info |
+
+### Interactive (requires fzf)
+
+| Command | Description |
+|---------|-------------|
+| `scf` | Interactive service manager with preview |
+| `sclogf` | Interactive log viewer |
+
+### Aliases
+
+| Alias | Command |
+|-------|---------|
+| `scs` | `sc status` |
+| `scstart` | `sc start` |
+| `scstop` | `sc stop` |
+| `screload` | `sc daemon-reload` |
+| `jctl` | `journalctl` |
+| `jctlf` | `journalctl -f` |
+| `jctlb` | `journalctl -b` |
+| `jctlerr` | `journalctl -p err -b` |
+
+---
+
+## Btrfs Helpers
+
+Quick commands for btrfs filesystem management (CachyOS defaults to btrfs).
+
+### Information
+
+| Command | Alias | Description |
+|---------|-------|-------------|
+| `btrfs-usage [mount]` | `btru` | Filesystem usage summary |
+| `btrfs-subs [mount]` | `btrs` | List all subvolumes |
+| `btrfs-info [mount]` | `btri` | Full filesystem information |
+| `btrfs-health [mount]` | `btrh` | Quick health check |
+| `btrfs-compress [path]` | `btrc` | Compression stats (requires `compsize`) |
+
+### Maintenance
+
+| Command | Description |
+|---------|-------------|
+| `btrfs-balance [mount]` | Start balance operation |
+| `btrfs-balance-status` | Check balance progress |
+| `btrfs-balance-cancel` | Cancel running balance |
+| `btrfs-scrub [mount]` | Start scrub (integrity check) |
+| `btrfs-scrub-status` | Check scrub progress |
+| `btrfs-scrub-cancel` | Cancel running scrub |
+| `btrfs-defrag <path>` | Defragment file/directory |
+| `btrfs-maintain [mount]` | Full maintenance routine |
+
+### Snapshots
+
+| Command | Description |
+|---------|-------------|
+| `btrfs-snap-usage` | Show snapshot space usage |
+
+> **Note:** Most commands default to `/` if no mount point is specified. See also `snapper.zsh` for snapshot management.
+
+---
+
+## Snapper Integration
+
+Btrfs snapshot management with limine bootloader sync.
+
+| Command | Alias | Description |
+|---------|-------|-------------|
+| `snap-create "description"` | `snap` | Create snapshot with validation |
+| `snap-list [count]` | `snapls` | List recent snapshots (default: 10) |
+| `snap-show <number>` | `snapshow` | Show snapshot details |
+| `snap-delete <number>` | `snaprm` | Delete snapshot |
+| `snap-check-limine` | `snapcheck` | Verify boot menu sync |
+| `snap-sync` | `snapsync` | Manually trigger limine sync |
+| `snap-validate-service` | - | Check service status |
+
+### System Update with Snapshot
+
+```bash
+sys-update    # Creates pre/post snapshot around pacman -Syu
 ```
-dotfiles/
-├── install.sh                 # Main installer script
-├── dotfiles.conf              # Central configuration
-├── zsh/
-│   ├── .zshrc                 # Shell configuration
-│   ├── aliases.zsh            # Command aliases
-│   ├── themes/adlee.zsh-theme # Prompt theme
-│   └── functions/
-│       ├── command-palette.zsh    # Ctrl+Space launcher
-│       ├── motd.zsh               # System info display
-│       ├── smart-suggest.zsh      # Typo correction
-│       ├── password-manager.zsh   # LastPass integration
-│       ├── snapper.zsh            # Btrfs snapshots
-│       ├── ssh-manager.zsh        # SSH profiles
-│       ├── tmux-workspaces.zsh    # Workspace templates
-│       └── python-templates.zsh   # Python project scaffolding
-├── vim/.vimrc                 # Vim configuration
-├── nvim/                      # Neovim configuration
-├── tmux/.tmux.conf           # Tmux configuration
-├── git/.gitconfig.template   # Git configuration template
-└── bin/                       # Scripts (symlinked to ~/.local/bin)
-    ├── dotfiles-doctor.sh     # Health checker
-    ├── dotfiles-sync.sh       # Multi-machine sync
-    ├── dotfiles-stats.sh      # Shell analytics
-    ├── dotfiles-update.sh     # Update dotfiles
-    ├── dotfiles-vault.sh      # Encrypted secrets manager
-    └── dotfiles-version.sh    # Version info
-```
 
-## 🎮 Command Palette
+---
 
-Press **Ctrl+Space** or **Ctrl+P** to open the fuzzy command launcher:
+## Command Palette
+
+Press **`Ctrl+Space`** or **`Ctrl+P`** to open the fuzzy command launcher.
 
 ```
 ╭──────────────────────────────────────────╮
@@ -105,23 +199,37 @@ Press **Ctrl+Space** or **Ctrl+P** to open the fuzzy command launcher:
 ╰──────────────────────────────────────────╯
 ```
 
-**Searches:** aliases, functions, recent commands, bookmarks, git commands, quick actions
+### Searches
 
-**Keybindings:**
-- `Enter` - Execute command
-- `Ctrl+E` - Edit before running
-- `Ctrl+Y` - Copy to clipboard
+- Aliases and functions
+- Recent commands
+- Git commands (when in repo)
+- Docker commands
+- Bookmarked directories
+- Dotfiles scripts
+- Quick actions
+
+### Keybindings
+
+| Key | Action |
+|-----|--------|
+| `Enter` | Execute command |
+| `Ctrl+E` | Edit before running |
+| `Ctrl+Y` | Copy to clipboard |
+| `Ctrl+R` | Reload entries |
 
 ### Directory Bookmarks
 
-```bash
-bookmark projects ~/projects    # Save bookmark
-bookmark list                   # List all
-jump projects                   # Go to bookmark
-j                               # Fuzzy select
-```
+| Command | Alias | Description |
+|---------|-------|-------------|
+| `bookmark <name> [path]` | `bm` | Save bookmark (default: current dir) |
+| `bookmark list` | `bm list` | List all bookmarks |
+| `bookmark delete <name>` | `bm rm` | Delete bookmark |
+| `jump <name>` | `j` | Go to bookmark (fuzzy select if no name) |
 
-## 🔧 Smart Suggestions
+---
+
+## Smart Suggestions
 
 Automatic typo correction for 100+ common mistakes:
 
@@ -129,10 +237,6 @@ Automatic typo correction for 100+ common mistakes:
 $ gti status
 ✗ Command not found: gti
 → Did you mean: git?
-
-$ dokcer ps
-✗ Command not found: dokcer
-→ Did you mean: docker?
 ```
 
 Alias recommendations for frequently typed commands:
@@ -142,222 +246,347 @@ Alias recommendations for frequently typed commands:
    Consider adding: alias gs='git status'
 ```
 
-## 📊 Shell Analytics
+### Supported Typos
+
+Git, Docker, common commands (ls, cat, grep, mkdir, etc.), Python, Node, sudo, ssh, vim, and more.
+
+### Quick Fix
 
 ```bash
-dotfiles-stats.sh              # Full dashboard
-# or use aliases:
-dfstats
-stats
+fuck    # Re-run last command with typo correction
 ```
 
-```
-╔═══════════════════════════════════════════════════════════════════╗
-║  Shell Analytics Dashboard                                        ║
-╠═══════════════════════════════════════════════════════════════════╣
-║  Total commands:  4,832                                           ║
-║  Unique commands: 847                                             ║
-║                                                                   ║
-║  Top Commands                                                     ║
-║  git          847  ████████████████████████░░░░░░                 ║
-║  cd           412  ████████████░░░░░░░░░░░░░░░░░░                 ║
-║  ls           398  ███████████░░░░░░░░░░░░░░░░░░░                 ║
-╚═══════════════════════════════════════════════════════════════════╝
-```
+---
 
-## 🔐 Secrets Vault
+## MOTD (Message of the Day)
 
-Encrypted storage for API keys and tokens:
+System info displayed on shell startup.
 
-```bash
-vault set GITHUB_TOKEN ghp_xxxxxxxxxxxx
-vault set AWS_SECRET_KEY              # Prompts for hidden input
-vault get GITHUB_TOKEN
-vault list                            # Shows keys only
-vault delete OLD_KEY
-# Full command: dotfiles-vault.sh
-```
+### Display Styles
 
-Export to environment:
-
-```bash
-eval $(vault shell)                   # Load all secrets
-```
-
-Uses `age` or `gpg` encryption. Secrets auto-load on shell start.
-
-## 🔑 Password Manager Integration
-
-LastPass CLI for unified password management:
-
-```bash
-pw list                    # List all items
-pw get github              # Get password
-pw get github username     # Get specific field
-pw otp github              # Get TOTP code
-pw copy aws                # Copy password to clipboard
-pw search mail             # Search items
-pwf                        # Fuzzy search + copy (requires fzf)
-```
-
-### Install LastPass CLI
-
-```bash
-# Via AUR with paru (recommended)
-paru -S lastpass-cli
-
-# Or with yay
-yay -S lastpass-cli
-```
-
-## 🖥️ Dynamic MOTD
-
-System info displayed on shell startup:
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│ ✦ alee@battlestation                     Mon Dec 15 14:30   │
-├──────────────────────────────────────────────────────────────┤
-│ ▲ up:4d 7h   ◆ load:0.45     ◇ mem:8.2/32G   ⊡ 234G free  │
-└──────────────────────────────────────────────────────────────┘
-```
-
-Shows: uptime, load average, memory usage, disk space
-
-**Configuration:**
-```bash
-ENABLE_MOTD="true"         # Enable MOTD
-MOTD_STYLE="compact"       # compact (box), mini (single line), or off
-```
-
-## 🎨 Zsh Theme
-
-```
-┌[user@hostname]─[~/projects ⎇ main *]
-└%
-```
-
-**Features:**
-- Two-line prompt for clarity
-- Git integration (branch name with dirty indicator `*`)
-- Command timer (shows elapsed time for commands >10s)
-- Smart path truncation
-- Root detection (red for root, blue for users)
-
-## 🔄 Dotfiles Sync
-
-Keep configuration synchronized across machines:
-
-```bash
-dotfiles-sync.sh              # Interactive sync
-dotfiles-sync.sh --status     # Show sync status
-dotfiles-sync.sh --push       # Push changes
-dotfiles-sync.sh --pull       # Pull changes
-dotfiles-sync.sh --watch 300  # Auto-sync every 5 min
-```
-
-On shell start, you'll see notifications of available updates.
-
-## 📸 Snapper Integration
-
-Btrfs snapshot management for Arch with limine bootloader:
-
-```bash
-snap-create "Before system update"    # Create snapshot
-snap-list 20                           # List recent snapshots
-snap-check-limine                      # Verify boot menu sync
-snap-delete 42                         # Delete snapshot
-snap-validate-service                  # Check service status
-```
-
-Auto-syncs with `limine-snapper-sync` for boot menu entries.
-
-**Install on CachyOS/Arch:**
-```bash
-paru -S limine-snapper-sync
-sudo systemctl enable limine-snapper-sync.service
-```
-
-## 🎯 Tmux Workspace Manager
-
-Pre-configured layouts for different workflows:
-
-```bash
-tw-create myproject dev        # Create dev workspace
-tw myproject                    # Quick attach or create
-tw-list                         # List active workspaces
-tw-save my-custom-layout       # Save current layout as template
-tw-sync                         # Toggle pane sync for multi-server
-twf                             # Fuzzy search workspaces
-```
-
-**Available Templates:**
-- `dev` - Vim (50%) + terminal (25%) + logs (25%)
-- `ops` - 4-pane monitoring grid
-- `ssh-multi` - 4 panes for multi-server management
-- `debug` - 2 panes: main (70%) + helper (30%)
-- `full` - Single full-screen pane
-- `review` - Side-by-side code review panes
-
-## 🌐 SSH Session Manager
-
-Save and manage SSH connections with automatic tmux integration:
-
-```bash
-ssh-save prod user@prod.example.com 22 ~/.ssh/prod_key
-ssh-connect prod                       # Auto-creates/attaches tmux session
-ssh-list                               # List all profiles
-sshf                                   # Fuzzy search and connect
-ssh-sync-dotfiles prod                 # Deploy dotfiles to remote
-```
-
-## 🐍 Python Project Templates
-
-Quick project scaffolding with virtual environments:
-
-```bash
-py-new myproject               # Basic Python project
-py-django myblog               # Django web app
-py-flask myapp                 # Flask web app
-py-fastapi myapi               # FastAPI REST API
-py-data analysis                # Data science project
-py-cli mytool                  # CLI tool with Click
-```
-
-All include virtual environment setup, git initialization, and project structure.
-
-## ⌨️ Command Aliases
-
-All dotfiles commands have convenient aliases:
-
-| Alias | Command | Description |
+| Style | Command | Description |
 |-------|---------|-------------|
-| `dfd` | `dotfiles-doctor.sh` | Health check |
-| `dffix` | `dotfiles-doctor.sh --fix` | Auto-fix issues |
-| `dfs` | `dotfiles-sync.sh` | Sync dotfiles |
-| `dfpush` | `dotfiles-sync.sh --push` | Push changes |
-| `dfpull` | `dotfiles-sync.sh --pull` | Pull changes |
-| `dfu` | `dotfiles-update.sh` | Update dotfiles |
-| `dfv` | `dotfiles-version.sh` | Version info |
-| `dfstats` | `dotfiles-stats.sh` | Shell analytics |
-| `vault` | `dotfiles-vault.sh` | Secrets manager |
-| `pw` | LastPass password manager | Get/list passwords |
-| `tw` | Tmux workspace manager | Quick workspace access |
-| `reload` | `source ~/.zshrc` | Reload shell config |
+| Compact | `show_motd` | Box format with stats |
+| Mini | `show_motd_mini` | Single line |
+| Full | `show_motd_full` | Extended info with kernel, scheduler |
 
-## 🩺 Health Check
+### Configuration
+
+In `dotfiles.conf`:
 
 ```bash
-dotfiles-doctor.sh             # Run diagnostics
-dotfiles-doctor.sh --fix       # Auto-fix issues
-# Aliases: dfd, doctor, dffix
+ENABLE_MOTD="true"
+MOTD_STYLE="compact"    # compact, mini, full, or none
 ```
 
-Checks: symlinks, zsh plugins, git config, optional tools, and more
+### Force Refresh
 
-## ⚙️ Configuration
+```bash
+motd          # Compact
+motd-mini     # Mini
+motd-full     # Full
+sysbrief      # Quick system overview (callable anytime)
+```
 
-Edit `~/.dotfiles/dotfiles.conf` to customize:
+---
+
+## Secrets Vault
+
+Encrypted storage for API keys and tokens using `age` or `gpg`.
+
+| Command | Description |
+|---------|-------------|
+| `vault init` | Initialize vault |
+| `vault set <key> [value]` | Store secret (prompts if value omitted) |
+| `vault get <key>` | Retrieve secret |
+| `vault list` | List all keys |
+| `vault delete <key>` | Delete secret |
+| `vault shell` | Print as export statements |
+| `vault export <file>` | Backup vault (encrypted) |
+| `vault import <file>` | Restore from backup |
+| `vault status` | Show vault info |
+
+### Aliases
+
+| Alias | Command |
+|-------|---------|
+| `vls` | `vault list` |
+| `vget` | `vault get` |
+| `vset` | `vault set` |
+
+### Auto-load on Shell Start
+
+Secrets can be auto-exported to environment. Enable in `.zshrc`:
+
+```bash
+eval $(vault shell)
+```
+
+---
+
+## Password Manager (LastPass)
+
+Unified interface for LastPass CLI.
+
+| Command | Description |
+|---------|-------------|
+| `pw list` | List all items |
+| `pw get <item> [field]` | Get field (default: password) |
+| `pw otp <item>` | Get TOTP code |
+| `pw search <query>` | Search items |
+| `pw copy <item> [field]` | Copy to clipboard |
+| `pw lock` | Logout/lock session |
+
+### Fields
+
+`password`, `username`, `url`, `notes`, or any custom field name.
+
+### Aliases
+
+| Alias | Command |
+|-------|---------|
+| `pwl` | `pw list` |
+| `pwg` | `pw get` |
+| `pwc` | `pw copy` |
+| `pws` | `pw search` |
+
+### FZF Integration
+
+| Command | Description |
+|---------|-------------|
+| `pwf` | Fuzzy search and copy password |
+| `pwof` | Fuzzy search and copy OTP |
+
+---
+
+## Tmux Workspace Manager
+
+Pre-configured layouts for different workflows.
+
+### Workspace Commands
+
+| Command | Alias | Description |
+|---------|-------|-------------|
+| `tw <name> [template]` | - | Attach or create workspace |
+| `tw-create <name> [template]` | `twc` | Create workspace |
+| `tw-attach <name>` | `twa` | Attach to workspace |
+| `tw-list` | `twl` | List active workspaces |
+| `tw-delete <name>` | `twd` | Delete workspace |
+| `tw-save <name>` | `tws` | Save current layout as template |
+| `tw-templates` | `twt` | List available templates |
+| `tw-template-edit <name>` | `twe` | Edit template |
+| `tw-sync` | - | Toggle pane synchronization |
+| `tw-rename <old> <new>` | - | Rename workspace |
+| `twf` | - | Fuzzy search workspaces |
+
+### Built-in Templates
+
+| Template | Description |
+|----------|-------------|
+| `dev` | Vim (50%) + terminal (25%) + logs (25%) |
+| `ops` | 4-pane monitoring grid |
+| `ssh-multi` | 4 panes for multi-server management |
+| `debug` | Main (70%) + helper (30%) |
+| `full` | Single full-screen pane |
+| `review` | Side-by-side code review |
+
+---
+
+## SSH Session Manager
+
+Save and manage SSH connections with automatic tmux integration.
+
+| Command | Alias | Description |
+|---------|-------|-------------|
+| `ssh-save <name> <user@host> [port] [key] [opts] [desc]` | `sshs` | Save profile |
+| `ssh-list` | `sshl` | List all profiles |
+| `ssh-connect <name>` | `sshc` | Connect (auto tmux) |
+| `ssh-delete <name>` | `sshd` | Delete profile |
+| `ssh-reconnect [name]` | `sshr` | Reconnect (default: last) |
+| `ssh-sync-dotfiles <name>` | `sshsync` | Deploy dotfiles to remote |
+| `sshf` | - | Fuzzy search and connect |
+
+### Configuration
+
+In `dotfiles.conf`:
+
+```bash
+SSH_AUTO_TMUX="true"              # Auto-create tmux session
+SSH_TMUX_SESSION_PREFIX="ssh"     # Session naming prefix
+SSH_SYNC_DOTFILES="ask"           # Sync dotfiles on connect
+```
+
+---
+
+## Python Project Templates
+
+Quick project scaffolding with virtual environments.
+
+| Command | Alias | Description |
+|---------|-------|-------------|
+| `py-new <name>` | `pynew` | Basic Python project |
+| `py-django <name>` | `pydjango` | Django web app |
+| `py-flask <name>` | `pyflask` | Flask web app |
+| `py-fastapi <name>` | `pyfast` | FastAPI REST API |
+| `py-data <name>` | `pydata` | Data science project |
+| `py-cli <name>` | `pycli` | CLI tool with Click |
+
+### Quick Venv Activation
+
+```bash
+venv    # Activates venv, .venv, or env if found
+```
+
+---
+
+## Shell Analytics
+
+Track command usage and get insights.
+
+| Command | Description |
+|---------|-------------|
+| `dfstats` | Full dashboard |
+| `dfstats top [n]` | Top N commands |
+| `dfstats suggest` | Alias suggestions |
+| `dfstats breakdown` | Category breakdown |
+| `dfstats heatmap` | Activity by hour |
+| `dfstats dirs` | Most visited directories |
+| `dfstats git` | Git command breakdown |
+| `dfstats export` | Export as JSON |
+
+---
+
+## Common Aliases
+
+### Navigation
+
+| Alias | Command |
+|-------|---------|
+| `..` | `cd ..` |
+| `...` | `cd ../..` |
+| `....` | `cd ../../..` |
+| `~` | `cd ~` |
+| `c.` | `cd ~/.dotfiles` |
+
+### Git
+
+| Alias | Command |
+|-------|---------|
+| `g` | `git` |
+| `gs` | `git status` |
+| `ga` | `git add` |
+| `gc` | `git commit` |
+| `gp` | `git push` |
+| `gl` | `git pull` |
+| `gd` | `git diff` |
+| `gco` | `git checkout` |
+| `gb` | `git branch` |
+| `glog` | `git log --oneline --graph --decorate --all` |
+
+### Docker
+
+| Alias | Command |
+|-------|---------|
+| `d` | `docker` |
+| `dc` | `docker-compose` |
+| `dps` | `docker ps` |
+| `dpa` | `docker ps -a` |
+| `di` | `docker images` |
+| `dex` | `docker exec -it` |
+
+### System
+
+| Alias | Command |
+|-------|---------|
+| `h` | `history` |
+| `c` | `clear` |
+| `myip` | `curl -s ifconfig.me` |
+| `ports` | `netstat -tulanp` |
+
+### Tools (conditional)
+
+| Alias | Command | Condition |
+|-------|---------|-----------|
+| `ls` | `eza --icons` | if eza installed |
+| `ll` | `eza -lah --icons` | if eza installed |
+| `la` | `eza -a --icons` | if eza installed |
+| `lt` | `eza --tree --level=2 --icons` | if eza installed |
+| `cat` | `bat --paging=never` | if bat installed |
+
+---
+
+## Zsh Theme Features
+
+The `adlee` theme provides:
+
+- **Two-line prompt** for clarity
+- **Git integration** with branch name and dirty indicator (`*`)
+- **Command timer** for commands taking >10 seconds
+- **Update indicator** showing available package updates
+- **Root detection** (red `#` for root, blue `%` for users)
+- **Smart path display**
+
+### Timer Display
+
+| Duration | Color |
+|----------|-------|
+| >1 hour | Red |
+| >1 minute | Orange |
+| >10 seconds | Green |
+
+---
+
+## Espanso Text Expansion
+
+Text expansion snippets for quick typing.
+
+### Date/Time
+
+| Trigger | Output |
+|---------|--------|
+| `..date` | `2025-12-24` |
+| `..time` | `14:30:45` |
+| `..dt` | `2025-12-24 14:30:45 EST` |
+| `..ts` | ISO 8601 timestamp |
+| `..epoch` | Unix timestamp |
+
+### Quick Text
+
+| Trigger | Output |
+|---------|--------|
+| `..shrug` | `¯\_(ツ)_/¯` |
+| `..flip` | `(╯°□°)╯︵ ┻━┻` |
+| `..lgtm` | `Looks good to me` |
+
+### Code
+
+| Trigger | Output |
+|---------|--------|
+| `..bash` | Bash shebang + set -euo pipefail |
+| `..python` | Python main boilerplate |
+| `..mdcode` | Markdown code block |
+
+See [REFERENCE.md](REFERENCE.md) for complete Espanso reference.
+
+---
+
+## Key Bindings
+
+| Binding | Action |
+|---------|--------|
+| `Ctrl+Space` | Command palette |
+| `Ctrl+P` | Command palette (alternative) |
+| `Alt+R` | Reload zsh config |
+| `Ctrl+→` | Forward word |
+| `Ctrl+←` | Backward word |
+| `Home` | Beginning of line |
+| `End` | End of line |
+
+---
+
+## Configuration
+
+Edit `~/.dotfiles/dotfiles.conf`:
 
 ```bash
 # Identity
@@ -365,71 +594,72 @@ USER_FULLNAME="Your Name"
 USER_EMAIL="you@example.com"
 USER_GITHUB="yourusername"
 
-# Features
-INSTALL_ZSH_PLUGINS="true"
-INSTALL_FZF="ask"
-INSTALL_NEOVIM="ask"
-SET_ZSH_DEFAULT="ask"
+# MOTD
+ENABLE_MOTD="true"
+MOTD_STYLE="compact"
 
-# Advanced
+# Features
 ENABLE_SMART_SUGGESTIONS="true"
 ENABLE_COMMAND_PALETTE="true"
 ENABLE_VAULT="true"
 DOTFILES_AUTO_SYNC_CHECK="true"
+
+# Btrfs
+BTRFS_DEFAULT_MOUNT="/"
+
+# Package Manager
+AUR_HELPER="auto"    # paru, yay, or auto
 ```
 
-## 🔄 Updating
+---
 
-```bash
-dotfiles-update.sh
-# or aliases:
-dfu
-dfupdate
+## Repository Structure
+
+```
+~/.dotfiles/
+├── install.sh              # Main installer
+├── dotfiles.conf           # Central configuration
+├── bin/                    # Scripts (symlinked to ~/.local/bin)
+│   ├── dotfiles-doctor.sh
+│   ├── dotfiles-sync.sh
+│   ├── dotfiles-update.sh
+│   ├── dotfiles-vault.sh
+│   ├── dotfiles-stats.sh
+│   ├── dotfiles-version.sh
+│   └── dotfiles-compile.sh
+├── zsh/
+│   ├── .zshrc
+│   ├── aliases.zsh
+│   ├── lib/
+│   │   └── colors.zsh      # Shared color definitions
+│   ├── themes/
+│   │   └── adlee.zsh-theme
+│   └── functions/
+│       ├── btrfs-helpers.zsh
+│       ├── command-palette.zsh
+│       ├── motd.zsh
+│       ├── password-manager.zsh
+│       ├── python-templates.zsh
+│       ├── smart-suggest.zsh
+│       ├── snapper.zsh
+│       ├── ssh-manager.zsh
+│       ├── systemd-helpers.zsh
+│       └── tmux-workspaces.zsh
+├── vim/.vimrc
+├── tmux/.tmux.conf
+├── git/.gitconfig.template
+├── espanso/                # Text expansion
+├── setup/                  # Setup scripts
+└── .tmux-templates/        # Workspace layouts
 ```
 
-Check version:
-```bash
-dotfiles-version.sh
-# or: dfv
-```
+---
 
-## 🗑️ Uninstalling
-
-```bash
-./install.sh --uninstall            # Remove symlinks
-./install.sh --uninstall --purge    # Also delete ~/.dotfiles
-```
-
-## 📚 Documentation
-
-- [SETUP_GUIDE.md](docs/SETUP_GUIDE.md) - Detailed installation and configuration
-- [ESPANSO.md](docs/ESPANSO.md) - Text expansion snippets reference
-- [SNAPPER.md](docs/SNAPPER.md) - Btrfs snapshot management guide
-- [SSH_TMUX_INTEGRATION.md](docs/SSH_TMUX_INTEGRATION.md) - SSH + Tmux workflow
-
-## 🛠️ Install Options
-
-```bash
-./install.sh                    # Standard install
-./install.sh --wizard           # Interactive TUI wizard
-./install.sh --skip-deps        # Re-run without checking deps
-./install.sh --uninstall        # Remove symlinks
-./install.sh --help             # Show all options
-```
-
-## 🤝 Forking
-
-1. Fork the repo
-2. Edit `dotfiles.conf` with your settings
-3. Customize files as needed
-4. The installer will use your fork's URLs
-
-## 📄 License
+## License
 
 MIT – See [LICENSE](LICENSE)
 
 ---
 
 **Author:** Aaron D. Lee  
-**Repository:** https://github.com/adlee-was-taken/dotfiles  
-**Arch/CachyOS Only Edition**
+**Repository:** https://github.com/adlee-was-taken/dotfiles
