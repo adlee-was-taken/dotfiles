@@ -28,37 +28,31 @@ fi
 # Colors
 # ============================================================================
 
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-RED='\033[0;31m'
-CYAN='\033[0;36m'
-NC='\033[0m'
+# Source shared colors (with fallback)
+source "${0:A:h}/../lib/colors.zsh" 2>/dev/null || \
+source "$HOME/.dotfiles/zsh/lib/colors.zsh" 2>/dev/null || {
+    typeset -g DF_NC=$'\033[0m' DF_BOLD=$'\033[1m' DF_DIM=$'\033[2m'
+    typeset -g DF_BLUE=$'\033[38;5;39m' DF_CYAN=$'\033[38;5;51m'
+    typeset -g DF_GREEN=$'\033[38;5;82m' DF_YELLOW=$'\033[38;5;220m'
+    typeset -g DF_RED=$'\033[38;5;196m' DF_GREY=$'\033[38;5;242m' DF_NC=$'\033[0m'
+}
 
-# ============================================================================
+
 # MOTD-style header
 # ============================================================================
 
-_M_WIDTH=66
+DF_WIDTH=66
 
 print_header() {
     local user="${USER:-root}"
     local hostname="${HOSTNAME:-$(hostname -s 2>/dev/null)}"
     local script_name="setup-espanso"
     local datetime=$(date '+%a %b %d %H:%M')
-    
-    # Colors
-    local _M_RESET=$'\033[0m'
-    local _M_BOLD=$'\033[1m'
-    local _M_DIM=$'\033[2m'
-    local _M_BLUE=$'\033[38;5;39m'
-    local _M_GREY=$'\033[38;5;242m'
-    
-    # Build horizontal line
+
     local hline=""
-    for ((i=0; i<_M_WIDTH; i++)); do hline+="═"; done
-    local inner=$((_M_WIDTH - 2))
-    
+    for ((i=0; i<DF_WIDTH; i++)); do hline+="═"; done
+    local inner=$((DF_WIDTH - 2))
+
     # Header content
     local h_left="✦ ${user}@${hostname}"
     local h_center="${script_name}"
@@ -66,28 +60,28 @@ print_header() {
     local h_pad=$(((inner - ${#h_left} - ${#h_center} - ${#h_right}) / 2))
     local h_spaces=""
     for ((i=0; i<h_pad; i++)); do h_spaces+=" "; done
-    
+
     echo ""
-    echo -e "${_M_GREY}╒${hline}╕${_M_RESET}"
-    echo -e "${_M_GREY}│${_M_RESET} ${_M_BOLD}${_M_BLUE}${h_left}${_M_RESET}${h_spaces}${_M_DIM}${h_center}${h_spaces}${h_right}${_M_RESET} ${_M_GREY}│${_M_RESET}"
-    echo -e "${_M_GREY}╘${hline}╛${_M_RESET}"
+    echo -e "${DF_GREY}╒${hline}╕${DF_NC}"
+    echo -e "${DF_GREY}│${DF_NC} ${DF_BOLD}${DF_BLUE}${h_left}${DF_NC}${h_spaces}${DF_DIM}${h_center}${h_spaces}${h_right}${DF_NC} ${DF_GREY}│${DF_NC}"
+    echo -e "${DF_GREY}╘${hline}╛${DF_NC}"
     echo ""
 }
 
 print_step() {
-    echo -e "${GREEN}==>${NC} $1"
+    echo -e "${DF_GREEN}==>${DF_NC} $1"
 }
 
 print_success() {
-    echo -e "${GREEN}✓${NC} $1"
+    echo -e "${DF_GREEN}✓${DF_NC} $1"
 }
 
 print_warning() {
-    echo -e "${YELLOW}⚠${NC} $1"
+    echo -e "${DF_YELLOW}⚠${DF_NC} $1"
 }
 
 print_error() {
-    echo -e "${RED}✗${NC} $1"
+    echo -e "${DF_RED}✗${DF_NC} $1"
 }
 
 ask_yes_no() {
@@ -213,7 +207,7 @@ EOF
 
     # Suggest updating dotfiles.conf for future installs
     echo
-    echo -e "${BLUE}Tip:${NC} Add these to dotfiles.conf for future installs:"
+    echo -e "${DF_BLUE}Tip:${DF_NC} Add these to dotfiles.conf for future installs:"
     echo "  USER_FULLNAME=\"$fullname\""
     echo "  USER_EMAIL=\"$email\""
     [[ -n "$github" ]] && echo "  USER_GITHUB=\"$github\""
@@ -257,27 +251,27 @@ show_usage_tips() {
 
     cat << EOF
 
-${GREEN}Espanso Quick Start:${NC}
+${DF_GREEN}Espanso Quick Start:${DF_NC}
 
-${YELLOW}Toggle espanso on/off:${NC}
+${DF_YELLOW}Toggle espanso on/off:${DF_NC}
   ALT+SHIFT+E
 
-${YELLOW}Open search menu:${NC}
+${DF_YELLOW}Open search menu:${DF_NC}
   ALT+SPACE
 
-${YELLOW}Basic triggers:${NC}
+${DF_YELLOW}Basic triggers:${DF_NC}
   ..date      → Current date (YYYY-MM-DD)
   ..time      → Current time (HH:MM:SS)
   ..shrug     → ¯\\_(ツ)_/¯
   ..gstat     → git status
   ..myemail   → Your email
 
-${YELLOW}Espanso commands:${NC}
+${DF_YELLOW}Espanso commands:${DF_NC}
   espanso status    - Check if running
   espanso restart   - Restart service
   espanso log       - View logs
 
-${YELLOW}Configuration files:${NC}
+${DF_YELLOW}Configuration files:${DF_NC}
   ~/.config/espanso/match/base.yml       - Main snippets
   ~/.config/espanso/match/personal.yml   - Your personal snippets
 
@@ -313,7 +307,7 @@ main() {
     echo
     print_success "Espanso setup complete!"
     echo
-    echo "Try typing ${YELLOW}..date${NC} in any application to test it!"
+    echo "Try typing ${DF_YELLOW}..date${DF_NC} in any application to test it!"
 }
 
 main "$@"
