@@ -40,7 +40,7 @@ cd ~/.dotfiles
 ./install.sh
 ```
 
-See [INSTALL.md](INSTALL.md) for detailed installation instructions.
+See `INSTALL.md` for detailed installation instructions.
 
 ---
 

@@ -17,7 +17,6 @@ Desktop.ini
 # --- Compiled zsh stuff ---
 *.jwc
 
-
 # --- Local machine-specific configs ---
 *.local
 .zshrc.local
