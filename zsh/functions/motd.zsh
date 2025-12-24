@@ -43,9 +43,9 @@ _motd_uptime() {
     local mins=$(((uptime_seconds % 3600) / 60))
     
     if (( days > 0 )); then
-        echo "${days}d ${hours}h"
+        echo "${days}d${hours}h"
     elif (( hours > 0 )); then
-        echo "${hours}h ${mins}m"
+        echo "${hours}h${mins}m"
     else
         echo "${mins}m"
     fi
@@ -159,21 +159,22 @@ show_motd() {
     
     # Header: hostname + datetime
     local h_left="✦ ${hostname}"
+    local h_center=$(hostname -i | awk -F" " '{print $1}')
     local h_right="${datetime}"
-    local h_pad=$(((inner - ${#h_left} - ${#h_right}) / 2))
+    local h_pad=$(((inner - ${#h_left} - ${#h_center} - ${#h_right}) / 2))
     local h_spaces=""
     for ((i=0; i<h_pad; i++)); do h_spaces+=" "; done
-    echo "${DF_GREY}│${DF_NC} ${DF_BOLD}${DF_BLUE}${h_left}${DF_NC}${h_spaces}${h_spaces}${DF_NC}${DF_BOLD}${h_right}${DF_NC} ${DF_GREY}│${DF_NC}"
+    echo "${DF_GREY}│${DF_NC} ${DF_BOLD}${DF_BLUE}${h_left}${DF_NC}${h_spaces}${DF_YELLOW}${h_center}${h_spaces}${DF_NC}${DF_BOLD}${h_right}${DF_NC} ${DF_GREY}│${DF_NC}"
     
     # Separator
     echo "${DF_GREY}╘${hline}╛${DF_NC}"
     
     # Stats line
-    local s1="${DF_YELLOW}▲${DF_NC}${uptime}"
-    local s2="${DF_CYAN}◆${DF_NC}${load}"
-    local s3="${DF_GREEN}◇${DF_NC}${mem}"
-    local s4="${DF_BLUE}⊡${DF_NC}${disk}"
-    echo " ${s1}  ${s2}  ${s3}  ${s4}"
+    local s1="${DF_GREY}｢${DF_YELLOW}▲ ${DF_NC}${uptime}${DF_GREY}｣"
+    local s2="${DF_GREY}｢${DF_CYAN}◆ ${DF_NC}${load}${DF_GREY}｣"
+    local s3="${DF_GREY}｢${DF_GREEN}◇ ${DF_NC}${mem}${DF_GREY}｣"
+    local s4="${DF_GREY}｢${DF_BLUE}⊡ ${DF_NC}${disk}${DF_GREY}｣"
+    echo " ${s1}─${s2}─${s3}─${s4}"
     
     # Alerts line (if any issues)
     local alerts=""
