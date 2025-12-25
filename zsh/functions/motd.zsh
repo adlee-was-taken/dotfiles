@@ -87,7 +87,7 @@ _motd_updates() { echo "${UPDATE_PKG_COUNT:-0}"; }
 
 _motd_line() {
     local char="$1"
-    local width="${DF_WIDTH:-66}"
+    local width="${DF_WIDTH}"
     local line=""
     for ((i=0; i<width; i++)); do line+="$char"; done
     echo "$line"
