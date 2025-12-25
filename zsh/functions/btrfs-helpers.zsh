@@ -59,9 +59,7 @@ btrfs-usage() {
     _btrfs_check || return 1
     local mount="${1:-$BTRFS_DEFAULT_MOUNT}"
     
-    echo -e "${DF_BLUE}╔════════════════════════════════════════════════════════════╗${DF_NC}"
-    echo -e "${DF_BLUE}║${DF_NC}  Btrfs Filesystem Usage: ${mount}                           "
-    echo -e "${DF_BLUE}╚════════════════════════════════════════════════════════════╝${DF_NC}"
+    echo -e "${DF_BLUE}Btrfs Filesystem Usage: ${DF_YELLOW}${mount}${DF_NC}"
     echo ""
     
     sudo btrfs filesystem usage "$mount" -h
@@ -72,9 +70,7 @@ btrfs-subs() {
     _btrfs_check || return 1
     local mount="${1:-$BTRFS_DEFAULT_MOUNT}"
     
-    echo -e "${DF_BLUE}╔════════════════════════════════════════════════════════════╗${DF_NC}"
-    echo -e "${DF_BLUE}║${DF_NC}  Btrfs Subvolumes                                          "
-    echo -e "${DF_BLUE}╚════════════════════════════════════════════════════════════╝${DF_NC}"
+    echo -e "${DF_BLUE}Btrfs Subvolumes"
     echo ""
     
     echo -e "${DF_CYAN}Subvolume List:${DF_NC}"
@@ -135,9 +131,7 @@ btrfs-scrub() {
     _btrfs_check || return 1
     local mount="${1:-$BTRFS_DEFAULT_MOUNT}"
     
-    echo -e "${DF_BLUE}╔════════════════════════════════════════════════════════════╗${DF_NC}"
-    echo -e "${DF_BLUE}║${DF_NC}  Btrfs Scrub                                               "
-    echo -e "${DF_BLUE}╚════════════════════════════════════════════════════════════╝${DF_NC}"
+    echo -e "${DF_BLUE}Btrfs Scrub"
     echo ""
     
     # Check if scrub is already running
@@ -217,9 +211,7 @@ btrfs-compress() {
         return 1
     fi
     
-    echo -e "${DF_BLUE}╔════════════════════════════════════════════════════════════╗${DF_NC}"
-    echo -e "${DF_BLUE}║${DF_NC}  Btrfs Compression Statistics                              "
-    echo -e "${DF_BLUE}╚════════════════════════════════════════════════════════════╝${DF_NC}"
+    echo -e "${DF_BLUE}Btrfs Compression Statistics${FD_NC}"
     echo ""
     
     sudo compsize "$target"
@@ -234,9 +226,7 @@ btrfs-info() {
     _btrfs_check || return 1
     local mount="${1:-$BTRFS_DEFAULT_MOUNT}"
     
-    echo -e "${DF_BLUE}╔════════════════════════════════════════════════════════════╗${DF_NC}"
-    echo -e "${DF_BLUE}║${DF_NC}  Btrfs Filesystem Information                              "
-    echo -e "${DF_BLUE}╚════════════════════════════════════════════════════════════╝${DF_NC}"
+    echo -e "${DF_BLUE}Btrfs Filesystem Information${DF_NC}"
     
     echo -e "\n${DF_CYAN}Filesystem Show:${DF_NC}"
     sudo btrfs filesystem show "$mount"
@@ -255,9 +245,7 @@ btrfs-health() {
     _btrfs_check || return 1
     local mount="${1:-$BTRFS_DEFAULT_MOUNT}"
     
-    echo -e "${DF_BLUE}╔════════════════════════════════════════════════════════════╗${DF_NC}"
-    echo -e "${DF_BLUE}║${DF_NC}  Btrfs Health Check                                        "
-    echo -e "${DF_BLUE}╚════════════════════════════════════════════════════════════╝${DF_NC}"
+    echo -e "${DF_BLUE}Btrfs Health Check${DF_NC}"
     echo ""
     
     local issues=0
@@ -329,9 +317,7 @@ btrfs-health() {
 btrfs-snap-usage() {
     _btrfs_check || return 1
     
-    echo -e "${DF_BLUE}╔════════════════════════════════════════════════════════════╗${DF_NC}"
-    echo -e "${DF_BLUE}║${DF_NC}  Snapshot Space Usage                                      "
-    echo -e "${DF_BLUE}╚════════════════════════════════════════════════════════════╝${DF_NC}"
+    echo -e "${DF_BLUE}Snapshot Space Usage${DF_NC}"
     echo ""
     
     if [[ -d "/.snapshots" ]]; then
@@ -356,9 +342,7 @@ btrfs-maintain() {
     _btrfs_check || return 1
     local mount="${1:-$BTRFS_DEFAULT_MOUNT}"
     
-    echo -e "${DF_BLUE}╔════════════════════════════════════════════════════════════╗${DF_NC}"
-    echo -e "${DF_BLUE}║${DF_NC}  Btrfs Maintenance Routine                                 "
-    echo -e "${DF_BLUE}╚════════════════════════════════════════════════════════════╝${DF_NC}"
+    echo -e "${DF_BLUE}Btrfs Maintenance Routine${DF_NC}"
     echo ""
     echo "This will perform:"
     echo "  1. Health check"
@@ -400,9 +384,7 @@ alias btrc='btrfs-compress'
 # ============================================================================
 
 btrfs-help() {
-    echo -e "${DF_BLUE}╔════════════════════════════════════════════════════════════╗${DF_NC}"
-    echo -e "${DF_BLUE}║${DF_NC}  Btrfs Helper Commands                                     "
-    echo -e "${DF_BLUE}╚════════════════════════════════════════════════════════════╝${DF_NC}"
+    echo -e "${DF_BLUE}Btrfs Helper Commands${DF_NC}"
     
     cat << 'EOF'
 
