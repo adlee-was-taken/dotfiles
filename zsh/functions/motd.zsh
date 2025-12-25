@@ -227,9 +227,9 @@ show_motd_mini() {
     local s4="${DF_GREY}｢${DF_BLUE}⊡ ${DF_NC}${disk}${DF_GREY}｣"
 
     if [ "$EUID" -ne 0 ];then 
-        echo "${DF_DIM}──${DF_NC} ${DF_BOLD}${DF_LIGHT_BLUE}${hostname}${DF_NC}${s1}─${s2}─${s3}─${s4}${DF_DIM}──${DF_NC}"
+        echo "${DF_GREY}──${DF_NC} ${DF_BOLD}${DF_LIGHT_BLUE}${hostname} ${DF_GREY}─${DF_NC}${s1}─${s2}─${s3}─${s4}${DF_GREY}──${DF_NC}"
     else
-        echo "${DF_DIM}──${DF_NC} ${DF_BOLD}${DF_RED}${hostname}${DF_NC}${s1}─${s2}─${s3}─${s4}${DF_DIM}──${DF_NC}"
+        echo "${DF_GREY}──${DF_NC} ${DF_BOLD}${DF_RED}${hostname} ${DF_GREY}─${DF_NC}${s1}─${s2}─${s3}─${s4}${DF_GREY}──${DF_NC}"
     fi 
 }
 
