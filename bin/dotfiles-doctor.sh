@@ -195,13 +195,13 @@ check_bin_scripts() {
         "dotfiles-compile.sh"
         "dotfiles-diff.sh"
         "dotfiles-doctor.sh"
-       "dotfiles-stats.sh"
-       "dotfiles-sync.sh"
-       "dotfiles-tour.sh"
-       "dotfiles-update.sh"
-       "dotfiles-vault.sh"
+        "dotfiles-stats.sh"
+        "dotfiles-sync.sh"
+        "dotfiles-tour.sh"
+        "dotfiles-update.sh"
+        "dotfiles-vault.sh"
         "dotfiles-version.sh"
-       "dotfiles-profile.sh"
+        "dotfiles-profile.sh"
     )
 
     for script in "${scripts[@]}"; do
