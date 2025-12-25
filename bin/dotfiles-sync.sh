@@ -15,6 +15,8 @@ source "$DOTFILES_HOME/zsh/lib/colors.zsh" 2>/dev/null || {
     DF_BOLD=$'\033[1m' DF_DIM=$'\033[2m' DF_LIGHT_GREEN=$'\033[38;5;82m'
 }
 
+# Source utils.zsh
+source "$DOTFILES_HOME/zsh/lib/utils.zsh" 2>/dev/null
 
 # Color codes
 readonly RED='\033[0;31m'

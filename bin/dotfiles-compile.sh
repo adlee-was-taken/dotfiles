@@ -14,6 +14,9 @@ source "$DOTFILES_DIR/zsh/lib/colors.zsh" 2>/dev/null || {
     DF_BOLD=$'\033[1m' DF_DIM=$'\033[2m'
 }
 
+# Source utils (fixed: was DOTFILES_HOME, should be DOTFILES_DIR)
+source "$DOTFILES_DIR/zsh/lib/utils.zsh" 2>/dev/null
+
 # ============================================================================
 # MOTD-style header
 # ============================================================================
@@ -26,7 +29,8 @@ print_header() {
         local hostname="${HOST:-$(hostname -s 2>/dev/null)}"
         local datetime=$(date '+%a %b %d %H:%M')
         local width=66
-        local hline="" && for ((i=0; i<width; i++)); do hline+="═"; done
+        local hline=""
+        for ((i=0; i<width; i++)); do hline+="═"; done
 
         echo ""
         echo "${DF_GREY}╒${hline}╕${DF_NC}"
@@ -77,6 +81,10 @@ compile_all() {
     echo "Dotfiles:"
     compile_file "$DOTFILES_DIR/zsh/.zshrc"
     compile_file "$DOTFILES_DIR/zsh/aliases.zsh"
+
+    for file in "$DOTFILES_DIR/zsh/lib"/*.zsh(N); do
+        compile_file "$file"
+    done
 
     for file in "$DOTFILES_DIR/zsh/functions"/*.zsh(N); do
         compile_file "$file"

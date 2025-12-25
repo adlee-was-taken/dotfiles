@@ -15,6 +15,9 @@ source "$DOTFILES_HOME/zsh/lib/colors.zsh" 2>/dev/null || {
     DF_BOLD=$'\033[1m' DF_DIM=$'\033[2m'
 }
 
+# Source utils.zsh
+source "$DOTFILES_HOME/zsh/lib/utils.zsh" 2>/dev/null
+
 # ============================================================================
 # MOTD-style header
 # ============================================================================
@@ -31,7 +34,7 @@ print_header() {
 
         echo ""
         echo -e "${DF_GREY}╒${hline}╕${DF_NC}"
-        echo -e "${DF_GREY}│${DF_NC} ${DF_BOLD}${DF_LIGHT_BLUE}✦ ${user}@${hostname}${DF_NC}      ${DF_DIM}dotfiles-stats! ${DF_NC}      ${datetime} ${DF_GREY}│${DF_NC}"
+        echo -e "${DF_GREY}│${DF_NC} ${DF_BOLD}${DF_LIGHT_BLUE}✦ ${user}@${hostname}${DF_NC}      ${DF_DIM}dotfiles-stats!${DF_NC}      ${datetime} ${DF_GREY}│${DF_NC}"
         echo -e "${DF_GREY}╘${hline}╛${DF_NC}"
         echo ""
     fi
