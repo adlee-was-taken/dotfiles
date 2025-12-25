@@ -22,7 +22,7 @@ autoload -U colors && colors
 # ============================================================================
 
 # Colors
-typeset -g COLOR_GREY='%{$FG[239]%}'
+typeset -g COLOR_GREY='%{$FG[241]%}'
 typeset -g COLOR_YELLOW='%{$FG[179]%}'
 typeset -g COLOR_BLUE='%{$FG[069]%}'
 typeset -g COLOR_GREEN='%{$FG[118]%}'
@@ -43,7 +43,7 @@ typeset -g TIMER_THRESHOLD=10
 # ============================================================================
 
 ZSH_THEME_GIT_PROMPT_PREFIX=" %{$fg_bold[green]%}⎇ "
-ZSH_THEME_GIT_PROMPT_SUFFIX="%{$reset_color$FG[239]%}"
+ZSH_THEME_GIT_PROMPT_SUFFIX="%{$reset_color$FG[241]%}"
 ZSH_THEME_GIT_PROMPT_DIRTY=" %{$fg[red]%}*"
 ZSH_THEME_GIT_PROMPT_CLEAN=""
 
@@ -77,11 +77,11 @@ _adlee_format_elapsed_time() {
 _adlee_build_prompt() {
     # %(#.TRUE.FALSE) - red for root, blue for users
     if [[ -n $UPDATE_PKG_COUNT && $UPDATE_PKG_COUNT -gt 0 ]];then
-        PROMPT='%{$FG[239]%}┌｢%{$FG[118]%}%n@%m%{$reset_color$FG[239]%}｣ ｢%{$FG[179]%}%~%{$reset_color$FG[239]%}$(git_prompt_info)%{$FG[239]%}｣ ｢%{$FG[111]%}⇑${UPDATE_PKG_COUNT}%{$reset_color$FG[239]%}｣
-%{$FG[239]%}└%{$FX[bold]%}%(#.%{$FG[196]%}.%{$FG[069]%})%#%{$reset_color%} '
+        PROMPT='%{$FG[241]%}┌｢%{$FG[118]%}%n@%m%{$reset_color$FG[241]%}｣ ｢%{$FG[179]%}%~%{$reset_color$FG[241]%}$(git_prompt_info)%{$FG[241]%}｣ ｢%{$FG[111]%}⇑${UPDATE_PKG_COUNT}%{$reset_color$FG[241]%}｣
+%{$FG[241]%}└%{$FX[bold]%}%(#.%{$FG[196]%}.%{$FG[069]%})%#%{$reset_color%} '
     else
-        PROMPT='%{$FG[239]%}┌｢%{$FG[118]%}%n@%m%{$reset_color$FG[239]%}｣ ｢%{$FG[179]%}%~%{$reset_color$FG[239]%}$(git_prompt_info)%{$FG[239]%}｣
-%{$FG[239]%}└%{$FX[bold]%}%(#.%{$FG[196]%}.%{$FG[069]%})%#%{$reset_color%} '
+        PROMPT='%{$FG[241]%}┌｢%{$FG[118]%}%n@%m%{$reset_color$FG[241]%}｣ ｢%{$FG[179]%}%~%{$reset_color$FG[241]%}$(git_prompt_info)%{$FG[241]%}｣
+%{$FG[241]%}└%{$FX[bold]%}%(#.%{$FG[196]%}.%{$FG[069]%})%#%{$reset_color%} '
     fi
 }
 
