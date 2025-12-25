@@ -2,429 +2,209 @@
 # Btrfs Helpers for Arch/CachyOS
 # ============================================================================
 # Quick commands for btrfs filesystem management
-# CachyOS defaults to btrfs, so these are highly useful
-#
-# Commands:
-#   btrfs-usage         - Show filesystem usage
-#   btrfs-subs          - List subvolumes
-#   btrfs-balance       - Start balance operation
-#   btrfs-scrub         - Start/check scrub
-#   btrfs-defrag        - Defragment file or directory
-#   btrfs-compress      - Show compression stats
-#   btrfs-info          - Full filesystem info
-#   btrfs-health        - Quick health check
 # ============================================================================
 
-# Source shared colors (with fallback)
-source "${0:A:h}/../lib/colors.zsh" 2>/dev/null || \
-source "$HOME/.dotfiles/zsh/lib/colors.zsh" 2>/dev/null || {
-    typeset -g DF_GREEN=$'\033[0;32m' DF_YELLOW=$'\033[1;33m'
-    typeset -g DF_RED=$'\033[0;31m' DF_BLUE=$'\033[0;34m'
-    typeset -g DF_CYAN=$'\033[0;36m' DF_NC=$'\033[0m'
-}
-
-# ============================================================================
-# Configuration
-# ============================================================================
+source "${0:A:h}/../lib/utils.zsh" 2>/dev/null || \
+source "$HOME/.dotfiles/zsh/lib/utils.zsh" 2>/dev/null
 
 typeset -g BTRFS_DEFAULT_MOUNT="${BTRFS_DEFAULT_MOUNT:-/}"
 
-# ============================================================================
-# Detection
-# ============================================================================
-
 _btrfs_check() {
-    if ! command -v btrfs &>/dev/null; then
-        echo -e "${DF_RED}✗${DF_NC} btrfs-progs not installed"
-        echo "Install: sudo pacman -S btrfs-progs"
+    df_require_cmd btrfs btrfs-progs || return 1
+    if ! df_is_btrfs; then
+        df_print_warning "Root filesystem is not btrfs"
         return 1
     fi
-    
-    # Check if root is btrfs
-    local fstype=$(df -T / | awk 'NR==2 {print $2}')
-    if [[ "$fstype" != "btrfs" ]]; then
-        echo -e "${DF_YELLOW}⚠${DF_NC} Root filesystem is not btrfs (detected: $fstype)"
-        return 1
-    fi
-    
     return 0
 }
 
-# ============================================================================
-# Core Commands
-# ============================================================================
-
-# Show filesystem usage
 btrfs-usage() {
     _btrfs_check || return 1
     local mount="${1:-$BTRFS_DEFAULT_MOUNT}"
-   
     df_print_func_name "Btrfs Filesystem Usage: ${mount}"
-    
     sudo btrfs filesystem usage "$mount" -h
 }
 
-# List all subvolumes
 btrfs-subs() {
     _btrfs_check || return 1
     local mount="${1:-$BTRFS_DEFAULT_MOUNT}"
-
     df_print_func_name "Btrfs Subvolumes"
-    
-    echo -e "${DF_CYAN}Subvolume List:${DF_NC}"
+    df_print_section "Subvolume List"
     sudo btrfs subvolume list "$mount" | while read -r line; do
         local path=$(echo "$line" | awk '{print $NF}')
         local id=$(echo "$line" | awk '{print $2}')
-        echo -e "  ${DF_GREEN}●${DF_NC} [$id] $path"
+        df_print_indent "● [$id] $path"
     done
-    
     echo ""
-    echo -e "${DF_CYAN}Default Subvolume:${DF_NC}"
+    df_print_section "Default Subvolume"
     sudo btrfs subvolume get-default "$mount"
 }
 
-# Start balance operation
 btrfs-balance() {
     _btrfs_check || return 1
     local mount="${1:-$BTRFS_DEFAULT_MOUNT}"
-    local usage="${2:-50}"  # Default: rebalance chunks with <50% usage
-    
+    local usage="${2:-50}"
     df_print_func_name "Btrfs Balance"
-    
-    echo -e "${DF_YELLOW}⚠${DF_NC} This may take a while and use significant I/O"
+    df_confirm_warning "This may take a while and use significant I/O" || return 0
     echo ""
-    
-    read -q "REPLY?Continue? [y/N]: "; echo
-    [[ ! "$REPLY" =~ ^[Yy]$ ]] && return 0
-    
-    echo ""
-    echo -e "${DF_BLUE}==>${DF_NC} Balancing data chunks with <${usage}% usage..."
+    df_print_step "Balancing data chunks with <${usage}% usage..."
     sudo btrfs balance start -dusage="$usage" -musage="$usage" "$mount" -v
-    
-    if [[ $? -eq 0 ]]; then
-        echo -e "${DF_GREEN}✓${DF_NC} Balance completed"
-    else
-        echo -e "${DF_YELLOW}⚠${DF_NC} Balance finished (may have been interrupted or had no work)"
-    fi
+    [[ $? -eq 0 ]] && df_print_success "Balance completed" || df_print_warning "Balance finished (may have been interrupted)"
 }
 
-# Check balance status
 btrfs-balance-status() {
     _btrfs_check || return 1
-    local mount="${1:-$BTRFS_DEFAULT_MOUNT}"
-    
     df_print_func_name "Btrfs Balance Status"
-    
-    sudo btrfs balance status "$mount"
+    sudo btrfs balance status "${1:-$BTRFS_DEFAULT_MOUNT}"
 }
 
-# Cancel running balance
 btrfs-balance-cancel() {
     _btrfs_check || return 1
-    local mount="${1:-$BTRFS_DEFAULT_MOUNT}"
-    
-    echo -e "${DF_BLUE}==>${DF_NC} Cancelling balance on ${mount}..."
-    sudo btrfs balance cancel "$mount"
+    df_print_step "Cancelling balance..."
+    sudo btrfs balance cancel "${1:-$BTRFS_DEFAULT_MOUNT}"
 }
 
-# Start scrub operation
 btrfs-scrub() {
     _btrfs_check || return 1
     local mount="${1:-$BTRFS_DEFAULT_MOUNT}"
-    
     df_print_func_name "Btrfs Scrub"
-    
-    # Check if scrub is already running
     local status=$(sudo btrfs scrub status "$mount" 2>/dev/null)
     if echo "$status" | grep -q "running"; then
-        echo -e "${DF_CYAN}Scrub Status (running):${DF_NC}"
+        df_print_section "Scrub Status (running)"
         echo "$status" | sed 's/^/  /'
         return 0
     fi
-    
-    echo -e "${DF_YELLOW}⚠${DF_NC} Scrub verifies data integrity and may take hours"
-    read -q "REPLY?Start scrub? [y/N]: "; echo
-    [[ ! "$REPLY" =~ ^[Yy]$ ]] && return 0
-    
-    echo ""
-    echo -e "${DF_BLUE}==>${DF_NC} Starting scrub..."
+    df_print_warning "Scrub verifies data integrity and may take hours"
+    df_confirm "Start scrub?" || return 0
+    df_print_step "Starting scrub..."
     sudo btrfs scrub start "$mount"
-    
     echo ""
-    echo -e "${DF_CYAN}Scrub Status:${DF_NC}"
+    df_print_section "Scrub Status"
     sudo btrfs scrub status "$mount"
-    
-    echo ""
-    echo -e "${DF_CYAN}Monitor with:${DF_NC} btrfs-scrub-status"
+    df_print_info "Monitor with: btrfs-scrub-status"
 }
 
-# Show scrub status
 btrfs-scrub-status() {
     _btrfs_check || return 1
-    local mount="${1:-$BTRFS_DEFAULT_MOUNT}"
-    
     df_print_func_name "Btrfs Scrub Status"
-    
-    sudo btrfs scrub status "$mount"
+    sudo btrfs scrub status "${1:-$BTRFS_DEFAULT_MOUNT}"
 }
 
-# Cancel scrub
 btrfs-scrub-cancel() {
     _btrfs_check || return 1
-    local mount="${1:-$BTRFS_DEFAULT_MOUNT}"
-    
-    echo -e "${DF_BLUE}==>${DF_NC} Cancelling scrub on ${mount}..."
-    sudo btrfs scrub cancel "$mount"
+    df_print_step "Cancelling scrub..."
+    sudo btrfs scrub cancel "${1:-$BTRFS_DEFAULT_MOUNT}"
 }
 
-# Defragment file or directory
 btrfs-defrag() {
     _btrfs_check || return 1
     local target="${1:-.}"
-    
-    if [[ ! -e "$target" ]]; then
-        echo -e "${DF_RED}✗${DF_NC} Target not found: $target"
-        return 1
-    fi
-    
+    [[ ! -e "$target" ]] && { df_print_error "Target not found: $target"; return 1; }
     df_print_func_name "Btrfs Defragment"
-    
     if [[ -d "$target" ]]; then
-        echo -e "${DF_YELLOW}⚠${DF_NC} Recursive defrag on directory: $target"
-        read -q "REPLY?Continue? [y/N]: "; echo
-        [[ ! "$REPLY" =~ ^[Yy]$ ]] && return 0
-        
+        df_print_warning "Recursive defrag on directory: $target"
+        df_confirm "Continue?" || return 0
         sudo btrfs filesystem defragment -r -v "$target"
     else
-        echo -e "${DF_BLUE}==>${DF_NC} Defragmenting: $target"
+        df_print_step "Defragmenting: $target"
         sudo btrfs filesystem defragment -v "$target"
     fi
-    
-    echo -e "${DF_GREEN}✓${DF_NC} Defragmentation complete"
+    df_print_success "Defragmentation complete"
 }
 
-# Show compression stats (requires compsize)
 btrfs-compress() {
     _btrfs_check || return 1
-    local target="${1:-$BTRFS_DEFAULT_MOUNT}"
-    
-    if ! command -v compsize &>/dev/null; then
-        echo -e "${DF_YELLOW}⚠${DF_NC} compsize not installed"
-        echo "Install: sudo pacman -S compsize"
-        return 1
-    fi
-    
+    df_require_cmd compsize || return 1
     df_print_func_name "Btrfs Compression Statistics"
-    
-    sudo compsize "$target"
+    sudo compsize "${1:-$BTRFS_DEFAULT_MOUNT}"
 }
 
-# ============================================================================
-# Information Commands
-# ============================================================================
-
-# Full filesystem info
 btrfs-info() {
     _btrfs_check || return 1
     local mount="${1:-$BTRFS_DEFAULT_MOUNT}"
-    
     df_print_func_name "Btrfs Filesystem Information"
-    
-    echo -e "${DF_CYAN}Filesystem Show:${DF_NC}"
+    df_print_section "Filesystem Show"
     sudo btrfs filesystem show "$mount"
-    
-    echo -e "\n${DF_CYAN}Filesystem df:${DF_NC}"
-    sudo btrfs filesystem df "$mount"
-    
-    echo -e "\n${DF_CYAN}Device Stats:${DF_NC}"
-    sudo btrfs device stats "$mount"
-    
     echo ""
+    df_print_section "Filesystem df"
+    sudo btrfs filesystem df "$mount"
+    echo ""
+    df_print_section "Device Stats"
+    sudo btrfs device stats "$mount"
 }
 
-# Quick health check
 btrfs-health() {
     _btrfs_check || return 1
     local mount="${1:-$BTRFS_DEFAULT_MOUNT}"
-   
     df_print_func_name "Btrfs Health Check"
-    
     local issues=0
     
-    # Check device stats for errors
-    echo -e "${DF_CYAN}Device Errors:${DF_NC}"
-    local stats=$(sudo btrfs device stats "$mount" 2>/dev/null)
-    local errors=$(echo "$stats" | grep -v " 0$" | grep -v "^$")
+    df_print_section "Device Errors"
+    local errors=$(sudo btrfs device stats "$mount" 2>/dev/null | grep -v " 0$" | grep -v "^$")
+    [[ -z "$errors" ]] && df_print_indent "✓ No errors" || { df_print_indent "✗ Errors detected:"; echo "$errors" | sed 's/^/    /'; ((issues++)); }
     
-    if [[ -z "$errors" ]]; then
-        echo -e "  ${DF_GREEN}✓${DF_NC} No device errors detected"
-    else
-        echo -e "  ${DF_RED}✗${DF_NC} Errors detected:"
-        echo "$errors" | sed 's/^/    /'
-        issues=$((issues + 1))
-    fi
-    
-    # Check allocation
-    echo -e "\n${DF_CYAN}Space Allocation:${DF_NC}"
-    local usage=$(sudo btrfs filesystem usage "$mount" -b 2>/dev/null)
-    local used_pct=$(echo "$usage" | grep "Used:" | head -1 | awk '{print $2}' | tr -d '%')
-    
+    echo ""
+    df_print_section "Space Allocation"
+    local used_pct=$(sudo btrfs filesystem usage "$mount" -b 2>/dev/null | grep "Used:" | head -1 | awk '{print $2}' | tr -d '%')
     if [[ -n "$used_pct" ]]; then
-        if (( used_pct >= 90 )); then
-            echo -e "  ${DF_RED}✗${DF_NC} Filesystem ${used_pct}% full - critical!"
-            issues=$((issues + 1))
-        elif (( used_pct >= 80 )); then
-            echo -e "  ${DF_YELLOW}⚠${DF_NC} Filesystem ${used_pct}% full - consider cleanup"
-        else
-            echo -e "  ${DF_GREEN}✓${DF_NC} Filesystem ${used_pct}% used"
-        fi
-    fi
-    
-    # Check last scrub
-    echo -e "\n${DF_CYAN}Last Scrub:${DF_NC}"
-    local scrub_status=$(sudo btrfs scrub status "$mount" 2>/dev/null)
-    local scrub_date=$(echo "$scrub_status" | grep "Scrub started" | awk '{print $3, $4, $5}')
-    local scrub_errors=$(echo "$scrub_status" | grep "Error summary" | grep -v "no errors")
-    
-    if [[ -n "$scrub_date" ]]; then
-        echo -e "  Last scrub: $scrub_date"
-        if [[ -n "$scrub_errors" ]]; then
-            echo -e "  ${DF_RED}✗${DF_NC} Scrub found errors"
-            echo "$scrub_errors" | sed 's/^/    /'
-            issues=$((issues + 1))
-        else
-            echo -e "  ${DF_GREEN}✓${DF_NC} No errors in last scrub"
-        fi
-    else
-        echo -e "  ${DF_YELLOW}⚠${DF_NC} No scrub has been run (recommended monthly)"
-    fi
-    
-    # Summary
-    echo ""
-    if (( issues == 0 )); then
-        echo -e "${DF_GREEN}✓${DF_NC} Btrfs filesystem appears healthy"
-    else
-        echo -e "${DF_RED}✗${DF_NC} Found $issues issue(s) - investigate above"
+        (( used_pct >= 90 )) && { df_print_indent "✗ ${used_pct}% full - critical!"; ((issues++)); } || \
+        (( used_pct >= 80 )) && df_print_indent "⚠ ${used_pct}% full" || df_print_indent "✓ ${used_pct}% used"
     fi
     
     echo ""
+    df_print_section "Last Scrub"
+    local scrub=$(sudo btrfs scrub status "$mount" 2>/dev/null)
+    local scrub_date=$(echo "$scrub" | grep "Scrub started" | awk '{print $3, $4, $5}')
+    [[ -n "$scrub_date" ]] && df_print_indent "Last: $scrub_date" || df_print_indent "⚠ No scrub run yet"
+    
+    echo ""
+    (( issues == 0 )) && df_print_success "Filesystem healthy" || df_print_error "Found $issues issue(s)"
 }
 
-# ============================================================================
-# Snapshot Helpers (complement snapper.zsh)
-# ============================================================================
-
-# Show snapshot space usage
 btrfs-snap-usage() {
     _btrfs_check || return 1
-   
     df_print_func_name "Snapshot Disk Space Usage"
-    
     if [[ -d "/.snapshots" ]]; then
-        echo -e "${DF_CYAN}Snapshot Directory:${DF_NC}"
-        local size
-        size=$(sudo du -sh /.snapshots 2>/dev/null | cut -f1)
-        if [[ -n "$size" ]]; then
-            echo "  $size"
-        else
-            echo "  Unable to calculate (timeout or error)"
-        fi
-        
-        echo -e "\n${DF_CYAN}Individual Snapshots (top 10 by size):${DF_NC}"
-        sudo du -sh /.snapshots/*/ 2>/dev/null | sort -h | tail -10 | sed 's/^/  /' || \
-            echo "  Unable to list snapshots"
+        df_print_section "Snapshot Directory"
+        local size=$(timeout 10 sudo du -sh /.snapshots 2>/dev/null | cut -f1)
+        df_print_indent "${size:-Unable to calculate}"
+        echo ""
+        df_print_section "Individual Snapshots (top 10)"
+        timeout 30 sudo du -sh /.snapshots/*/ 2>/dev/null | sort -h | tail -10 | sed 's/^/  /'
     else
-        echo -e "${DF_YELLOW}⚠${DF_NC} No /.snapshots directory found"
+        df_print_warning "No /.snapshots directory found"
     fi
-    
-    echo ""
 }
 
-# ============================================================================
-# Maintenance
-# ============================================================================
-
-# Full maintenance routine
 btrfs-maintain() {
     _btrfs_check || return 1
     local mount="${1:-$BTRFS_DEFAULT_MOUNT}"
-   
     df_print_func_name "Btrfs Maintenance Routine"
-    
-    echo "This will perform:"
-    echo "  1. Health check"
-    echo "  2. Balance (low usage chunks)"
-    echo "  3. Scrub (data integrity)"
-    echo ""
-    echo -e "${DF_YELLOW}⚠${DF_NC} This may take several hours"
-    read -q "REPLY?Continue? [y/N]: "; echo
-    [[ ! "$REPLY" =~ ^[Yy]$ ]] && return 0
-    
-    echo ""
-    echo -e "${DF_BLUE}==>${DF_NC} Step 1/3: Health Check"
+    echo "This will: health check, balance, scrub"
+    df_confirm_warning "This may take several hours" || return 0
+    df_print_step "Step 1/3: Health Check"
     btrfs-health "$mount"
-    
-    echo -e "${DF_BLUE}==>${DF_NC} Step 2/3: Balance"
+    df_print_step "Step 2/3: Balance"
     sudo btrfs balance start -dusage=50 -musage=50 "$mount"
-    
-    echo ""
-    echo -e "${DF_BLUE}==>${DF_NC} Step 3/3: Scrub"
-    sudo btrfs scrub start -B "$mount"  # -B runs in foreground
-    
-    echo ""
-    echo -e "${DF_GREEN}✓${DF_NC} Maintenance complete"
-    btrfs-health "$mount"
+    df_print_step "Step 3/3: Scrub"
+    sudo btrfs scrub start -B "$mount"
+    df_print_success "Maintenance complete"
 }
-
-# ============================================================================
-# Aliases
-# ============================================================================
-
-alias btru='btrfs-usage'
-alias btrs='btrfs-subs'
-alias btrh='btrfs-health'
-alias btri='btrfs-info'
-alias btrc='btrfs-compress'
-
-# ============================================================================
-# Help
-# ============================================================================
 
 btrfs-help() {
     df_print_func_name "Btrfs Helper Commands"
-    
     cat << 'EOF'
-
-  Information:
-    btrfs-usage [mount]     Filesystem usage summary
-    btrfs-subs [mount]      List all subvolumes
-    btrfs-info [mount]      Full filesystem information
-    btrfs-health [mount]    Quick health check
-    btrfs-compress [path]   Compression statistics (requires compsize)
-    
-  Maintenance:
-    btrfs-balance [mount]   Start balance operation
-    btrfs-balance-status    Check balance progress
-    btrfs-balance-cancel    Cancel running balance
-    btrfs-scrub [mount]     Start scrub (integrity check)
-    btrfs-scrub-status      Check scrub progress
-    btrfs-scrub-cancel      Cancel running scrub
-    btrfs-defrag <path>     Defragment file/directory
-    btrfs-maintain [mount]  Full maintenance routine
-    
-  Snapshots:
-    btrfs-snap-usage        Show snapshot space usage
-    
-  Aliases:
-    btru    btrfs-usage
-    btrs    btrfs-subs
-    btrh    btrfs-health
-    btri    btrfs-info
-    btrc    btrfs-compress
-
-  Note: Most commands default to / if no mount point specified.
-  
-  See also: snapper.zsh for snapshot management
-
+  btrfs-usage [mount]     Filesystem usage
+  btrfs-subs [mount]      List subvolumes
+  btrfs-info [mount]      Full filesystem info
+  btrfs-health [mount]    Quick health check
+  btrfs-compress [path]   Compression stats
+  btrfs-balance [mount]   Start balance
+  btrfs-scrub [mount]     Start scrub
+  btrfs-defrag <path>     Defragment
+  btrfs-snap-usage        Snapshot space usage
+  btrfs-maintain [mount]  Full maintenance
 EOF
 }
+
+alias btru='btrfs-usage' btrs='btrfs-subs' btrh='btrfs-health' btri='btrfs-info' btrc='btrfs-compress'

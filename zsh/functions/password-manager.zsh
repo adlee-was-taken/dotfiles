@@ -1,198 +1,84 @@
 # ============================================================================
-# Password Manager Integration for Zsh (LastPass Only)
-# ============================================================================
-# Unified interface for LastPass CLI
-#
-# Usage:
-#   pw list                    # List all items
-#   pw get <item>              # Get password
-#   pw otp <item>              # Get OTP/TOTP code
-#   pw search <query>          # Search items
-#   pw copy <item>             # Copy password to clipboard
+# Password Manager Integration (LastPass CLI)
 # ============================================================================
 
-# Source shared colors (with fallback)
-source "${0:A:h}/../lib/colors.zsh" 2>/dev/null || \
-source "$HOME/.dotfiles/zsh/lib/colors.zsh" 2>/dev/null || {
-    typeset -g DF_GREEN=$'\033[0;32m' DF_BLUE=$'\033[0;34m'
-    typeset -g DF_YELLOW=$'\033[1;33m' DF_CYAN=$'\033[0;36m'
-    typeset -g DF_RED=$'\033[0;31m' DF_NC=$'\033[0m'
-}
+source "${0:A:h}/../lib/utils.zsh" 2>/dev/null || \
+source "$HOME/.dotfiles/zsh/lib/utils.zsh" 2>/dev/null
 
-# ============================================================================
-# LastPass Functions
-# ============================================================================
+typeset -g PW_CLIP_TIME="${PW_CLIP_TIME:-45}"
 
-_lp_ensure_session() {
+_pw_check() {
+    df_require_cmd lpass lastpass-cli || return 1
     if ! lpass status -q 2>/dev/null; then
-        echo "Signing into LastPass..." >&2
-        lpass login "${LASTPASS_EMAIL:-}"
+        df_print_warning "Not logged in"
+        df_print_step "Logging in..."
+        lpass login --trust "${LPASS_USER:-}" || { df_print_error "Login failed"; return 1; }
     fi
 }
 
-_lp_list() {
-    _lp_ensure_session
-    lpass ls --format="%an\t%ag" 2>/dev/null
-}
-
-_lp_get() {
-    local item="$1"
-    local field="${2:-password}"
-    _lp_ensure_session
-    
-    case "$field" in
-        password) lpass show --password "$item" 2>/dev/null ;;
-        username) lpass show --username "$item" 2>/dev/null ;;
-        url)      lpass show --url "$item" 2>/dev/null ;;
-        notes)    lpass show --notes "$item" 2>/dev/null ;;
-        *)        lpass show --field="$field" "$item" 2>/dev/null ;;
-    esac
-}
-
-_lp_otp() {
-    local item="$1"
-    _lp_ensure_session
-    lpass show --otp "$item" 2>/dev/null
-}
-
-_lp_search() {
-    local query="$1"
-    _lp_ensure_session
-    lpass ls 2>/dev/null | grep -i "$query"
-}
-
-# ============================================================================
-# Unified Interface
-# ============================================================================
-
-pw() {
-    local cmd="${1:-help}"
-    shift
-    
-    if ! command -v lpass &>/dev/null; then
-        echo -e "${DF_RED}✗${DF_NC} LastPass CLI (lpass) not installed"
-        echo "Install with: yay -S lastpass-cli"
+_pw_copy() {
+    local text="$1" label="${2:-Password}"
+    if df_cmd_exists wl-copy; then
+        echo -n "$text" | wl-copy
+    elif df_cmd_exists xclip; then
+        echo -n "$text" | xclip -selection clipboard
+    else
+        df_print_error "No clipboard tool (install wl-clipboard or xclip)"
         return 1
     fi
-    
+    df_print_success "$label copied (clears in ${PW_CLIP_TIME}s)"
+    (sleep "$PW_CLIP_TIME" && { wl-copy "" 2>/dev/null || xclip -selection clipboard < /dev/null 2>/dev/null; }) &
+}
+
+pw() {
+    local cmd="${1:-search}"
     case "$cmd" in
-        list|ls|l)
-            df_print_func_name "LastPass Vault"
-            _lp_list
+        login) lpass login --trust "${LPASS_USER:-}" ;;
+        logout) lpass logout -f; df_print_success "Logged out" ;;
+        sync) _pw_check || return 1; df_print_step "Syncing..."; lpass sync; df_print_success "Synced" ;;
+        show) _pw_check || return 1; [[ -z "$2" ]] && { echo "Usage: pw show <entry>"; return 1; }; lpass show "$2" ;;
+        gen|generate)
+            local len="${2:-20}"
+            local pass=$(tr -dc 'A-Za-z0-9!@#$%^&*' < /dev/urandom | head -c "$len")
+            _pw_copy "$pass" "Generated password"
             ;;
-        
-        get|g|show)
-            local item="$1"
-            local field="${2:-password}"
-            [[ -z "$item" ]] && { echo "Usage: pw get <item> [field]"; return 1; }
-            _lp_get "$item" "$field"
-            ;;
-        
-        otp|totp|2fa)
-            local item="$1"
-            [[ -z "$item" ]] && { echo "Usage: pw otp <item>"; return 1; }
-            _lp_otp "$item"
-            ;;
-        
-        search|find|s)
-            local query="$1"
-            [[ -z "$query" ]] && { echo "Usage: pw search <query>"; return 1; }
-            df_print_func_name "LastPass Search: $query"
-            _lp_search "$query"
-            ;;
-        
-        copy|cp|c)
-            local item="$1"
-            local field="${2:-password}"
-            [[ -z "$item" ]] && { echo "Usage: pw copy <item> [field]"; return 1; }
-            
-            local value=$(_lp_get "$item" "$field")
-            
-            if [[ -n "$value" ]]; then
-                echo -n "$value" | xclip -selection clipboard 2>/dev/null || \
-                echo -n "$value" | xsel --clipboard 2>/dev/null || \
-                { echo "Could not copy to clipboard"; return 1; }
-                echo -e "${DF_GREEN}✓${DF_NC} Copied to clipboard"
+        list|ls) _pw_check || return 1; df_print_func_name "Password Entries"; lpass ls --long ;;
+        search|*)
+            _pw_check || return 1
+            local query="$1"; [[ "$cmd" == "search" ]] && query="$2"
+            if df_cmd_exists fzf && [[ -z "$query" ]]; then
+                local entry=$(lpass ls --format "%an (%au) [%ai]" 2>/dev/null | fzf $(df_fzf_opts) --prompt='Password > ')
+                [[ -z "$entry" ]] && return
+                local id=$(echo "$entry" | grep -oP '\[\K[^\]]+(?=\]$)')
+                local pass=$(lpass show --password "$id" 2>/dev/null)
+                [[ -n "$pass" ]] && _pw_copy "$pass" || df_print_error "Could not retrieve"
             else
-                echo -e "${DF_RED}✗${DF_NC} Item not found or empty"
-                return 1
+                [[ -z "$query" ]] && { echo "Usage: pw <search-term>"; return 1; }
+                local results=$(lpass ls --format "%an [%ai]" 2>/dev/null | grep -i "$query")
+                local count=$(echo "$results" | grep -c . 2>/dev/null || echo 0)
+                if (( count == 0 )); then
+                    df_print_warning "No entries for: $query"
+                elif (( count == 1 )); then
+                    local id=$(echo "$results" | grep -oP '\[\K[^\]]+(?=\]$)')
+                    _pw_copy "$(lpass show --password "$id" 2>/dev/null)"
+                else
+                    df_print_warning "Multiple entries:"
+                    echo "$results" | while read -r l; do df_print_indent "$l"; done
+                fi
             fi
             ;;
-        
-        lock)
-            lpass logout -f 2>/dev/null
-            echo -e "${DF_GREEN}✓${DF_NC} Logged out of LastPass"
-            ;;
-        
-        help|--help|-h|*)
-            df_print_func_name "Password Manager CLI"
-            echo "Usage: pw <command> [args]"
-            echo
-            echo "Commands:"
-            echo "  list              List all items"
-            echo "  get <item> [field] Get field (default: password)"
-            echo "  otp <item>        Get OTP/TOTP code"
-            echo "  search <query>    Search items"
-            echo "  copy <item> [field] Copy to clipboard"
-            echo "  lock              Logout/lock session"
-            echo "  help              Show this help"
-            echo
-            echo "Fields: password, username, url, notes, or custom field name"
-            echo
-            echo "Examples:"
-            echo "  pw get github"
-            echo "  pw get github username"
-            echo "  pw otp github"
-            echo "  pw copy aws"
-            echo "  pw search mail"
-            echo
-            echo "Install: yay -S lastpass-cli"
+        help|--help|-h)
+            df_print_func_name "Password Manager"
+            cat << 'EOF'
+  pw <search>       Search and copy password
+  pw show <n>       Show entry details
+  pw list           List all entries
+  pw gen [len]      Generate password (default: 20)
+  pw sync           Sync vault
+  pw login/logout   Auth commands
+EOF
             ;;
     esac
 }
 
-# ============================================================================
-# Aliases
-# ============================================================================
-
-alias pwl='pw list'
-alias pwg='pw get'
-alias pwc='pw copy'
-alias pws='pw search'
-
-# ============================================================================
-# FZF Integration (if available)
-# ============================================================================
-
-if command -v fzf &>/dev/null; then
-    pwf() {
-        if ! command -v lpass &>/dev/null; then
-            echo "LastPass CLI not installed"
-            return 1
-        fi
-        
-        local item=$(_lp_list | fzf --height=40% --reverse | cut -f1)
-        
-        if [[ -n "$item" ]]; then
-            pw copy "$item"
-        fi
-    }
-    
-    pwof() {
-        if ! command -v lpass &>/dev/null; then
-            echo "LastPass CLI not installed"
-            return 1
-        fi
-        
-        local item=$(_lp_list | fzf --height=40% --reverse | cut -f1)
-        
-        if [[ -n "$item" ]]; then
-            local otp=$(pw otp "$item")
-            if [[ -n "$otp" ]]; then
-                echo -n "$otp" | xclip -selection clipboard 2>/dev/null || \
-                echo -n "$otp" | xsel --clipboard 2>/dev/null
-                echo -e "${DF_GREEN}✓${DF_NC} OTP copied: $otp"
-            fi
-        fi
-    }
-fi
+alias pwc='pw' pws='pw show' pwg='pw gen' pwl='pw list'
