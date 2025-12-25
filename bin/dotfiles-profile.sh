@@ -11,7 +11,8 @@
 #   dotfiles-profile.sh --compare    # Compare with minimal shell
 # ============================================================================
 
-set -e
+# Don't exit on error
+set +e
 
 # Source bootstrap
 source "${DOTFILES_HOME:-$HOME/.dotfiles}/zsh/lib/bootstrap.zsh" 2>/dev/null || {
@@ -21,6 +22,8 @@ source "${DOTFILES_HOME:-$HOME/.dotfiles}/zsh/lib/bootstrap.zsh" 2>/dev/null || 
     df_print_header() { echo "=== $1 ==="; }
     df_print_success() { echo -e "${DF_GREEN}✓${DF_NC} $1"; }
     df_print_warning() { echo -e "${DF_YELLOW}⚠${DF_NC} $1"; }
+    df_print_error() { echo -e "${DF_RED}✗${DF_NC} $1"; }
+    df_print_info() { echo -e "${DF_CYAN}ℹ${DF_NC} $1"; }
     df_print_step() { echo -e "${DF_BLUE}==>${DF_NC} $1"; }
     df_print_section() { echo -e "${DF_CYAN}$1:${DF_NC}"; }
     df_print_indent() { echo "  $1"; }
@@ -35,6 +38,38 @@ SLOW_THRESHOLD_MS=200
 VERY_SLOW_THRESHOLD_MS=500
 
 # ============================================================================
+# Time Measurement Helper
+# ============================================================================
+
+# Get time in milliseconds (portable)
+get_time_ms() {
+    # Try GNU date with nanoseconds
+    if date +%s%3N 2>/dev/null | grep -qE '^[0-9]+$'; then
+        date +%s%3N
+    # Try perl (very portable)
+    elif command -v perl &>/dev/null; then
+        perl -MTime::HiRes=time -e 'printf "%.0f\n", time * 1000'
+    # Try python
+    elif command -v python3 &>/dev/null; then
+        python3 -c 'import time; print(int(time.time() * 1000))'
+    elif command -v python &>/dev/null; then
+        python -c 'import time; print(int(time.time() * 1000))'
+    # Fallback to seconds (less precise)
+    else
+        echo "$(($(date +%s) * 1000))"
+    fi
+}
+
+# Time a command and return milliseconds
+time_command() {
+    local start end
+    start=$(get_time_ms)
+    eval "$@" 2>/dev/null
+    end=$(get_time_ms)
+    echo $((end - start))
+}
+
+# ============================================================================
 # Profiling Functions
 # ============================================================================
 
@@ -44,17 +79,17 @@ quick_profile() {
     echo ""
     
     local times=()
+    local i duration
+    
     for i in $(seq 1 $PROFILE_RUNS); do
-        local start=$(date +%s%3N)
-        zsh -i -c 'exit' 2>/dev/null
-        local end=$(date +%s%3N)
-        local duration=$((end - start))
-        times+=($duration)
+        duration=$(time_command "zsh -i -c 'exit'")
+        times+=("$duration")
         printf "  Run %d: ${DF_CYAN}%dms${DF_NC}\n" "$i" "$duration"
     done
     
     # Calculate average
     local sum=0
+    local t
     for t in "${times[@]}"; do
         sum=$((sum + t))
     done
@@ -64,11 +99,11 @@ quick_profile() {
     df_print_section "Results"
     
     if (( avg < SLOW_THRESHOLD_MS )); then
-        df_print_indent "Average: ${DF_GREEN}${avg}ms${DF_NC} (excellent)"
+        echo -e "  Average: ${DF_GREEN}${avg}ms${DF_NC} (excellent)"
     elif (( avg < VERY_SLOW_THRESHOLD_MS )); then
-        df_print_indent "Average: ${DF_YELLOW}${avg}ms${DF_NC} (acceptable)"
+        echo -e "  Average: ${DF_YELLOW}${avg}ms${DF_NC} (acceptable)"
     else
-        df_print_indent "Average: ${DF_RED}${avg}ms${DF_NC} (slow - optimization recommended)"
+        echo -e "  Average: ${DF_RED}${avg}ms${DF_NC} (slow - optimization recommended)"
     fi
 }
 
@@ -78,19 +113,20 @@ detailed_profile() {
     echo ""
     
     # Create temporary profile script
-    local tmp_zshrc=$(mktemp)
-    cat > "$tmp_zshrc" << 'EOF'
+    local tmp_script=$(mktemp)
+    cat > "$tmp_script" << 'PROFILE_SCRIPT'
 zmodload zsh/zprof
 source ~/.zshrc
 zprof
-EOF
+PROFILE_SCRIPT
     
-    ZDOTDIR=$(dirname "$tmp_zshrc") zsh -i -c "source $tmp_zshrc; exit" 2>/dev/null | head -40
+    # Run zsh with the profiling script
+    zsh -c "source $tmp_script" 2>/dev/null | head -50
     
-    rm -f "$tmp_zshrc"
+    rm -f "$tmp_script"
     
     echo ""
-    df_print_info "Top 40 functions shown. Run with ZDOTDIR override for full output."
+    df_print_info "Top functions shown. These are the slowest during startup."
 }
 
 # Benchmark with hyperfine
@@ -108,12 +144,11 @@ benchmark_profile() {
     echo ""
     
     hyperfine --warmup 3 --min-runs 10 \
-        --export-markdown /tmp/zsh-bench.md \
         'zsh -i -c exit' \
         2>&1
     
     echo ""
-    df_print_success "Results saved to /tmp/zsh-bench.md"
+    df_print_success "Benchmark complete"
 }
 
 # Compare with minimal shell
@@ -122,21 +157,20 @@ compare_profile() {
     echo ""
     
     df_print_step "Full shell (with dotfiles):"
-    local full_start=$(date +%s%3N)
-    zsh -i -c 'exit' 2>/dev/null
-    local full_end=$(date +%s%3N)
-    local full_time=$((full_end - full_start))
-    df_print_indent "${full_time}ms"
+    local full_time
+    full_time=$(time_command "zsh -i -c 'exit'")
+    echo -e "  ${DF_CYAN}${full_time}ms${DF_NC}"
     
     df_print_step "Minimal shell (no rc files):"
-    local min_start=$(date +%s%3N)
-    zsh --no-rcs -i -c 'exit' 2>/dev/null
-    local min_end=$(date +%s%3N)
-    local min_time=$((min_end - min_start))
-    df_print_indent "${min_time}ms"
+    local min_time
+    min_time=$(time_command "zsh --no-rcs -i -c 'exit'")
+    echo -e "  ${DF_CYAN}${min_time}ms${DF_NC}"
     
     local overhead=$((full_time - min_time))
-    local overhead_pct=$((overhead * 100 / (min_time + 1)))
+    local overhead_pct=0
+    if (( min_time > 0 )); then
+        overhead_pct=$((overhead * 100 / min_time))
+    fi
     
     echo ""
     df_print_section "Analysis"
@@ -153,39 +187,6 @@ compare_profile() {
     fi
 }
 
-# Identify slow components
-analyze_components() {
-    df_print_section "Component Analysis"
-    echo ""
-    
-    local components=(
-        "oh-my-zsh:source \$ZSH/oh-my-zsh.sh"
-        "autosuggestions:source */zsh-autosuggestions.zsh"
-        "syntax-highlight:source */zsh-syntax-highlighting.zsh"
-        "fzf:source */fzf/*.zsh"
-        "nvm:source \$NVM_DIR/nvm.sh"
-        "dotfiles-funcs:source */functions/*.zsh"
-    )
-    
-    for comp in "${components[@]}"; do
-        local name="${comp%%:*}"
-        local pattern="${comp#*:}"
-        
-        # Time loading this component
-        local start=$(date +%s%3N)
-        zsh -i -c "
-            # Disable the component by commenting it out temporarily
-            # This is a simplified check
-        " 2>/dev/null
-        local end=$(date +%s%3N)
-        
-        printf "  %-20s: checking...\n" "$name"
-    done
-    
-    echo ""
-    df_print_info "For detailed component timing, use: --detailed"
-}
-
 # Show optimization tips
 show_tips() {
     df_print_section "Optimization Tips"
@@ -199,7 +200,11 @@ show_tips() {
   2. LAZY-LOAD HEAVY TOOLS
      nvm, pyenv, rbenv, kubectl - only load when first used.
      Example in .zshrc:
-       kubectl() { unfunction kubectl; source <(command kubectl completion zsh); kubectl "$@"; }
+       kubectl() {
+         unfunction kubectl
+         source <(command kubectl completion zsh)
+         kubectl "$@"
+       }
 
   3. REDUCE OH-MY-ZSH PLUGINS
      Each plugin adds startup time. Only enable what you use.
@@ -220,6 +225,10 @@ show_tips() {
        else
          compinit -C  # Skip security check (faster)
        fi
+
+  7. AVOID SUBSHELLS IN PROMPT
+     $(command) in PS1/PROMPT runs every prompt.
+     Cache values or use precmd hook instead.
 
 EOF
 }
@@ -264,7 +273,7 @@ EOF
 main() {
     df_print_header "dotfiles-profile"
     
-    case "${1:-}" in
+    case "${1:-quick}" in
         --detailed|-d)
             detailed_profile
             ;;
@@ -289,7 +298,7 @@ main() {
         --help|-h)
             show_help
             ;;
-        *)
+        --quick|-q|*)
             quick_profile
             echo ""
             df_print_info "For more analysis: $0 --all"
