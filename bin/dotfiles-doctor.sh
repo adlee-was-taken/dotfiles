@@ -188,7 +188,7 @@ check_dotfiles_dir() {
 }
 
 check_bin_scripts() {
-    print_section "Bin Script Symlinks: ${DF_LIGHT_ORANGE}.local/bin${DF_NC}"
+    print_section "Bin Script Symlinks: ${DF_LIGHT_GREY}.local/bin${DF_NC}"
 
     local scripts=(
         "dotfiles-doctor.sh"

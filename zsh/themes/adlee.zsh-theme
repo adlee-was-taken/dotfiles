@@ -60,13 +60,13 @@ _adlee_format_elapsed_time() {
         local remainder=$((elapsed % 3600))
         local minutes=$((remainder / 60))
         local seconds=$((remainder % 60))
-        print -P "${COLOR_RED}•••[ completed in: %b%B${COLOR_RED}${hours}h${minutes}m${seconds}s%b${COLOR_RED} at: %b%B${COLOR_RED}${timestamp}%b${COLOR_RED} ]•••%b"
+        print -P "${COLOR_RED}•••｢Completed in: %b%B${COLOR_RED}${hours}h${minutes}m${seconds}s%b${COLOR_RED} at: %b%B${COLOR_RED}${timestamp}%b${COLOR_RED}｣•••%b"
     elif (( elapsed >= 60 )); then
         local minutes=$((elapsed / 60))
         local seconds=$((elapsed % 60))
-        print -P "${COLOR_ORANGE}••[ completed in: %b%B${COLOR_LIGHT_ORANGE}${minutes}m${seconds}s%b${COLOR_ORANGE} at: %b%B${COLOR_LIGHT_ORANGE}${timestamp}%b${COLOR_ORANGE} ]••%b"
+        print -P "${COLOR_ORANGE}••｢Completed in: %b%B${COLOR_LIGHT_ORANGE}${minutes}m${seconds}s%b${COLOR_ORANGE} at: %b%B${COLOR_LIGHT_ORANGE}${timestamp}%b${COLOR_ORANGE}｣••%b"
     else
-        print -P "${COLOR_LIGHT_GREEN}•[ completed in: %b%B${COLOR_BRIGHT_GREEN}${elapsed}s%b${COLOR_BRIGHT_GREEN} at: %b%B${COLOR_LIGHT_GREEN}${timestamp}%b${COLOR_LIGHT_GREEN} ]•%b"
+        print -P "${COLOR_LIGHT_GREEN}•｢Completed in: %b%B${COLOR_BRIGHT_GREEN}${elapsed}s%b${COLOR_BRIGHT_GREEN} at: %b%B${COLOR_LIGHT_GREEN}${timestamp}%b${COLOR_LIGHT_GREEN}｣•%b"
     fi
 }
 
@@ -77,10 +77,10 @@ _adlee_format_elapsed_time() {
 _adlee_build_prompt() {
     # %(#.TRUE.FALSE) - red for root, blue for users
     if [[ -n $UPDATE_PKG_COUNT && $UPDATE_PKG_COUNT -gt 0 ]];then
-        PROMPT='%{$FG[239]%}┌[%{$FG[118]%}%n@%m%{$reset_color$FG[239]%}]─[%{$FG[179]%}%~%{$reset_color$FG[239]%}$(git_prompt_info)%{$FG[239]%}]─[%{$FG[111]%}⇑${UPDATE_PKG_COUNT}%{$reset_color$FG[239]%}]
+        PROMPT='%{$FG[239]%}┌｢%{$FG[118]%}%n@%m%{$reset_color$FG[239]%}｣─｢%{$FG[179]%}%~%{$reset_color$FG[239]%}$(git_prompt_info)%{$FG[239]%}｣─｢%{$FG[111]%}⇑${UPDATE_PKG_COUNT}%{$reset_color$FG[239]%}｣
 %{$FG[239]%}└%{$FX[bold]%}%(#.%{$FG[196]%}.%{$FG[069]%})%#%{$reset_color%} '
     else
-        PROMPT='%{$FG[239]%}┌[%{$FG[118]%}%n@%m%{$reset_color$FG[239]%}]─[%{$FG[179]%}%~%{$reset_color$FG[239]%}$(git_prompt_info)%{$FG[239]%}]
+        PROMPT='%{$FG[239]%}┌｢%{$FG[118]%}%n@%m%{$reset_color$FG[239]%}｣─｢%{$FG[179]%}%~%{$reset_color$FG[239]%}$(git_prompt_info)%{$FG[239]%}｣
 %{$FG[239]%}└%{$FX[bold]%}%(#.%{$FG[196]%}.%{$FG[069]%})%#%{$reset_color%} '
     fi
 }
