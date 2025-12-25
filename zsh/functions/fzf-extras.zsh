@@ -18,7 +18,17 @@ typeset -g _DF_FZF_EXTRAS_LOADED=1
 
 # Source utils
 source "${0:A:h}/../lib/utils.zsh" 2>/dev/null || \
-source "$HOME/.dotfiles/zsh/lib/utils.zsh" 2>/dev/null
+source "$HOME/.dotfiles/zsh/lib/utils.zsh" 2>/dev/null || {
+    # Fallback definitions
+    DF_GREEN=$'\033[0;32m' DF_YELLOW=$'\033[1;33m' DF_RED=$'\033[0;31m'
+    DF_CYAN=$'\033[0;36m' DF_BLUE=$'\033[0;34m' DF_NC=$'\033[0m'
+    df_print_error() { echo -e "${DF_RED}✗${DF_NC} $1" >&2; }
+    df_print_success() { echo -e "${DF_GREEN}✓${DF_NC} $1"; }
+    df_print_warning() { echo -e "${DF_YELLOW}⚠${DF_NC} $1"; }
+    df_print_info() { echo -e "${DF_CYAN}ℹ${DF_NC} $1"; }
+    df_print_step() { echo -e "${DF_BLUE}==>${DF_NC} $1"; }
+    df_print_section() { echo -e "${DF_CYAN}$1:${DF_NC}"; }
+}
 
 # ============================================================================
 # Check FZF
@@ -181,38 +191,45 @@ path-add() {
 procf() {
     _fzf_check || return 1
     
+    # Preview without sudo - only show info accessible to current user
     local selected=$(ps aux --sort=-%mem | \
         fzf $(_fzf_common_opts) \
         --prompt="Process > " \
         --header-lines=1 \
         --preview='pid=$(echo {} | awk "{print \$2}"); 
                    echo "=== Process Details ==="
-                   ps -p $pid -o pid,ppid,user,%cpu,%mem,stat,start,time,cmd 2>/dev/null
+                   ps -p $pid -o pid,ppid,user,%cpu,%mem,stat,start,time,args 2>/dev/null || echo "Process may have exited"
                    echo ""
-                   echo "=== Open Files (first 10) ==="
-                   sudo lsof -p $pid 2>/dev/null | head -10 || echo "(requires sudo)"
+                   echo "=== Command Line ==="
+                   cat /proc/$pid/cmdline 2>/dev/null | tr "\0" " " || echo "(not accessible)"
                    echo ""
-                   echo "=== Environment (first 10) ==="
-                   sudo cat /proc/$pid/environ 2>/dev/null | tr "\0" "\n" | head -10 || echo "(requires sudo)"' \
+                   echo "=== Working Directory ==="
+                   readlink /proc/$pid/cwd 2>/dev/null || echo "(not accessible)"
+                   echo ""
+                   echo "=== File Descriptors (owned by you) ==="
+                   ls -l /proc/$pid/fd 2>/dev/null | head -10 || echo "(not accessible)"' \
         --preview-window=right:50%:wrap \
-        --header="Process list | Enter: details | Ctrl-K: kill")
+        --header="Process list | Enter: actions | (sorted by memory)")
     
     [[ -z "$selected" ]] && return
     
     local pid=$(echo "$selected" | awk '{print $2}')
+    local user=$(echo "$selected" | awk '{print $1}')
     local cmd=$(echo "$selected" | awk '{for(i=11;i<=NF;i++) printf $i" "; print ""}')
     
     echo ""
     df_print_section "Selected Process"
-    echo "  PID: $pid"
-    echo "  CMD: $cmd"
+    echo "  PID:  $pid"
+    echo "  User: $user"
+    echo "  CMD:  ${cmd:0:60}"
     echo ""
     echo "Actions:"
-    echo "  1) Show details"
-    echo "  2) Send SIGTERM (graceful)"
-    echo "  3) Send SIGKILL (force)"
-    echo "  4) Send SIGHUP (reload)"
-    echo "  5) Cancel"
+    echo "  1) Show full details"
+    echo "  2) Send SIGTERM (graceful stop)"
+    echo "  3) Send SIGKILL (force kill)"
+    echo "  4) Send SIGHUP (reload config)"
+    echo "  5) Open files (requires sudo)"
+    echo "  6) Cancel"
     echo ""
     
     read -k1 "action?Action [1]: "
@@ -220,19 +237,44 @@ procf() {
     
     case "${action:-1}" in
         1)
+            echo ""
             ps -p "$pid" -f
+            echo ""
+            echo "Command line:"
+            cat /proc/$pid/cmdline 2>/dev/null | tr '\0' ' '
+            echo ""
             ;;
         2)
             df_print_step "Sending SIGTERM to $pid..."
-            kill -TERM "$pid" 2>/dev/null && df_print_success "Signal sent" || df_print_error "Failed (try sudo)"
+            if kill -TERM "$pid" 2>/dev/null; then
+                df_print_success "Signal sent"
+            else
+                df_print_warning "Failed - trying with sudo..."
+                sudo kill -TERM "$pid" && df_print_success "Signal sent" || df_print_error "Failed"
+            fi
             ;;
         3)
             df_print_step "Sending SIGKILL to $pid..."
-            kill -KILL "$pid" 2>/dev/null && df_print_success "Signal sent" || df_print_error "Failed (try sudo)"
+            if kill -KILL "$pid" 2>/dev/null; then
+                df_print_success "Signal sent"
+            else
+                df_print_warning "Failed - trying with sudo..."
+                sudo kill -KILL "$pid" && df_print_success "Signal sent" || df_print_error "Failed"
+            fi
             ;;
         4)
             df_print_step "Sending SIGHUP to $pid..."
-            kill -HUP "$pid" 2>/dev/null && df_print_success "Signal sent" || df_print_error "Failed (try sudo)"
+            if kill -HUP "$pid" 2>/dev/null; then
+                df_print_success "Signal sent"
+            else
+                df_print_warning "Failed - trying with sudo..."
+                sudo kill -HUP "$pid" && df_print_success "Signal sent" || df_print_error "Failed"
+            fi
+            ;;
+        5)
+            echo ""
+            df_print_step "Open files for PID $pid:"
+            sudo lsof -p "$pid" 2>/dev/null | head -30 || df_print_error "Failed to get open files"
             ;;
         *)
             echo "Cancelled"
@@ -249,6 +291,8 @@ killf() {
         --prompt="Kill > " \
         --header-lines=1 \
         --multi \
+        --preview='pid=$(echo {} | awk "{print \$2}"); 
+                   ps -p $pid -o pid,ppid,user,%cpu,%mem,stat,args 2>/dev/null' \
         --header="Select process(es) to kill (Tab to select multiple)")
     
     [[ -z "$selected" ]] && return
@@ -257,8 +301,13 @@ killf() {
         local pid=$(echo "$line" | awk '{print $2}')
         local cmd=$(echo "$line" | awk '{for(i=11;i<=NF;i++) printf $i" "; print ""}')
         
-        df_print_step "Killing PID $pid ($cmd)"
-        kill "$pid" 2>/dev/null && df_print_success "Killed" || df_print_error "Failed"
+        df_print_step "Killing PID $pid (${cmd:0:40})"
+        if kill "$pid" 2>/dev/null; then
+            df_print_success "Killed"
+        else
+            df_print_warning "Trying with sudo..."
+            sudo kill "$pid" && df_print_success "Killed" || df_print_error "Failed"
+        fi
     done
 }
 
@@ -459,8 +508,8 @@ glogf() {
 # ============================================================================
 
 fzf-help() {
-    df_print_func_name "FZF Utilities"
     cat << 'EOF'
+FZF Utilities
 
   Environment:
     envf             Browse environment variables
