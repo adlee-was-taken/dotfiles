@@ -59,9 +59,7 @@ btrfs-usage() {
     _btrfs_check || return 1
     local mount="${1:-$BTRFS_DEFAULT_MOUNT}"
    
-    df_print_func_header "Btrfs Filesystem Usage:"
-    #echo -e "${DF_BLUE}Btrfs Filesystem Usage: ${DF_YELLOW}${mount}${DF_NC}"
-    echo ""
+    df_print_func_name "Btrfs Filesystem Usage: ${mount}"
     
     sudo btrfs filesystem usage "$mount" -h
 }
@@ -71,9 +69,7 @@ btrfs-subs() {
     _btrfs_check || return 1
     local mount="${1:-$BTRFS_DEFAULT_MOUNT}"
 
-    df_print_func_name "Btrfs Subvolumes" 
-    #echo -e "${DF_BLUE}Btrfs Subvolumes"
-    echo ""
+    df_print_func_name "Btrfs Subvolumes"
     
     echo -e "${DF_CYAN}Subvolume List:${DF_NC}"
     sudo btrfs subvolume list "$mount" | while read -r line; do
@@ -93,7 +89,8 @@ btrfs-balance() {
     local mount="${1:-$BTRFS_DEFAULT_MOUNT}"
     local usage="${2:-50}"  # Default: rebalance chunks with <50% usage
     
-    echo -e "${DF_BLUE}==>${DF_NC} Starting btrfs balance on ${mount}"
+    df_print_func_name "Btrfs Balance"
+    
     echo -e "${DF_YELLOW}⚠${DF_NC} This may take a while and use significant I/O"
     echo ""
     
@@ -116,6 +113,8 @@ btrfs-balance-status() {
     _btrfs_check || return 1
     local mount="${1:-$BTRFS_DEFAULT_MOUNT}"
     
+    df_print_func_name "Btrfs Balance Status"
+    
     sudo btrfs balance status "$mount"
 }
 
@@ -132,9 +131,8 @@ btrfs-balance-cancel() {
 btrfs-scrub() {
     _btrfs_check || return 1
     local mount="${1:-$BTRFS_DEFAULT_MOUNT}"
-    df_print_func_name "Btrfs Scrub"    
-    #echo -e "${DF_BLUE}Btrfs Scrub"
-    echo ""
+    
+    df_print_func_name "Btrfs Scrub"
     
     # Check if scrub is already running
     local status=$(sudo btrfs scrub status "$mount" 2>/dev/null)
@@ -165,6 +163,8 @@ btrfs-scrub-status() {
     _btrfs_check || return 1
     local mount="${1:-$BTRFS_DEFAULT_MOUNT}"
     
+    df_print_func_name "Btrfs Scrub Status"
+    
     sudo btrfs scrub status "$mount"
 }
 
@@ -187,15 +187,16 @@ btrfs-defrag() {
         return 1
     fi
     
-    echo -e "${DF_BLUE}==>${DF_NC} Defragmenting: $target"
+    df_print_func_name "Btrfs Defragment"
     
     if [[ -d "$target" ]]; then
-        echo -e "${DF_YELLOW}⚠${DF_NC} Recursive defrag on directory"
+        echo -e "${DF_YELLOW}⚠${DF_NC} Recursive defrag on directory: $target"
         read -q "REPLY?Continue? [y/N]: "; echo
         [[ ! "$REPLY" =~ ^[Yy]$ ]] && return 0
         
         sudo btrfs filesystem defragment -r -v "$target"
     else
+        echo -e "${DF_BLUE}==>${DF_NC} Defragmenting: $target"
         sudo btrfs filesystem defragment -v "$target"
     fi
     
@@ -213,9 +214,7 @@ btrfs-compress() {
         return 1
     fi
     
-    df_print_func_header "Btrfs Compression Statistics"
-    #echo -e "${DF_BLUE}Btrfs Compression Statistics${FD_NC}"
-    echo ""
+    df_print_func_name "Btrfs Compression Statistics"
     
     sudo compsize "$target"
 }
@@ -228,10 +227,10 @@ btrfs-compress() {
 btrfs-info() {
     _btrfs_check || return 1
     local mount="${1:-$BTRFS_DEFAULT_MOUNT}"
-    df_print_func_name "Btrfs Filesystem Information" 
-    #echo -e "${DF_BLUE}Btrfs Filesystem Information${DF_NC}"
     
-    echo -e "\n${DF_CYAN}Filesystem Show:${DF_NC}"
+    df_print_func_name "Btrfs Filesystem Information"
+    
+    echo -e "${DF_CYAN}Filesystem Show:${DF_NC}"
     sudo btrfs filesystem show "$mount"
     
     echo -e "\n${DF_CYAN}Filesystem df:${DF_NC}"
@@ -249,8 +248,6 @@ btrfs-health() {
     local mount="${1:-$BTRFS_DEFAULT_MOUNT}"
    
     df_print_func_name "Btrfs Health Check"
-    #echo -e "${DF_BLUE}Btrfs Health Check${DF_NC}"
-    echo ""
     
     local issues=0
     
@@ -322,15 +319,22 @@ btrfs-snap-usage() {
     _btrfs_check || return 1
    
     df_print_func_name "Snapshot Disk Space Usage"
-    #echo -e "${DF_BLUE}Snapshot Space Usage${DF_NC}"
-    echo ""
     
     if [[ -d "/.snapshots" ]]; then
         echo -e "${DF_CYAN}Snapshot Directory:${DF_NC}"
-        sudo du -sh /.snapshots 2>/dev/null || echo "  Unable to calculate"
+        # Use timeout to prevent hanging, and run in background with wait
+        local size
+        size=$(timeout 10 sudo du -sh /.snapshots 2>/dev/null | cut -f1)
+        if [[ -n "$size" ]]; then
+            echo "  $size"
+        else
+            echo "  Unable to calculate (timeout or error)"
+        fi
         
-        echo -e "\n${DF_CYAN}Individual Snapshots:${DF_NC}"
-        sudo du -sh /.snapshots/*/ 2>/dev/null | sort -h | tail -10 | sed 's/^/  /'
+        echo -e "\n${DF_CYAN}Individual Snapshots (top 10 by size):${DF_NC}"
+        # List snapshots with timeout protection
+        timeout 30 sudo du -sh /.snapshots/*/ 2>/dev/null | sort -h | tail -10 | sed 's/^/  /' || \
+            echo "  Unable to list snapshots"
     else
         echo -e "${DF_YELLOW}⚠${DF_NC} No /.snapshots directory found"
     fi
@@ -348,8 +352,7 @@ btrfs-maintain() {
     local mount="${1:-$BTRFS_DEFAULT_MOUNT}"
    
     df_print_func_name "Btrfs Maintenance Routine"
-    #echo -e "${DF_BLUE}Btrfs Maintenance Routine${DF_NC}"
-    echo ""
+    
     echo "This will perform:"
     echo "  1. Health check"
     echo "  2. Balance (low usage chunks)"
@@ -391,7 +394,6 @@ alias btrc='btrfs-compress'
 
 btrfs-help() {
     df_print_func_name "Btrfs Helper Commands"
-    #echo -e "${DF_BLUE}Btrfs Helper Commands${DF_NC}"
     
     cat << 'EOF'
 

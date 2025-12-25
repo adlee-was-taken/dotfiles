@@ -77,6 +77,7 @@ pw() {
     
     case "$cmd" in
         list|ls|l)
+            df_print_func_name "LastPass Vault"
             _lp_list
             ;;
         
@@ -96,6 +97,7 @@ pw() {
         search|find|s)
             local query="$1"
             [[ -z "$query" ]] && { echo "Usage: pw search <query>"; return 1; }
+            df_print_func_name "LastPass Search: $query"
             _lp_search "$query"
             ;;
         
@@ -110,21 +112,20 @@ pw() {
                 echo -n "$value" | xclip -selection clipboard 2>/dev/null || \
                 echo -n "$value" | xsel --clipboard 2>/dev/null || \
                 { echo "Could not copy to clipboard"; return 1; }
-                echo "Copied to clipboard"
+                echo -e "${DF_GREEN}✓${DF_NC} Copied to clipboard"
             else
-                echo "Item not found or empty"
+                echo -e "${DF_RED}✗${DF_NC} Item not found or empty"
                 return 1
             fi
             ;;
         
         lock)
             lpass logout -f 2>/dev/null
-            echo "Logged out of LastPass"
+            echo -e "${DF_GREEN}✓${DF_NC} Logged out of LastPass"
             ;;
         
         help|--help|-h|*)
-            echo -e "${DF_BLUE}Password Manager CLI (LastPass)${DF_NC}"
-            echo
+            df_print_func_name "Password Manager CLI"
             echo "Usage: pw <command> [args]"
             echo
             echo "Commands:"
@@ -190,7 +191,7 @@ if command -v fzf &>/dev/null; then
             if [[ -n "$otp" ]]; then
                 echo -n "$otp" | xclip -selection clipboard 2>/dev/null || \
                 echo -n "$otp" | xsel --clipboard 2>/dev/null
-                echo "OTP copied: $otp"
+                echo -e "${DF_GREEN}✓${DF_NC} OTP copied: $otp"
             fi
         fi
     }

@@ -97,7 +97,7 @@ sclog() {
 sclogs() {
     local service="$1"
     local lines="${2:-50}"
-    [[ -z "$service" ]] && { echo "Usage: sclog <service> [lines]"; return 1; }
+    [[ -z "$service" ]] && { echo "Usage: sclogs <service> [lines]"; return 1; }
     
     sudo journalctl -xeu "$service" -n "$lines" --no-pager
 }
@@ -108,11 +108,9 @@ sclogs() {
 
 # Show failed services (system and user)
 sc-failed() {
-    echo -e "${DF_BLUE}╔════════════════════════════════════════════════════════════╗${DF_NC}"
-    echo -e "${DF_BLUE}║${DF_NC}  Failed Services                                           ${DF_BLUE}║${DF_NC}"
-    echo -e "${DF_BLUE}╚════════════════════════════════════════════════════════════╝${DF_NC}"
+    df_print_func_name "Failed Services"
     
-    echo -e "\n${DF_CYAN}System Services:${DF_NC}"
+    echo -e "${DF_CYAN}System Services:${DF_NC}"
     local sys_failed=$(systemctl --failed --no-pager --no-legend 2>/dev/null)
     if [[ -z "$sys_failed" ]]; then
         echo -e "  ${DF_GREEN}✓${DF_NC} No failed system services"
@@ -133,11 +131,9 @@ sc-failed() {
 
 # Show active timers
 sc-timers() {
-    echo -e "${DF_BLUE}╔════════════════════════════════════════════════════════════╗${DF_NC}"
-    echo -e "${DF_BLUE}║${DF_NC}  Active Timers                                             ${DF_BLUE}║${DF_NC}"
-    echo -e "${DF_BLUE}╚════════════════════════════════════════════════════════════╝${DF_NC}"
+    df_print_func_name "Active Timers"
     
-    echo -e "\n${DF_CYAN}System Timers:${DF_NC}"
+    echo -e "${DF_CYAN}System Timers:${DF_NC}"
     systemctl list-timers --no-pager | head -20
     
     echo -e "\n${DF_CYAN}User Timers:${DF_NC}"
@@ -150,11 +146,9 @@ sc-timers() {
 sc-recent() {
     local count="${1:-15}"
     
-    echo -e "${DF_BLUE}╔════════════════════════════════════════════════════════════╗${DF_NC}"
-    echo -e "${DF_BLUE}║${DF_NC}  Recent Service Activity                                   ${DF_BLUE}║${DF_NC}"
-    echo -e "${DF_BLUE}╚════════════════════════════════════════════════════════════╝${DF_NC}"
+    df_print_func_name "Recent Service Activity"
     
-    echo -e "\n${DF_CYAN}Recently Started:${DF_NC}"
+    echo -e "${DF_CYAN}Recently Started:${DF_NC}"
     systemctl list-units --type=service --state=running --no-pager --no-legend | \
         head -"$count" | awk '{print "  " $1}'
     
@@ -166,11 +160,9 @@ sc-recent() {
 
 # Boot time analysis
 sc-boot() {
-    echo -e "${DF_BLUE}╔════════════════════════════════════════════════════════════╗${DF_NC}"
-    echo -e "${DF_BLUE}║${DF_NC}  Boot Time Analysis                                        ${DF_BLUE}║${DF_NC}"
-    echo -e "${DF_BLUE}╚════════════════════════════════════════════════════════════╝${DF_NC}"
+    df_print_func_name "Boot Time Analysis"
     
-    echo -e "\n${DF_CYAN}Boot Summary:${DF_NC}"
+    echo -e "${DF_CYAN}Boot Summary:${DF_NC}"
     systemd-analyze
     
     echo -e "\n${DF_CYAN}Slowest Services (top 10):${DF_NC}"
@@ -191,8 +183,7 @@ sc-search() {
     local query="$1"
     [[ -z "$query" ]] && { echo "Usage: sc-search <query>"; return 1; }
     
-    echo -e "${DF_BLUE}==>${DF_NC} Searching for services matching: ${query}"
-    echo ""
+    df_print_func_name "Service Search: $query"
     
     systemctl list-unit-files --type=service --no-pager | grep -i "$query"
 }
@@ -202,11 +193,9 @@ sc-info() {
     local service="$1"
     [[ -z "$service" ]] && { echo "Usage: sc-info <service>"; return 1; }
     
-    echo -e "${DF_BLUE}╔════════════════════════════════════════════════════════════╗${DF_NC}"
-    echo -e "${DF_BLUE}║${DF_NC}  Service Info: ${service}"
-    echo -e "${DF_BLUE}╚════════════════════════════════════════════════════════════╝${DF_NC}"
+    df_print_func_name "Service Info: $service"
     
-    echo -e "\n${DF_CYAN}Status:${DF_NC}"
+    echo -e "${DF_CYAN}Status:${DF_NC}"
     systemctl status "$service" --no-pager -l 2>/dev/null || \
         sudo systemctl status "$service" --no-pager -l
     
@@ -305,9 +294,7 @@ alias jctlerr='journalctl -p err -b'
 # ============================================================================
 
 sc-help() {
-    echo -e "${DF_BLUE}╔════════════════════════════════════════════════════════════╗${DF_NC}"
-    echo -e "${DF_BLUE}║${DF_NC}  Systemd Helper Commands                                   ${DF_BLUE}║${DF_NC}"
-    echo -e "${DF_BLUE}╚════════════════════════════════════════════════════════════╝${DF_NC}"
+    df_print_func_name "Systemd Helper Commands"
     
     cat << 'EOF'
 
@@ -318,7 +305,7 @@ sc-help() {
     sce <service>       Enable and start (--now)
     scd <service>       Disable and stop (--now)
     sclog <service>     Follow journal logs (-f)
-    scogs <service>     Show recent logs (no follow)
+    sclogs <service>    Show recent logs (no follow)
     
   Status Commands:
     sc-failed           Show failed services

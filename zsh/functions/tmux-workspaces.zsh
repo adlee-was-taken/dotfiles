@@ -100,10 +100,7 @@ EOF
 tw-templates() {
     _tw_init_templates
     
-    echo -e "${DF_BLUE}╔════════════════════════════════════════════════════════════╗${DF_NC}"
-    echo -e "${DF_BLUE}║${DF_NC}  Available Tmux Templates                                  ${DF_BLUE}║${DF_NC}"
-    echo -e "${DF_BLUE}╚════════════════════════════════════════════════════════════╝${DF_NC}"
-    echo
+    df_print_func_name "Available Tmux Templates"
     
     for template in "$TW_TEMPLATES_DIR"/*.tmux; do
         [[ ! -f "$template" ]] && continue
@@ -200,10 +197,7 @@ tw-attach() {
 tw-list() {
     _tw_check_tmux || return 1
     
-    echo -e "${DF_BLUE}╔════════════════════════════════════════════════════════════╗${DF_NC}"
-    echo -e "${DF_BLUE}║${DF_NC}  Active Tmux Workspaces                                    ${DF_BLUE}║${DF_NC}"
-    echo -e "${DF_BLUE}╚════════════════════════════════════════════════════════════╝${DF_NC}"
-    echo
+    df_print_func_name "Active Tmux Workspaces"
     
     local has_workspaces=false
     

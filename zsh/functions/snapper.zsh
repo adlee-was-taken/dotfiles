@@ -18,9 +18,7 @@ snap-create() {
     local snap_config="root"
     local limine_conf="/boot/limine.conf"
     
-    echo -e "\n${DF_BLUE}╔════════════════════════════════════════════════════════════╗${DF_NC}"
-    echo -e "${DF_BLUE}║${DF_NC}  Snapper Snapshot Creation & Validation                  ${DF_BLUE}║${DF_NC}"
-    echo -e "${DF_BLUE}╚════════════════════════════════════════════════════════════╝${DF_NC}\n"
+    df_print_func_name "Snapper Snapshot Creation"
     
     if [[ -z "$description" ]]; then
         echo -e "${DF_YELLOW}⚠${DF_NC} No description provided"
@@ -90,21 +88,20 @@ snap-create() {
         validation_passed=false
     fi
     
-    echo -e "\n${DF_BLUE}╔════════════════════════════════════════════════════════════╗${DF_NC}"
-    echo -e "${DF_BLUE}║${DF_NC}  Summary                                                   ${DF_BLUE}║${DF_NC}"
-    echo -e "${DF_BLUE}╚════════════════════════════════════════════════════════════╝${DF_NC}"
-    echo -e "Snapshot Number:       #$snapshot_num"
-    echo -e "Description:           \"$description\""
-    echo -e "Config:                $snap_config"
-    echo -e "Before entries:        $before_entries"
-    echo -e "After entries:         $after_entries"
+    echo ""
+    echo -e "${DF_CYAN}Summary:${DF_NC}"
+    echo -e "  Snapshot Number:  #$snapshot_num"
+    echo -e "  Description:      \"$description\""
+    echo -e "  Config:           $snap_config"
+    echo -e "  Before entries:   $before_entries"
+    echo -e "  After entries:    $after_entries"
     
     if [[ "$validation_passed" == true ]]; then
-        echo -e "Status:                ${DF_GREEN}✓ VALIDATED${DF_NC}"
+        echo -e "  Status:           ${DF_GREEN}✓ VALIDATED${DF_NC}"
         echo -e "\n${DF_GREEN}✓${DF_NC} Snapshot created and limine.conf successfully updated!"
         return 0
     else
-        echo -e "Status:                ${DF_RED}✗ VALIDATION FAILED${DF_NC}"
+        echo -e "  Status:           ${DF_RED}✗ VALIDATION FAILED${DF_NC}"
         echo -e "\n${DF_RED}✗${DF_NC} Snapshot created but limine.conf validation failed!"
         echo -e "${DF_YELLOW}⚠${DF_NC} Check if limine-snapper-sync service is running properly"
         echo -e "${DF_YELLOW}Run:${DF_NC} sudo systemctl status limine-snapper-sync.service"
@@ -118,17 +115,20 @@ snap-create() {
 
 snap-list() {
     local count="${1:-10}"
-    echo -e "${DF_BLUE}Recent $count snapshots:${DF_NC}\n"
+    
+    df_print_func_name "Snapper Snapshots (last $count)"
+    
     sudo snapper -c root list | tail -n "$((count + 1))"
 }
 
 snap-show() {
     [[ -z "$1" ]] && { echo -e "${DF_RED}✗${DF_NC} Usage: snap-show <snapshot_number>"; return 1; }
     
-    echo -e "${DF_BLUE}Snapshot #$1 details:${DF_NC}\n"
+    df_print_func_name "Snapshot #$1 Details"
+    
     sudo snapper -c root list | grep "^\s*$1\s"
     
-    echo -e "\n${DF_BLUE}In limine.conf:${DF_NC}"
+    echo -e "\n${DF_CYAN}In limine.conf:${DF_NC}"
     if sudo grep -qP "^\\s*///$1\\s*│" /boot/limine.conf; then
         local entry_line=$(sudo grep -nP "^\\s*///$1\\s*│" /boot/limine.conf | head -n 1 | cut -d: -f1)
         [[ -n "$entry_line" ]] && sudo sed -n "${entry_line}p; $((entry_line+1))p" /boot/limine.conf
@@ -143,7 +143,7 @@ snap-delete() {
     local snapshot_num="$1"
     local limine_conf="/boot/limine.conf"
     
-    echo -e "${DF_BLUE}==>${DF_NC} Deleting snapshot #$snapshot_num"
+    df_print_func_name "Delete Snapshot #$snapshot_num"
     
     local before_entries=$(sudo grep -cP "^\\s*///\\d+\\s*│" "$limine_conf" || echo "0")
     
@@ -178,16 +178,14 @@ snap-delete() {
 snap-check-limine() {
     local limine_conf="/boot/limine.conf"
     
-    echo -e "${DF_BLUE}╔════════════════════════════════════════════════════════════╗${DF_NC}"
-    echo -e "${DF_BLUE}║${DF_NC}  Limine Snapshot Entries                                   ${DF_BLUE}║${DF_NC}"
-    echo -e "${DF_BLUE}╚════════════════════════════════════════════════════════════╝${DF_NC}\n"
+    df_print_func_name "Limine Snapshot Entries"
     
     [[ ! -f "$limine_conf" ]] && { echo -e "${DF_RED}✗${DF_NC} Limine config not found: $limine_conf"; return 1; }
     
     local latest_snapshot=$(sudo snapper -c root list | tail -n +3 | grep -v "^\s*0\s" | tail -n 1 | awk '{print $1}')
     [[ -z "$latest_snapshot" ]] && { echo -e "${DF_YELLOW}⚠${DF_NC} No snapshots found in snapper"; return 1; }
     
-    echo -e "${DF_BLUE}Latest snapshot:${DF_NC} #$latest_snapshot"
+    echo -e "${DF_CYAN}Latest snapshot:${DF_NC} #$latest_snapshot"
     
     echo -e "${DF_BLUE}==>${DF_NC} Checking if latest snapshot is in limine.conf"
     
@@ -199,16 +197,18 @@ snap-check-limine() {
     
     echo -e "\n${DF_BLUE}==>${DF_NC} Counting snapshot entries"
     local entry_count=$(sudo grep -cP "^\\s*///\\d+\\s*│" "$limine_conf" || echo "0")
-    echo -e "${DF_BLUE}Total snapshot entries:${DF_NC} $entry_count\n"
+    echo -e "${DF_CYAN}Total snapshot entries:${DF_NC} $entry_count"
 }
 
 snap-sync() {
+    df_print_func_name "Limine-Snapper-Sync"
+    
     echo -e "${DF_BLUE}==>${DF_NC} Manually triggering limine-snapper-sync..."
     
     if sudo systemctl start limine-snapper-sync.service; then
         echo -e "${DF_GREEN}✓${DF_NC} Service triggered successfully"
         sleep 2
-        echo -e "\n${DF_BLUE}Service status:${DF_NC}"
+        echo -e "\n${DF_CYAN}Service status:${DF_NC}"
         sudo systemctl status limine-snapper-sync.service --no-pager -l | tail -n 10
     else
         echo -e "${DF_RED}✗${DF_NC} Failed to trigger service"
@@ -217,9 +217,7 @@ snap-sync() {
 }
 
 snap-validate-service() {
-    echo -e "${DF_BLUE}╔════════════════════════════════════════════════════════════╗${DF_NC}"
-    echo -e "${DF_BLUE}║${DF_NC}  Limine-Snapper-Sync Service Validation                  ${DF_BLUE}║${DF_NC}"
-    echo -e "${DF_BLUE}╚════════════════════════════════════════════════════════════╝${DF_NC}\n"
+    df_print_func_name "Limine-Snapper-Sync Service Validation"
     
     echo -e "${DF_BLUE}==>${DF_NC} Checking service unit"
     

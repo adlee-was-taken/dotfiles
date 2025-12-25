@@ -231,10 +231,10 @@ bookmark() {
     
     case "$bm_name" in
         list|ls)
+            df_print_func_name "Bookmarks"
             if [[ -s "$PALETTE_BOOKMARKS_FILE" ]]; then
-                echo "Bookmarks:"
                 while IFS='|' read -r stored_name stored_path || [[ -n "$stored_name" ]]; do
-                    [[ -n "$stored_name" ]] && echo "  $stored_name → $stored_path"
+                    [[ -n "$stored_name" ]] && echo -e "  ${DF_GREEN}●${DF_NC} $stored_name → $stored_path"
                 done < "$PALETTE_BOOKMARKS_FILE"
             else
                 echo "No bookmarks yet"
@@ -251,7 +251,7 @@ bookmark() {
                 local temp_file="${PALETTE_BOOKMARKS_FILE}.tmp.$$"
                 grep -v "^${to_delete}|" "$PALETTE_BOOKMARKS_FILE" > "$temp_file" 2>/dev/null || true
                 mv -f "$temp_file" "$PALETTE_BOOKMARKS_FILE"
-                echo "Deleted: $to_delete"
+                echo -e "${DF_GREEN}✓${DF_NC} Deleted: $to_delete"
             else
                 echo "No bookmarks to delete"
             fi
@@ -265,7 +265,7 @@ bookmark() {
             fi
             # Add new bookmark
             echo "${bm_name}|${bm_path}" >> "$PALETTE_BOOKMARKS_FILE"
-            echo "Bookmarked: $bm_name → $bm_path"
+            echo -e "${DF_GREEN}✓${DF_NC} Bookmarked: $bm_name → $bm_path"
             ;;
     esac
 }

@@ -82,10 +82,7 @@ ssh-save() {
 ssh-list() {
     _ssh_init_profiles
     
-    echo -e "${DF_BLUE}╔════════════════════════════════════════════════════════════╗${DF_NC}"
-    echo -e "${DF_BLUE}║${DF_NC}  SSH Connection Profiles                                   ${DF_BLUE}║${DF_NC}"
-    echo -e "${DF_BLUE}╚════════════════════════════════════════════════════════════╝${DF_NC}"
-    echo
+    df_print_func_name "SSH Connection Profiles"
     
     local has_profiles=false
     while IFS='|' read -r name connection port key options description; do
@@ -205,7 +202,7 @@ ssh-sync-dotfiles() {
     local dotfiles_dir="${DOTFILES_DIR:-$HOME/.dotfiles}"
     [[ ! -d "$dotfiles_dir" ]] && { _ssh_print_error "Dotfiles directory not found"; return 1; }
     
-    _ssh_print_step "Syncing dotfiles to: $connection"
+    df_print_func_name "Sync Dotfiles to: $connection"
     
     local rsync_cmd="rsync -avz --exclude='.git' --exclude='*.local'"
     [[ -n "$port" && "$port" != "22" ]] && rsync_cmd="$rsync_cmd -e 'ssh -p $port'"
