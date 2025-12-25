@@ -47,7 +47,7 @@ done
 
 print_header() {
     if declare -f df_print_header &>/dev/null; then
-        df_print_header "dotfiles-version"
+        df_print_header "dotfiles-version "
     else
         local user="${USER:-root}"
         local hostname="${HOSTNAME:-$(hostname -s 2>/dev/null)}"
