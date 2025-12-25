@@ -20,14 +20,14 @@ source "$DOTFILES_DIR/zsh/lib/colors.zsh" 2>/dev/null || {
 
 print_header() {
     if declare -f df_print_header &>/dev/null; then
-        df_print_header "dotfiles-compile"
+        df_print_header "dotfiles-compile "
     else
         local user="${USER:-root}"
         local hostname="${HOST:-$(hostname -s 2>/dev/null)}"
         local datetime=$(date '+%a %b %d %H:%M')
         local width=66
         local hline="" && for ((i=0; i<width; i++)); do hline+="═"; done
-        
+
         echo ""
         echo "${DF_GREY}╒${hline}╕${DF_NC}"
         echo "${DF_GREY}│${DF_NC} ${DF_BOLD}${DF_LIGHT_BLUE}✦ ${user}@${hostname}${DF_NC}      ${DF_DIM}dotfiles-compile${DF_NC}      ${datetime} ${DF_GREY}│${DF_NC}"
@@ -51,48 +51,48 @@ compile_file() {
 
 clean_compiled() {
     echo "Removing compiled files..."
-    
+
     local count=0
-    
+
     for zwc in "$DOTFILES_DIR"/**/*.zwc(N); do
         rm -f "$zwc"
         ((count++))
     done
-    
+
     rm -f ~/.zshrc.zwc ~/.zshenv.zwc ~/.zprofile.zwc 2>/dev/null
-    
+
     echo -e "${DF_GREEN}✓${DF_NC} Removed $count compiled files"
 }
 
 compile_all() {
     echo -e "${DF_CYAN}Compiling zsh files for faster startup...${DF_NC}"
     echo
-    
+
     echo "Core files:"
     compile_file ~/.zshrc
     compile_file ~/.zshenv
     compile_file ~/.zprofile
     echo
-    
+
     echo "Dotfiles:"
     compile_file "$DOTFILES_DIR/zsh/.zshrc"
     compile_file "$DOTFILES_DIR/zsh/aliases.zsh"
-    
+
     for file in "$DOTFILES_DIR/zsh/functions"/*.zsh(N); do
         compile_file "$file"
     done
-    
+
     for file in "$DOTFILES_DIR/zsh/themes"/*.zsh-theme(N); do
         compile_file "$file"
     done
     echo
-    
+
     if [[ -d ~/.oh-my-zsh ]]; then
         echo "Oh-My-Zsh (optional):"
         compile_file ~/.oh-my-zsh/oh-my-zsh.sh
         echo
     fi
-    
+
     echo -e "${DF_GREEN}✓${DF_NC} Compilation complete"
     echo
     echo "To measure startup time:"
