@@ -52,7 +52,6 @@ typeset -g DF_NC=$'\033[0m'  # Alias for reset (No Color)
 typeset -g DF_GREY=$'\033[38;5;242m'
 typeset -g DF_LIGHT_GREY=$'\033[38;5;248m'
 typeset -g DF_DARK_GREY=$'\033[38;5;239m'
-typeset -g DF_ORANGE=$'\033[38;5;208m'
 typeset -g DF_LIGHT_ORANGE=$'\033[38;5;220m'
 typeset -g DF_PINK=$'\033[38;5;213m'
 typeset -g DF_PURPLE=$'\033[38;5;141m'
