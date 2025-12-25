@@ -309,18 +309,6 @@ alias hist="history"
 alias cls="clear"
 alias q="exit"
 
-# System upgrade with snapshot (Arch/CachyOS)
-sys-update() {
-    local update_date=$(date +"%Y-%m-%d %H:%M")
-    if command -v snapper &>/dev/null; then
-        sudo snapper -c root create --description "System Update ${update_date}" --command "sudo pacman -Syu"
-    else
-        sudo pacman -Syu
-    fi
-    # Update package count for prompt if available
-    command -v checkupdates &>/dev/null && export UPDATE_PKG_COUNT=$(checkupdates 2>/dev/null | wc -l)
-}
-
 # Markdown viewer with glow
 if command -v glow &>/dev/null; then
     alias glow='glow -p'
