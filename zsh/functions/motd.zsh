@@ -103,6 +103,7 @@ show_motd() {
 
     local width="${DF_WIDTH:-66}"
     local hostname="${HOST:-$(hostname -s 2>/dev/null)}"
+    local username=$(whoami)
     local datetime=$(date '+%a %b %d %H:%M')
     local uptime=$(_motd_uptime)
     local load=$(_motd_load)
@@ -114,7 +115,7 @@ show_motd() {
     echo ""
     echo "${DF_GREY}╒${hline}╕${DF_NC}"
     
-    local h_left="✦ ${hostname}"
+    local h_left="✦ ${username}@${hostname} "
     local h_center=$(hostname -i 2>/dev/null | awk -F" " '{print $1}')
     local h_right="${datetime}"
     local h_pad=$(((inner - ${#h_left} - ${#h_center} - ${#h_right}) / 2))
