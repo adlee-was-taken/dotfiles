@@ -168,7 +168,7 @@ show_motd() {
     if [ "$EUID" -ne 0 ];then 
         echo "${DF_GREY}│${DF_NC} ${DF_BOLD}${DF_LIGHT_BLUE}${h_left}${DF_NC}${h_spaces}${DF_YELLOW}${h_center}${h_spaces}${DF_NC}${DF_BOLD}${h_right}${DF_NC} ${DF_GREY}│${DF_NC}"
     else
-        echo "${DF_GREY}│${DF_NC} ${DF_BOLD}${DF_LIGHT_RED}${h_left}${DF_NC}${h_spaces}${DF_YELLOW}${h_center}${h_spaces}${DF_NC}${DF_BOLD}${h_right}${DF_NC} ${DF_GREY}│${DF_NC}"
+        echo "${DF_GREY}│${DF_NC} ${DF_BOLD}${DF_RED}${h_left}${DF_NC}${h_spaces}${DF_YELLOW}${h_center}${h_spaces}${DF_NC}${DF_BOLD}${h_right}${DF_NC} ${DF_GREY}│${DF_NC}"
     fi 
     # Separator
     echo "${DF_GREY}╘${hline}╛${DF_NC}"
