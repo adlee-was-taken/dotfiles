@@ -70,7 +70,7 @@ btrfs-subs() {
     _btrfs_check || return 1
     local mount="${1:-$BTRFS_DEFAULT_MOUNT}"
 
-    df_print_header "Btrfs Subvolumes" 
+    df_print_func_header "Btrfs Subvolumes" 
     #echo -e "${DF_BLUE}Btrfs Subvolumes"
     echo ""
     
@@ -131,7 +131,7 @@ btrfs-balance-cancel() {
 btrfs-scrub() {
     _btrfs_check || return 1
     local mount="${1:-$BTRFS_DEFAULT_MOUNT}"
-    df_print_header "Btrfs Scrub"    
+    df_print_func_header "Btrfs Scrub"    
     #echo -e "${DF_BLUE}Btrfs Scrub"
     echo ""
     
@@ -226,7 +226,7 @@ btrfs-compress() {
 btrfs-info() {
     _btrfs_check || return 1
     local mount="${1:-$BTRFS_DEFAULT_MOUNT}"
-    df_print_header "Btrfs Filesystem Info" 
+    df_print_func_header "Btrfs Filesystem Info" 
     #echo -e "${DF_BLUE}Btrfs Filesystem Information${DF_NC}"
     
     echo -e "\n${DF_CYAN}Filesystem Show:${DF_NC}"
@@ -246,7 +246,7 @@ btrfs-health() {
     _btrfs_check || return 1
     local mount="${1:-$BTRFS_DEFAULT_MOUNT}"
    
-    df_print_header "Btrfs Health Check"
+    df_print_func_header "Btrfs Health Check"
     #echo -e "${DF_BLUE}Btrfs Health Check${DF_NC}"
     echo ""
     
@@ -319,7 +319,7 @@ btrfs-health() {
 btrfs-snap-usage() {
     _btrfs_check || return 1
    
-    df_print_header "Snapshot Disc Usage"
+    df_print_func_header "Snapshot Disc Usage"
     #echo -e "${DF_BLUE}Snapshot Space Usage${DF_NC}"
     echo ""
     
@@ -345,7 +345,7 @@ btrfs-maintain() {
     _btrfs_check || return 1
     local mount="${1:-$BTRFS_DEFAULT_MOUNT}"
    
-    df_print_header "script-name"
+    df_print_func_header "script-name"
     #echo -e "${DF_BLUE}Btrfs Maintenance Routine${DF_NC}"
     echo ""
     echo "This will perform:"
@@ -388,7 +388,7 @@ alias btrc='btrfs-compress'
 # ============================================================================
 
 btrfs-help() {
-    df_print_header "Btrfs Helper CMD"
+    df_print_func_header "Btrfs Helper CMD"
     #echo -e "${DF_BLUE}Btrfs Helper Commands${DF_NC}"
     
     cat << 'EOF'

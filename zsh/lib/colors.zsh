@@ -142,6 +142,31 @@ df_print_header() {
     echo ""
 }
 
+df_print_func_header() {
+
+    local func_header_name="${1}"
+    local datetime=$(date '+%a %b %d %H:%M')
+    local width=66
+
+    # Build horizontal line
+    local hline=""
+    for ((i=0; i<width; i++)); do hline+="═"; done
+    local inner=$((width - 2))
+
+    # Header content
+    local h_left="✦ ${func_header_name}"
+    local h_right="${datetime}"
+    local h_pad=$(((inner - ${#h_left} - ${#h_right}) / 2))
+    local h_spaces=""
+    for ((i=0; i<h_pad; i++)); do h_spaces+=" "; done
+
+    echo ""
+    echo -e "${DF_GREY}╒${hline}╕${DF_NC}"
+    echo -e "${DF_GREY}│${DF_NC} ${DF_BOLD}${DF_LIGHT_BLUE}${h_lef}${h_spaces}${DF_NC}${DF_BOLD}${h_right}${DF_NC} ${DF_GREY}│${DF_NC}"
+    echo -e "${DF_GREY}╘${hline}╛${DF_NC}"
+    echo ""
+}
+
 # ============================================================================
 # Bash Compatibility
 # ============================================================================
