@@ -110,11 +110,39 @@ df_print_section() {
 }
 
 # ============================================================================
-# MOTD-Style Header Function
+# MOTD-Style Header/Function Header
 # ============================================================================
 
 # Prints a standardized header box for scripts
 # Usage: df_print_header "script-name"
+# Usage: df_print_func_name "func-name"
+
+df_print_func_name() {
+    local func_name="${1:-func}"
+    local datetime=$(date '+%a %b %d %H:%M')
+    local width=66
+
+    # Build horizontal line
+    local hline=""
+    for ((i=0; i<width; i++)); do hline+="═"; done
+    local inner=$((width - 2))
+
+    # Header content
+    local h_left="${func_name}"
+    local h_right="${datetime}"
+    local h_pad=$((inner - ${#h_left} - ${#h_right}))
+    local h_spaces=""
+    for ((i=0; i<h_pad; i++)); do h_spaces+=" "; done
+
+    echo ""
+    echo -e "${DF_GREY}╒${hline}╕${DF_NC}"
+    echo -e "${DF_GREY}│${DF_NC} ${DF_BOLD}${DF_LIGHT_BLUE}${h_left}${DF_NC}${h_spaces}${DF_NC}${DF_BOLD}${h_right}${DF_NC} ${DF_GREY}│${DF_NC}"
+    echo -e "${DF_GREY}╘${hline}╛${DF_NC}"
+    echo ""
+}
+
+
+
 df_print_header() {
     local script_name="${1:-script}"
     local user="${USER:-root}"
@@ -138,31 +166,6 @@ df_print_header() {
     echo ""
     echo -e "${DF_GREY}╒${hline}╕${DF_NC}"
     echo -e "${DF_GREY}│${DF_NC} ${DF_BOLD}${DF_LIGHT_BLUE}${h_left}${DF_NC}${h_spaces}${DF_LIGHT_GREEN}${h_center}${h_spaces}${DF_NC}${DF_BOLD}${h_right}${DF_NC} ${DF_GREY}│${DF_NC}"
-    echo -e "${DF_GREY}╘${hline}╛${DF_NC}"
-    echo ""
-}
-
-df_print_func_header() {
-
-    local func_header_name="${1}"
-    local datetime=$(date '+%a %b %d %H:%M')
-    local width=66
-
-    # Build horizontal line
-    local hline=""
-    for ((i=0; i<width; i++)); do hline+="═"; done
-    local inner=$((width - 2))
-
-    # Header content
-    local h_left="✦ ${func_header_name}"
-    local h_right="${datetime}"
-    local h_pad=$(((inner - ${#h_left} - ${#h_right}) / 2))
-    local h_spaces=""
-    for ((i=0; i<h_pad; i++)); do h_spaces+=" "; done
-
-    echo ""
-    echo -e "${DF_GREY}╒${hline}╕${DF_NC}"
-    echo -e "${DF_GREY}│${DF_NC} ${DF_BOLD}${DF_LIGHT_BLUE}${h_lef}${h_spaces}${DF_NC}${DF_BOLD}${h_right}${DF_NC} ${DF_GREY}│${DF_NC}"
     echo -e "${DF_GREY}╘${hline}╛${DF_NC}"
     echo ""
 }
