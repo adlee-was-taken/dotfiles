@@ -73,11 +73,9 @@ df_print_func_name() {
     local h_pad=$((inner - ${#h_left} - ${#h_right}))                                                                                              
     local h_spaces=""                                                                                                                              
     for ((i=0; i<h_pad; i++)); do h_spaces+=" "; done                                                                                              
-    echo ""                                                                                                                                        
     echo -e "${DF_GREY}╒${hline}╕${DF_NC}"                                                                                                         
     echo -e "${DF_GREY}│${DF_NC} ${DF_BOLD}${DF_LIGHT_BLUE}${h_left}${DF_NC}${h_spaces}${DF_NC}${DF_BOLD}${h_right}${DF_NC} ${DF_GREY}│${DF_NC}"   
     echo -e "${DF_GREY}╘${hline}╛${DF_NC}"                                                                                                         
-    echo ""                                                                                                                                       
 }                                                                                                                                                  
 
 df_print_header() {
