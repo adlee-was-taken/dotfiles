@@ -12,7 +12,7 @@
 #   dotfiles-diff.sh --audit            # Full security audit
 # ============================================================================
 
-set -e
+set +e
 
 # Source bootstrap
 source "${DOTFILES_HOME:-$HOME/.dotfiles}/zsh/lib/bootstrap.zsh" 2>/dev/null || {
@@ -24,6 +24,7 @@ source "${DOTFILES_HOME:-$HOME/.dotfiles}/zsh/lib/bootstrap.zsh" 2>/dev/null || 
     df_print_success() { echo -e "${DF_GREEN}✓${DF_NC} $1"; }
     df_print_error() { echo -e "${DF_RED}✗${DF_NC} $1" >&2; }
     df_print_warning() { echo -e "${DF_YELLOW}⚠${DF_NC} $1"; }
+    df_print_info() { echo -e "${DF_CYAN}ℹ${DF_NC} $1"; }
     df_print_step() { echo -e "${DF_BLUE}==>${DF_NC} $1"; }
     df_print_section() { echo -e "${DF_CYAN}$1:${DF_NC}"; }
     df_print_indent() { echo "  $1"; }
@@ -336,9 +337,13 @@ compare_machines() {
         return
     fi
     
-    local configs=("$machines_dir"/*.zsh(N))
+    # Get list of config files (bash-compatible)
+    local configs=()
+    for f in "$machines_dir"/*.zsh; do
+        [[ -f "$f" ]] && configs+=("$f")
+    done
     
-    if (( ${#configs[@]} < 2 )); then
+    if [[ ${#configs[@]} -lt 2 ]]; then
         df_print_info "Need at least 2 machine configs to compare"
         return
     fi

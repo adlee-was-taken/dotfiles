@@ -11,9 +11,13 @@
 #   dotfiles-analytics.sh weekly       # Usage by day of week
 #   dotfiles-analytics.sh projects     # Group by directory
 #   dotfiles-analytics.sh trends       # Usage trends over time
+#   dotfiles-analytics.sh complexity   # Command complexity analysis
+#   dotfiles-analytics.sh tools        # Tool usage breakdown
+#   dotfiles-analytics.sh suggestions  # Alias suggestions
 # ============================================================================
 
-set -e
+# Don't exit on error - we handle errors ourselves
+set +e
 
 # Source bootstrap
 source "${DOTFILES_HOME:-$HOME/.dotfiles}/zsh/lib/bootstrap.zsh" 2>/dev/null || {
@@ -51,9 +55,22 @@ get_zsh_history_with_time() {
 # Get plain history (command only)
 get_history() {
     if [[ -f "$HISTORY_FILE" ]]; then
-        grep "^:" "$HISTORY_FILE" 2>/dev/null | cut -d';' -f2- || cat "$HISTORY_FILE"
+        grep "^:" "$HISTORY_FILE" 2>/dev/null | cut -d';' -f2- || cat "$HISTORY_FILE" 2>/dev/null
     elif [[ -f "$BASH_HISTORY_FILE" ]]; then
-        cat "$BASH_HISTORY_FILE"
+        cat "$BASH_HISTORY_FILE" 2>/dev/null
+    fi
+}
+
+# Safe count function - handles grep errors gracefully
+safe_count() {
+    local pattern="$1"
+    local result
+    result=$(get_history | awk '{print $1}' | grep -c "^${pattern}$" 2>/dev/null) || result=0
+    # Ensure we return a valid number
+    if [[ "$result" =~ ^[0-9]+$ ]]; then
+        echo "$result"
+    else
+        echo "0"
     fi
 }
 
@@ -66,11 +83,10 @@ show_hourly() {
     df_print_section "Command Usage by Hour of Day"
     echo ""
     
-    declare -A hour_counts
-    
     get_zsh_history_with_time | while IFS='|' read -r timestamp cmd; do
         if [[ -n "$timestamp" && "$timestamp" =~ ^[0-9]+$ ]]; then
-            local hour=$(date -d "@$timestamp" '+%H' 2>/dev/null || date -r "$timestamp" '+%H' 2>/dev/null)
+            local hour
+            hour=$(date -d "@$timestamp" '+%H' 2>/dev/null || date -r "$timestamp" '+%H' 2>/dev/null)
             if [[ -n "$hour" ]]; then
                 echo "$hour"
             fi
@@ -92,16 +108,11 @@ show_weekly() {
     echo ""
     
     local days=("Mon" "Tue" "Wed" "Thu" "Fri" "Sat" "Sun")
-    declare -A day_counts
-    
-    # Initialize
-    for day in "${days[@]}"; do
-        day_counts[$day]=0
-    done
     
     get_zsh_history_with_time | while IFS='|' read -r timestamp cmd; do
         if [[ -n "$timestamp" && "$timestamp" =~ ^[0-9]+$ ]]; then
-            local dow=$(date -d "@$timestamp" '+%a' 2>/dev/null || date -r "$timestamp" '+%a' 2>/dev/null)
+            local dow
+            dow=$(date -d "@$timestamp" '+%a' 2>/dev/null || date -r "$timestamp" '+%a' 2>/dev/null)
             if [[ -n "$dow" ]]; then
                 echo "$dow"
             fi
@@ -110,64 +121,58 @@ show_weekly() {
         local bar=""
         local bar_len=$((count / 100 + 1))
         for ((i=0; i<bar_len && i<40; i++)); do bar+="█"; done
-        printf "  %-3s  %6d  ${DF_CYAN}%s${DF_NC}\n" "$day" "$count" "$bar"
+        printf "  %-3s  %5d  ${DF_GREEN}%s${DF_NC}\n" "$day" "$count" "$bar"
     done
     
     echo ""
 }
 
-# Commands grouped by working directory
+# Commands grouped by project/directory
 show_projects() {
-    df_print_section "Command Usage by Project/Directory"
+    df_print_section "Command Usage by Directory"
     echo ""
     
-    # This requires shell integration that saves PWD with commands
-    # We'll analyze cd commands as a proxy
-    
-    df_print_indent "Most visited directories:"
+    # This requires that history records include directory info
+    # For now, show most common directory references
+    echo -e "  ${DF_DIM}Analyzing directory patterns in commands...${DF_NC}"
     echo ""
     
-    get_history | grep "^cd " | awk '{print $2}' | \
-        sed 's|^~|'"$HOME"'|' | \
-        sort | uniq -c | sort -rn | head -15 | while read -r count dir; do
-        # Shorten home paths
-        local short_dir="${dir/#$HOME/~}"
-        printf "  %5d  ${DF_CYAN}%s${DF_NC}\n" "$count" "$short_dir"
-    done
+    get_history | grep -oE '(~/[^ ]+|/home/[^ /]+/[^ ]+)' 2>/dev/null | \
+        sed 's|/[^/]*$||' | sort | uniq -c | sort -rn | head -10 | \
+        while read -r count dir; do
+            local short_dir="$dir"
+            if [[ ${#dir} -gt 40 ]]; then
+                short_dir="...${dir: -37}"
+            fi
+            printf "  %5d  ${DF_CYAN}%s${DF_NC}\n" "$count" "$short_dir"
+        done
     
     echo ""
-    df_print_indent "Git repositories worked on:"
-    echo ""
-    
-    get_history | grep -E "^(git|g) " | grep -v "^git config" | \
-        awk '{print $1, $2}' | sort | uniq -c | sort -rn | head -10 | while read -r count cmd subcmd; do
-        printf "  %5d  ${DF_GREEN}%s %s${DF_NC}\n" "$count" "$cmd" "$subcmd"
-    done
 }
 
-# Usage trends over time
+# Usage trends over time (last 30 days)
 show_trends() {
     df_print_section "Usage Trends (Last 30 Days)"
     echo ""
     
-    local today=$(date +%s)
-    local thirty_days_ago=$((today - 30*24*60*60))
-    
-    df_print_indent "Commands per day:"
-    echo ""
+    local thirty_days_ago=$(($(date +%s) - 30*24*60*60))
     
     get_zsh_history_with_time | while IFS='|' read -r timestamp cmd; do
-        if [[ -n "$timestamp" && "$timestamp" =~ ^[0-9]+$ ]]; then
-            if (( timestamp >= thirty_days_ago )); then
-                date -d "@$timestamp" '+%Y-%m-%d' 2>/dev/null || date -r "$timestamp" '+%Y-%m-%d' 2>/dev/null
+        if [[ -n "$timestamp" && "$timestamp" =~ ^[0-9]+$ && "$timestamp" -ge "$thirty_days_ago" ]]; then
+            local date_str
+            date_str=$(date -d "@$timestamp" '+%Y-%m-%d' 2>/dev/null || date -r "$timestamp" '+%Y-%m-%d' 2>/dev/null)
+            if [[ -n "$date_str" ]]; then
+                echo "$date_str"
             fi
         fi
     done | sort | uniq -c | tail -30 | while read -r count date; do
         local bar=""
         local bar_len=$((count / 20 + 1))
         for ((i=0; i<bar_len && i<30; i++)); do bar+="▪"; done
-        printf "  %s  %4d  ${DF_CYAN}%s${DF_NC}\n" "$date" "$count" "$bar"
+        printf "  %s  %4d  ${DF_BLUE}%s${DF_NC}\n" "$date" "$count" "$bar"
     done
+    
+    echo ""
 }
 
 # Command complexity analysis
@@ -175,31 +180,47 @@ show_complexity() {
     df_print_section "Command Complexity Analysis"
     echo ""
     
-    df_print_indent "Simple commands (single word):"
-    local simple=$(get_history | awk 'NF==1' | wc -l)
-    echo "    $simple"
+    local total=0
+    local simple=0
+    local piped=0
+    local redirected=0
+    local subshell=0
     
-    df_print_indent "Piped commands:"
-    local piped=$(get_history | grep -c '|' || echo 0)
-    echo "    $piped"
+    while read -r cmd; do
+        ((total++)) || true
+        
+        if [[ "$cmd" == *"|"* ]]; then
+            ((piped++)) || true
+        elif [[ "$cmd" == *">"* || "$cmd" == *"<"* ]]; then
+            ((redirected++)) || true
+        elif [[ "$cmd" == *'$('* || "$cmd" == *'`'* ]]; then
+            ((subshell++)) || true
+        else
+            ((simple++)) || true
+        fi
+    done < <(get_history)
     
-    df_print_indent "Commands with redirects:"
-    local redirects=$(get_history | grep -cE '[<>]' || echo 0)
-    echo "    $redirects"
-    
-    df_print_indent "Commands with subshells:"
-    local subshell=$(get_history | grep -cE '\$\(' || echo 0)
-    echo "    $subshell"
+    if [[ $total -gt 0 ]]; then
+        echo -e "  Simple commands:     ${DF_GREEN}$simple${DF_NC} ($((simple * 100 / total))%)"
+        echo -e "  Piped commands:      ${DF_YELLOW}$piped${DF_NC} ($((piped * 100 / total))%)"
+        echo -e "  With redirection:    ${DF_CYAN}$redirected${DF_NC} ($((redirected * 100 / total))%)"
+        echo -e "  With subshells:      ${DF_MAGENTA}$subshell${DF_NC} ($((subshell * 100 / total))%)"
+    else
+        echo "  No history data available"
+    fi
     
     echo ""
-    df_print_section "Most Complex Commands (by pipe count)"
+    
+    # Most complex commands (by pipe count)
+    df_print_indent "Most Complex Pipelines:"
     echo ""
     
-    get_history | awk -F'|' 'NF>2 {print NF-1, $0}' | sort -rn | head -5 | while read -r pipes cmd; do
-        local short_cmd="${cmd:0:60}"
-        [[ ${#cmd} -gt 60 ]] && short_cmd="${short_cmd}..."
-        echo -e "  ${DF_MAGENTA}$pipes pipes:${DF_NC} $short_cmd"
-    done
+    get_history | awk -F'|' 'NF > 3 {print NF-1, $0}' | sort -rn | head -5 | \
+        while read -r pipes cmd; do
+            local short_cmd="${cmd:0:60}"
+            [[ ${#cmd} -gt 60 ]] && short_cmd="${short_cmd}..."
+            echo -e "  ${DF_MAGENTA}$pipes pipes:${DF_NC} $short_cmd"
+        done
 }
 
 # Tool usage breakdown
@@ -217,17 +238,25 @@ show_tools() {
         "Network:curl wget ssh scp"
     )
     
+    # Cache history to avoid repeated reads
+    local history_cache
+    history_cache=$(get_history | awk '{print $1}')
+    
     for category in "${categories[@]}"; do
         local name="${category%%:*}"
         local tools="${category#*:}"
         local total=0
         
         for tool in $tools; do
-            local count=$(get_history | awk '{print $1}' | grep -c "^${tool}$" 2>/dev/null || echo 0)
-            total=$((total + count))
+            local count
+            count=$(echo "$history_cache" | grep -c "^${tool}$" 2>/dev/null) || count=0
+            # Validate count is a number
+            if [[ "$count" =~ ^[0-9]+$ ]]; then
+                total=$((total + count))
+            fi
         done
         
-        if (( total > 0 )); then
+        if [[ $total -gt 0 ]]; then
             printf "  %-12s ${DF_GREEN}%6d${DF_NC}\n" "$name:" "$total"
         fi
     done
@@ -243,10 +272,10 @@ show_suggestions() {
     echo ""
     
     get_history | awk 'length > 20' | sort | uniq -c | sort -rn | head -5 | while read -r count cmd; do
-        if (( count >= 5 )); then
+        if [[ "$count" =~ ^[0-9]+$ ]] && [[ $count -ge 5 ]]; then
             local short_cmd="${cmd:0:50}"
             [[ ${#cmd} -gt 50 ]] && short_cmd="${short_cmd}..."
-            echo -e "    ${DF_YELLOW}$count×${DF_NC} $short_cmd"
+            echo -e "    ${DF_YELLOW}${count}×${DF_NC} $short_cmd"
         fi
     done
     
@@ -257,43 +286,78 @@ show_suggestions() {
     echo ""
     
     local typos=("gti:git" "sl:ls" "cta:cat" "grpe:grep" "suod:sudo")
+    local found_typos=0
+    
+    # Cache history
+    local history_cache
+    history_cache=$(get_history | awk '{print $1}')
+    
     for typo_pair in "${typos[@]}"; do
         local typo="${typo_pair%%:*}"
         local correct="${typo_pair#*:}"
-        local count=$(get_history | grep -c "^${typo} " 2>/dev/null || echo 0)
-        if (( count > 0 )); then
-            echo -e "    ${DF_RED}$typo${DF_NC} → $correct (${count}×)"
+        local count
+        count=$(echo "$history_cache" | grep -c "^${typo}$" 2>/dev/null) || count=0
+        
+        if [[ "$count" =~ ^[0-9]+$ ]] && [[ $count -gt 0 ]]; then
+            echo -e "    ${DF_RED}$typo${DF_NC} → ${DF_GREEN}$correct${DF_NC} (${count}×)"
+            found_typos=1
         fi
     done
+    
+    if [[ $found_typos -eq 0 ]]; then
+        echo -e "    ${DF_GREEN}No common typos detected!${DF_NC}"
+    fi
+    
+    echo ""
 }
 
-# Full dashboard
+# Dashboard view
 show_dashboard() {
-    local total=$(get_history | wc -l)
-    local unique=$(get_history | sort -u | wc -l)
-    
     df_print_section "Shell Analytics Dashboard"
     echo ""
+    
+    # Basic stats
+    local total
+    total=$(get_history | wc -l 2>/dev/null) || total=0
+    local unique
+    unique=$(get_history | sort -u | wc -l 2>/dev/null) || unique=0
+    
+    # Ensure we have valid numbers
+    [[ ! "$total" =~ ^[0-9]+$ ]] && total=0
+    [[ ! "$unique" =~ ^[0-9]+$ ]] && unique=0
+    
+    # Trim whitespace
+    total=$(echo "$total" | tr -d ' ')
+    unique=$(echo "$unique" | tr -d ' ')
+    
     echo -e "  Total commands:    ${DF_GREEN}$total${DF_NC}"
-    echo -e "  Unique commands:   ${DF_GREEN}$unique${DF_NC}"
-    echo -e "  Efficiency ratio:  ${DF_CYAN}$(( unique * 100 / (total + 1) ))%${DF_NC}"
+    echo -e "  Unique commands:   ${DF_CYAN}$unique${DF_NC}"
+    
+    if [[ $total -gt 0 ]]; then
+        local efficiency=$((unique * 100 / total))
+        echo -e "  Efficiency ratio:  ${DF_YELLOW}${efficiency}%${DF_NC}"
+    fi
+    
     echo ""
     
+    # Top commands
     df_print_section "Top 15 Commands"
     echo ""
     
-    get_history | awk '{print $1}' | sort | uniq -c | sort -rn | head -15 | while read -r count cmd; do
-        printf "  %-20s ${DF_GREEN}%5d${DF_NC}\n" "$cmd" "$count"
-    done
+    get_history | awk '{print $1}' | sort 2>/dev/null | uniq -c 2>/dev/null | sort -rn 2>/dev/null | head -15 | \
+        while read -r count cmd; do
+            if [[ "$count" =~ ^[0-9]+$ ]] && [[ -n "$cmd" ]]; then
+                printf "  ${DF_GREEN}%-20s${DF_NC} %5d\n" "$cmd" "$count"
+            fi
+        done
     
     echo ""
+    
+    # Tool usage
     show_tools
 }
 
-# ============================================================================
 # Help
-# ============================================================================
-
 show_help() {
     cat << 'EOF'
 Enhanced Shell Analytics
@@ -301,20 +365,20 @@ Enhanced Shell Analytics
 Usage: dotfiles-analytics.sh [COMMAND]
 
 Commands:
-  dashboard      Full analytics dashboard (default)
+  (none)         Show dashboard with overview
   hourly         Command usage by hour of day
   weekly         Command usage by day of week
   projects       Commands grouped by directory
   trends         Usage trends over last 30 days
-  complexity     Command complexity analysis
-  tools          Tool usage breakdown
-  suggestions    Optimization suggestions
-  help           Show this help
+  complexity     Analyze command complexity
+  tools          Tool/category usage breakdown
+  suggestions    Alias and optimization suggestions
+  all            Show all analytics
 
 Examples:
-  dotfiles-analytics.sh              # Full dashboard
-  dotfiles-analytics.sh hourly       # See peak coding hours
-  dotfiles-analytics.sh suggestions  # Get alias suggestions
+  dotfiles-analytics.sh              # Dashboard
+  dotfiles-analytics.sh hourly       # When do you code most?
+  dotfiles-analytics.sh suggestions  # Get optimization tips
 
 EOF
 }
@@ -326,24 +390,48 @@ EOF
 main() {
     df_print_header "dotfiles-analytics"
     
-    if [[ ! -f "$HISTORY_FILE" && ! -f "$BASH_HISTORY_FILE" ]]; then
-        echo "No history file found"
-        exit 1
-    fi
-    
     case "${1:-dashboard}" in
-        dashboard|d)   show_dashboard ;;
-        hourly|h)      show_hourly ;;
-        weekly|w)      show_weekly ;;
-        projects|p)    show_projects ;;
-        trends|t)      show_trends ;;
-        complexity|c)  show_complexity ;;
-        tools)         show_tools ;;
-        suggestions|s) show_suggestions ;;
-        help|--help|-h) show_help ;;
+        dashboard|dash)
+            show_dashboard
+            ;;
+        hourly|hour|h)
+            show_hourly
+            ;;
+        weekly|week|w)
+            show_weekly
+            ;;
+        projects|proj|p)
+            show_projects
+            ;;
+        trends|trend|t)
+            show_trends
+            ;;
+        complexity|complex|c)
+            show_complexity
+            ;;
+        tools|tool)
+            show_tools
+            ;;
+        suggestions|suggest|s)
+            show_suggestions
+            ;;
+        all|a)
+            show_dashboard
+            echo ""
+            show_hourly
+            echo ""
+            show_weekly
+            echo ""
+            show_complexity
+            echo ""
+            show_suggestions
+            ;;
+        help|--help|-h)
+            show_help
+            ;;
         *)
             echo "Unknown command: $1"
-            show_help
+            echo "Use --help for usage"
             exit 1
             ;;
     esac
