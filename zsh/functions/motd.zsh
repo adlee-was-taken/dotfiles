@@ -164,7 +164,7 @@ show_motd() {
     local h_pad=$(((inner - ${#h_left} - ${#h_center} - ${#h_right}) / 2))
     local h_spaces=""
     for ((i=0; i<h_pad; i++)); do h_spaces+=" "; done
-    echo "${DF_GREY}│${DF_NC} ${DF_BOLD}${DF_BLUE}${h_left}${DF_NC}${h_spaces}${DF_YELLOW}${h_center}${h_spaces}${DF_NC}${DF_BOLD}${h_right}${DF_NC} ${DF_GREY}│${DF_NC}"
+    echo "${DF_GREY}│${DF_NC} ${DF_BOLD}${DF_LIGHT_BLUE}${h_left}${DF_NC}${h_spaces}${DF_YELLOW}${h_center}${h_spaces}${DF_NC}${DF_BOLD}${h_right}${DF_NC} ${DF_GREY}│${DF_NC}"
     
     # Separator
     echo "${DF_GREY}╘${hline}╛${DF_NC}"
