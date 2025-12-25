@@ -322,9 +322,8 @@ btrfs-snap-usage() {
     
     if [[ -d "/.snapshots" ]]; then
         echo -e "${DF_CYAN}Snapshot Directory:${DF_NC}"
-        # Use timeout to prevent hanging, and run in background with wait
         local size
-        size=$(timeout 10 sudo du -sh /.snapshots 2>/dev/null | cut -f1)
+        size=$(sudo du -sh /.snapshots 2>/dev/null | cut -f1)
         if [[ -n "$size" ]]; then
             echo "  $size"
         else
@@ -333,7 +332,7 @@ btrfs-snap-usage() {
         
         echo -e "\n${DF_CYAN}Individual Snapshots (top 10 by size):${DF_NC}"
         # List snapshots with timeout protection
-        timeout 30 sudo du -sh /.snapshots/*/ 2>/dev/null | sort -h | tail -10 | sed 's/^/  /' || \
+        sudo du -sh /.snapshots/*/ 2>/dev/null | sort -h | tail -10 | sed 's/^/  /' || \
             echo "  Unable to list snapshots"
     else
         echo -e "${DF_YELLOW}⚠${DF_NC} No /.snapshots directory found"
