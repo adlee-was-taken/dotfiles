@@ -331,7 +331,6 @@ btrfs-snap-usage() {
         fi
         
         echo -e "\n${DF_CYAN}Individual Snapshots (top 10 by size):${DF_NC}"
-        # List snapshots with timeout protection
         sudo du -sh /.snapshots/*/ 2>/dev/null | sort -h | tail -10 | sed 's/^/  /' || \
             echo "  Unable to list snapshots"
     else
