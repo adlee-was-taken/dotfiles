@@ -238,7 +238,7 @@ show_motd_full() {
     local scheduler=$(_motd_scheduler)
     local hline=$(_motd_line '═')
 
-    echo ""
+    # echo ""
     echo "${DF_GREY}╒${hline}╕${DF_NC}"
     echo "${DF_GREY}│${DF_NC} ${DF_BOLD}${DF_BLUE}✦ ${hostname}${DF_NC}"
     echo "${DF_GREY}│${DF_NC} ${DF_DIM}${datetime}${DF_NC}"
