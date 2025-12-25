@@ -211,6 +211,9 @@ show_motd_mini() {
     local hostname="${HOST:-$(hostname -s 2>/dev/null)}"
     local uptime=$(_motd_uptime)
     local mem=$(_motd_mem)
+    local load=$(_motd_load)
+    local disk=$(_motd_disk)
+    local hline=$(_motd_line '═')
     local failed=$(_motd_failed_services)
     
     local alert=""
