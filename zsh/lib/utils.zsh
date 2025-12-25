@@ -95,9 +95,13 @@ df_print_header() {
     local h_spaces=""
     for ((i=0; i<h_pad; i++)); do h_spaces+=" "; done
 
+    # Use red for root, light blue for normal users
+    local user_color="${DF_LIGHT_BLUE}"
+    [[ "$EUID" -eq 0 ]] && user_color="${DF_RED}"
+
     echo ""
     echo -e "${DF_GREY}╒${hline}╕${DF_NC}"
-    echo -e "${DF_GREY}│${DF_NC} ${DF_BOLD}${DF_LIGHT_BLUE}${h_left}${DF_NC}${h_spaces}${DF_LIGHT_GREEN}${h_center}${h_spaces}${DF_NC}${DF_BOLD}${h_right}${DF_NC} ${DF_GREY}│${DF_NC}"
+    echo -e "${DF_GREY}│${DF_NC} ${DF_BOLD}${user_color}${h_left}${DF_NC}${h_spaces}${DF_LIGHT_GREEN}${h_center}${h_spaces}${DF_NC}${DF_BOLD}${h_right}${DF_NC} ${DF_GREY}│${DF_NC}"
     echo -e "${DF_GREY}╘${hline}╛${DF_NC}"
     echo ""
 }
