@@ -10,7 +10,8 @@
 #   dotfiles-tour.sh --changelog # Show recent changes
 # ============================================================================
 
-set -e
+# Don't exit on error - interactive scripts need to handle errors gracefully
+set +e
 
 # Source bootstrap
 source "${DOTFILES_HOME:-$HOME/.dotfiles}/zsh/lib/bootstrap.zsh" 2>/dev/null || {
@@ -24,6 +25,7 @@ source "${DOTFILES_HOME:-$HOME/.dotfiles}/zsh/lib/bootstrap.zsh" 2>/dev/null || 
     df_print_indent() { echo "  $1"; }
     df_print_success() { echo -e "${DF_GREEN}✓${DF_NC} $1"; }
     df_print_info() { echo -e "${DF_CYAN}ℹ${DF_NC} $1"; }
+    df_print_step() { echo -e "${DF_BLUE}==>${DF_NC} $1"; }
 }
 
 DOTFILES_DIR="${DOTFILES_HOME:-$HOME/.dotfiles}"
@@ -274,8 +276,8 @@ tour_complete() {
     echo ""
     
     # Mark first run complete
-    touch "$FIRST_RUN_FILE"
-    echo "$DOTFILES_VERSION" > "$LAST_VERSION_FILE"
+    touch "$FIRST_RUN_FILE" 2>/dev/null || true
+    echo "$DOTFILES_VERSION" > "$LAST_VERSION_FILE" 2>/dev/null || true
 }
 
 # ============================================================================
@@ -283,41 +285,51 @@ tour_complete() {
 # ============================================================================
 
 run_interactive_tour() {
-    local pages=(
-        "show_welcome:Welcome"
-        "tour_navigation:Navigation & Shortcuts"
-        "tour_dotfiles_management:Dotfiles Management"
-        "tour_git_helpers:Git & Development"
-        "tour_tmux_workspaces:Tmux Workspaces"
-        "tour_system_tools:System Administration"
-        "tour_productivity:Productivity Features"
-        "tour_complete:Complete"
+    # Page functions and titles
+    local page_funcs=(
+        "show_welcome"
+        "tour_navigation"
+        "tour_dotfiles_management"
+        "tour_git_helpers"
+        "tour_tmux_workspaces"
+        "tour_system_tools"
+        "tour_productivity"
+        "tour_complete"
+    )
+    
+    local page_titles=(
+        "Welcome"
+        "Navigation & Shortcuts"
+        "Dotfiles Management"
+        "Git & Development"
+        "Tmux Workspaces"
+        "System Administration"
+        "Productivity Features"
+        "Complete"
     )
     
     local current=0
-    local total=${#pages[@]}
+    local total=${#page_funcs[@]}
+    local key=""
     
     while true; do
-        local page_info="${pages[$current]}"
-        local func="${page_info%%:*}"
-        local title="${page_info#*:}"
-        
         # Show current page
-        $func
+        ${page_funcs[$current]}
         
         # Navigation footer
         echo ""
         echo -e "${DF_DIM}─────────────────────────────────────────────────────────────${DF_NC}"
-        echo -e "  Page $((current + 1)) of $total: ${DF_CYAN}$title${DF_NC}"
+        echo -e "  Page $((current + 1)) of $total: ${DF_CYAN}${page_titles[$current]}${DF_NC}"
         echo ""
         
-        if (( current == total - 1 )); then
+        if [[ $current -eq $((total - 1)) ]]; then
             echo -e "  Press ${DF_GREEN}Enter${DF_NC} to finish, ${DF_CYAN}p${DF_NC} for previous, ${DF_RED}q${DF_NC} to quit"
         else
             echo -e "  Press ${DF_GREEN}Enter${DF_NC} for next, ${DF_CYAN}p${DF_NC} for previous, ${DF_RED}q${DF_NC} to quit"
         fi
         
-        read -rsn1 key
+        # Read single key
+        read -rsn1 key || true
         
         case "$key" in
             q|Q)
@@ -326,15 +338,18 @@ run_interactive_tour() {
                 exit 0
                 ;;
             p|P)
-                (( current > 0 )) && ((current--))
+                if [[ $current -gt 0 ]]; then
+                    current=$((current - 1))
+                fi
                 ;;
             *)
-                if (( current == total - 1 )); then
+                # Enter or any other key goes to next page
+                if [[ $current -eq $((total - 1)) ]]; then
                     echo ""
                     echo -e "${DF_GREEN}Enjoy your new shell!${DF_NC}"
                     exit 0
                 fi
-                ((current++))
+                current=$((current + 1))
                 ;;
         esac
     done
@@ -388,10 +403,13 @@ show_changelog() {
     df_print_header "Recent Changes"
     echo ""
     
-    cd "$DOTFILES_DIR"
+    cd "$DOTFILES_DIR" 2>/dev/null || {
+        df_print_info "Could not access dotfiles directory"
+        return
+    }
     
     local last_version=""
-    [[ -f "$LAST_VERSION_FILE" ]] && last_version=$(cat "$LAST_VERSION_FILE")
+    [[ -f "$LAST_VERSION_FILE" ]] && last_version=$(cat "$LAST_VERSION_FILE" 2>/dev/null)
     
     if [[ -n "$last_version" && "$last_version" != "$DOTFILES_VERSION" ]]; then
         echo -e "Updated from ${DF_YELLOW}$last_version${DF_NC} to ${DF_GREEN}$DOTFILES_VERSION${DF_NC}"
@@ -412,7 +430,7 @@ show_changelog() {
     echo ""
     
     # Update version tracking
-    echo "$DOTFILES_VERSION" > "$LAST_VERSION_FILE"
+    echo "$DOTFILES_VERSION" > "$LAST_VERSION_FILE" 2>/dev/null || true
 }
 
 # ============================================================================
@@ -458,11 +476,9 @@ EOF
 main() {
     case "${1:-}" in
         --quick|-q)
-            df_print_header "dotfiles-tour"
             show_quick_overview
             ;;
         --changelog|-c)
-            df_print_header "dotfiles-tour"
             show_changelog
             ;;
         --check)
