@@ -1,89 +1,86 @@
 # ============================================================================
 # Shared Utility Functions for Zsh Dotfiles
 # ============================================================================
-# Common helper functions used across multiple function files
-# Note: colors.zsh provides: DF_* color variables and df_print_func_name
+# Common helper functions used across multiple function files.
+#
+# This file sources config.zsh (which sources dotfiles.conf) and colors.zsh,
+# so sourcing this single file gives you access to everything.
 #
 # Source this file in function files:
 #   source "${0:A:h}/../lib/utils.zsh"
 # ============================================================================
 
-# Ensure colors are loaded first (provides DF_* vars and df_print_func_name)
-source "${0:A:h}/colors.zsh" 2>/dev/null || \
-source "$HOME/.dotfiles/zsh/lib/colors.zsh" 2>/dev/null
+# Prevent double-sourcing
+[[ -n "$_DF_UTILS_LOADED" ]] && return 0
+typeset -g _DF_UTILS_LOADED=1
 
 # ============================================================================
-# Common Print Functions
+# Source Configuration and Colors
+# ============================================================================
+# Order matters: config first (sets DF_WIDTH, etc.), then colors
+
+# Find lib directory
+_df_lib_dir="${0:A:h}"
+[[ ! -d "$_df_lib_dir" ]] && _df_lib_dir="$HOME/.dotfiles/zsh/lib"
+
+# Source config (provides all settings from dotfiles.conf)
+source "${_df_lib_dir}/config.zsh" 2>/dev/null || \
+source "$HOME/.dotfiles/zsh/lib/config.zsh" 2>/dev/null || {
+    # Fallback: set critical defaults if config.zsh not found
+    typeset -g DOTFILES_DIR="${DOTFILES_DIR:-$HOME/.dotfiles}"
+    typeset -g DOTFILES_HOME="${DOTFILES_HOME:-$DOTFILES_DIR}"
+    typeset -g DOTFILES_VERSION="${DOTFILES_VERSION:-unknown}"
+    typeset -g DF_WIDTH="${DF_WIDTH:-66}"
+}
+
+# Source colors
+source "${_df_lib_dir}/colors.zsh" 2>/dev/null || \
+source "$HOME/.dotfiles/zsh/lib/colors.zsh" 2>/dev/null || {
+    # Fallback colors if colors.zsh not found
+    typeset -g DF_RED=$'\033[0;31m' DF_GREEN=$'\033[0;32m' DF_YELLOW=$'\033[1;33m'
+    typeset -g DF_BLUE=$'\033[0;34m' DF_CYAN=$'\033[0;36m' DF_NC=$'\033[0m'
+    typeset -g DF_GREY=$'\033[38;5;242m' DF_LIGHT_BLUE=$'\033[38;5;39m'
+    typeset -g DF_LIGHT_GREEN=$'\033[38;5;82m' DF_BOLD=$'\033[1m' DF_DIM=$'\033[2m'
+}
+
+unset _df_lib_dir
+
+# ============================================================================
+# MOTD-Style Header Functions
 # ============================================================================
 
-# Print a step/section header
-df_print_step() {
-    echo -e "${DF_GREEN}==>${DF_NC} $1"
+# Prints a standardized header box for functions
+# Usage: df_print_func_name "Function Name"
+df_print_func_name() {
+    local func_name="${1:-func}"
+    local datetime=$(date '+%a %b %d %H:%M')
+    local width="${DF_WIDTH:-66}"
+
+    # Build horizontal line
+    local hline=""
+    for ((i=0; i<width; i++)); do hline+="═"; done
+    local inner=$((width - 2))
+
+    # Header content
+    local h_left="${func_name}"
+    local h_right="${datetime}"
+    local h_pad=$((inner - ${#h_left} - ${#h_right}))
+    local h_spaces=""
+    for ((i=0; i<h_pad; i++)); do h_spaces+=" "; done
+
+    echo -e "${DF_GREY}╒${hline}╕${DF_NC}"
+    echo -e "${DF_GREY}│${DF_NC} ${DF_BOLD}${DF_LIGHT_BLUE}${h_left}${DF_NC}${h_spaces}${DF_NC}${DF_BOLD}${h_right}${DF_NC} ${DF_GREY}│${DF_NC}"
+    echo -e "${DF_GREY}╘${hline}╛${DF_NC}"
 }
 
-# Print success message
-df_print_success() {
-    echo -e "${DF_GREEN}✓${DF_NC} $1"
-}
-
-# Print error message (to stderr)
-df_print_error() {
-    echo -e "${DF_RED}✗${DF_NC} $1" >&2
-}
-
-# Print warning message
-df_print_warning() {
-    echo -e "${DF_YELLOW}⚠${DF_NC} $1"
-}
-
-# Print info message
-df_print_info() {
-    echo -e "${DF_CYAN}ℹ${DF_NC} $1"
-}
-
-# Print a section divider
-df_print_section() {
-    echo ""
-    echo -e "${DF_BLUE}▶${DF_NC} $1"
-    echo -e "${DF_CYAN}─────────────────────────────────────────────────────────────${DF_NC}"
-}
-
-
-# ============================================================================                                                                     
-# MOTD-Style Header/Function Header                                                                                                                
-# ============================================================================                                                                     
-                                                                                                                                                    
-# Prints a standardized header box for scripts                                                                                                     
-# Usage: df_print_header "script-name"                                                                                                             
-# Usage: df_print_func_name "func-name"                                                                                                            
-                                                                                                                                                    
-df_print_func_name() {                                                                                                                             
-    local func_name="${1:-func}"                                                                                                                   
-    local datetime=$(date '+%a %b %d %H:%M')                                                                                                       
-    local width=66                                                                                                                                 
-                                                                                                                                                    
-    # Build horizontal line                                                                                                                        
-    local hline=""                                                                                                                                 
-    for ((i=0; i<width; i++)); do hline+="═"; done                                                                                                 
-    local inner=$((width - 2))                                                                                                                     
-                                                                                                                                                    
-    # Header content                                                                                                                               
-    local h_left="${func_name}"                                                                                                                    
-    local h_right="${datetime}"                                                                                                                    
-    local h_pad=$((inner - ${#h_left} - ${#h_right}))                                                                                              
-    local h_spaces=""                                                                                                                              
-    for ((i=0; i<h_pad; i++)); do h_spaces+=" "; done                                                                                              
-    echo -e "${DF_GREY}╒${hline}╕${DF_NC}"                                                                                                         
-    echo -e "${DF_GREY}│${DF_NC} ${DF_BOLD}${DF_LIGHT_BLUE}${h_left}${DF_NC}${h_spaces}${DF_NC}${DF_BOLD}${h_right}${DF_NC} ${DF_GREY}│${DF_NC}"   
-    echo -e "${DF_GREY}╘${hline}╛${DF_NC}"                                                                                                         
-}                                                                                                                                                  
-
+# Prints a standardized header box for scripts
+# Usage: df_print_header "script-name"
 df_print_header() {
     local script_name="${1:-script}"
     local user="${USER:-root}"
     local hostname="${HOST:-${HOSTNAME:-$(hostname -s 2>/dev/null)}}"
     local datetime=$(date '+%a %b %d %H:%M')
-    local width=66
+    local width="${DF_WIDTH:-66}"
 
     # Build horizontal line
     local hline=""
@@ -104,40 +101,25 @@ df_print_header() {
     echo -e "${DF_GREY}╘${hline}╛${DF_NC}"
     echo ""
 }
- 
+
 # ============================================================================
 # Output Formatting Functions
 # ============================================================================
 
-# Print a step/action indicator (blue arrow)
 df_print_step() { echo -e "${DF_BLUE}==>${DF_NC} $1"; }
-
-# Print a success message (green checkmark)
 df_print_success() { echo -e "${DF_GREEN}✓${DF_NC} $1"; }
-
-# Print an error message (red X)
-df_print_error() { echo -e "${DF_RED}✗${DF_NC} $1"; }
-
-# Print a warning message (yellow warning sign)
+df_print_error() { echo -e "${DF_RED}✗${DF_NC} $1" >&2; }
 df_print_warning() { echo -e "${DF_YELLOW}⚠${DF_NC} $1"; }
-
-# Print an info message (cyan info icon)
 df_print_info() { echo -e "${DF_CYAN}ℹ${DF_NC} $1"; }
-
-# Print a section header (cyan label)
 df_print_section() { echo -e "${DF_CYAN}$1:${DF_NC}"; }
-
-# Print indented content
 df_print_indent() { echo "  $1"; }
 
 # ============================================================================
 # Command Dependency Checking
 # ============================================================================
 
-# Check if a command exists
 df_cmd_exists() { command -v "$1" &>/dev/null; }
 
-# Require a command, show install hint if missing
 df_require_cmd() {
     local cmd="$1"
     local package="${2:-$1}"
@@ -154,7 +136,6 @@ df_require_cmd() {
 # User Confirmation
 # ============================================================================
 
-# Ask for yes/no confirmation (defaults to no)
 df_confirm() {
     local prompt="$1"
     read -q "REPLY?$prompt [y/N]: "
@@ -162,7 +143,6 @@ df_confirm() {
     [[ "$REPLY" =~ ^[Yy]$ ]]
 }
 
-# Confirm with warning prefix
 df_confirm_warning() {
     df_print_warning "$1"
     df_confirm "Continue?"
@@ -172,16 +152,10 @@ df_confirm_warning() {
 # File/Directory Helpers
 # ============================================================================
 
-# Check if in a git repo
 df_in_git_repo() { git rev-parse --git-dir &>/dev/null 2>&1; }
-
-# Get git root directory
 df_git_root() { git rev-parse --show-toplevel 2>/dev/null; }
-
-# Ensure directory exists
 df_ensure_dir() { [[ ! -d "$1" ]] && mkdir -p "$1"; }
 
-# Ensure file exists with optional default content
 df_ensure_file() {
     local file="$1" content="${2:-}"
     if [[ ! -f "$file" ]]; then

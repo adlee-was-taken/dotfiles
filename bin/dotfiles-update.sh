@@ -39,7 +39,8 @@ else
     DOTFILES_RAW_URL="https://raw.githubusercontent.com/adlee-was-taken/dotfiles/main"
 fi
 
-# Source shared colors
+# Source shared colors and utils (provides DF_WIDTH)
+source "$DOTFILES_DIR/zsh/lib/utils.zsh" 2>/dev/null || \
 source "$DOTFILES_DIR/zsh/lib/colors.zsh" 2>/dev/null || {
     DF_GREEN=$'\033[0;32m' DF_YELLOW=$'\033[1;33m' DF_RED=$'\033[0;31m'
     DF_BLUE=$'\033[0;34m' DF_CYAN=$'\033[0;36m' DF_NC=$'\033[0m'
@@ -47,8 +48,8 @@ source "$DOTFILES_DIR/zsh/lib/colors.zsh" 2>/dev/null || {
     DF_BOLD=$'\033[1m' DF_DIM=$'\033[2m' DF_LIGHT_GREEN=$'\033[38;5;82m'
 }
 
-# Source utils.zsh
-source "$DOTFILES_HOME/zsh/lib/utils.zsh" 2>/dev/null
+# Use DF_WIDTH from utils.zsh or default to 66
+readonly WIDTH="${DF_WIDTH:-66}"
 
 # ============================================================================
 # MOTD-style header
@@ -61,8 +62,7 @@ print_header() {
         local user="${USER:-root}"
         local hostname="${HOSTNAME:-$(hostname -s 2>/dev/null)}"
         local datetime=$(date '+%a %b %d %H:%M')
-        local width=66
-        local hline="" && for ((i=0; i<width; i++)); do hline+="═"; done
+        local hline="" && for ((i=0; i<WIDTH; i++)); do hline+="═"; done
 
         echo ""
         echo -e "${DF_GREY}╒${hline}╕${DF_NC}"
@@ -72,21 +72,10 @@ print_header() {
     fi
 }
 
-print_success() {
-    echo -e "${DF_GREEN}✓${DF_NC} $1"
-}
-
-print_warning() {
-    echo -e "${DF_YELLOW}⚠${DF_NC} $1"
-}
-
-print_error() {
-    echo -e "${DF_RED}✗${DF_NC} $1"
-}
-
-print_step() {
-    echo -e "${DF_GREEN}==>${DF_NC} $1"
-}
+print_success() { echo -e "${DF_GREEN}✓${DF_NC} $1"; }
+print_warning() { echo -e "${DF_YELLOW}⚠${DF_NC} $1"; }
+print_error() { echo -e "${DF_RED}✗${DF_NC} $1"; }
+print_step() { echo -e "${DF_GREEN}==>${DF_NC} $1"; }
 
 # ============================================================================
 # Main
@@ -96,8 +85,6 @@ print_header
 
 if [ ! -d "$DOTFILES_DIR" ]; then
     print_error "Dotfiles directory not found: $DOTFILES_DIR"
-    echo "Run the installation script first:"
-    echo "  curl -fsSL ${DOTFILES_RAW_URL}/install.sh | bash"
     exit 1
 fi
 
@@ -112,22 +99,7 @@ if [ $? -eq 0 ]; then
     if [[ "$PULL_ONLY" == true ]]; then
         echo
         print_success "Pull complete (--pull-only mode)"
-        echo "Run ./install.sh manually to re-link files"
         exit 0
-    fi
-
-    if [ -f "$DOTFILES_DIR/install.sh" ]; then
-        echo
-        read -p "Run install script to update links? [Y/n]: " response
-        response=${response:-y}
-
-        if [[ "$response" =~ ^[Yy]$ ]]; then
-            if [[ "$SKIP_DEPS" == true ]]; then
-                "$DOTFILES_DIR/install.sh" --skip-deps
-            else
-                "$DOTFILES_DIR/install.sh"
-            fi
-        fi
     fi
 
     echo

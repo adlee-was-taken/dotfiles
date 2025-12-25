@@ -7,15 +7,16 @@ set -e
 
 DOTFILES_DIR="${DOTFILES_DIR:-$HOME/.dotfiles}"
 
-# Source shared colors
+# Source shared colors and utils (provides DF_WIDTH)
+source "$DOTFILES_DIR/zsh/lib/utils.zsh" 2>/dev/null || \
 source "$DOTFILES_DIR/zsh/lib/colors.zsh" 2>/dev/null || {
     DF_GREEN=$'\033[0;32m' DF_YELLOW=$'\033[1;33m' DF_CYAN=$'\033[0;36m'
     DF_NC=$'\033[0m' DF_GREY=$'\033[38;5;242m' DF_LIGHT_BLUE=$'\033[38;5;39m'
     DF_BOLD=$'\033[1m' DF_DIM=$'\033[2m'
 }
 
-# Source utils (fixed: was DOTFILES_HOME, should be DOTFILES_DIR)
-source "$DOTFILES_DIR/zsh/lib/utils.zsh" 2>/dev/null
+# Use DF_WIDTH from utils.zsh or default to 66
+typeset -g WIDTH="${DF_WIDTH:-66}"
 
 # ============================================================================
 # MOTD-style header
@@ -23,14 +24,13 @@ source "$DOTFILES_DIR/zsh/lib/utils.zsh" 2>/dev/null
 
 print_header() {
     if declare -f df_print_header &>/dev/null; then
-        df_print_header "dotfiles-compile "
+        df_print_header "dotfiles-compile"
     else
         local user="${USER:-root}"
         local hostname="${HOST:-$(hostname -s 2>/dev/null)}"
         local datetime=$(date '+%a %b %d %H:%M')
-        local width=66
         local hline=""
-        for ((i=0; i<width; i++)); do hline+="═"; done
+        for ((i=0; i<WIDTH; i++)); do hline+="═"; done
 
         echo ""
         echo "${DF_GREY}╒${hline}╕${DF_NC}"

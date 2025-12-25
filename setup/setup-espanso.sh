@@ -28,22 +28,24 @@ fi
 # Colors
 # ============================================================================
 
-# Source shared colors (with fallback)
-source "${0:A:h}/../lib/colors.zsh" 2>/dev/null || \
+# Source shared colors and utils (provides DF_WIDTH)
+source "$DOTFILES_DIR/zsh/lib/utils.zsh" 2>/dev/null || \
+source "$HOME/.dotfiles/zsh/lib/utils.zsh" 2>/dev/null || \
+source "$DOTFILES_DIR/zsh/lib/colors.zsh" 2>/dev/null || \
 source "$HOME/.dotfiles/zsh/lib/colors.zsh" 2>/dev/null || {
     typeset -g DF_NC=$'\033[0m' DF_BOLD=$'\033[1m' DF_DIM=$'\033[2m'
     typeset -g DF_BLUE=$'\033[38;5;39m' DF_CYAN=$'\033[38;5;51m'
     typeset -g DF_GREEN=$'\033[38;5;82m' DF_YELLOW=$'\033[38;5;220m'
     typeset -g DF_RED=$'\033[38;5;196m' DF_GREY=$'\033[38;5;242m' DF_NC=$'\033[0m'
     typeset -g DF_LIGHT_BLUE=$'\033[38;5;39m' DF_LIGHT_GREEN=$'\033[38;5;82m'
-
 }
 
+# Use DF_WIDTH from utils.zsh or default to 66
+readonly WIDTH="${DF_WIDTH:-66}"
 
+# ============================================================================
 # MOTD-style header
 # ============================================================================
-
-DF_WIDTH=66
 
 print_header() {
     local user="${USER:-root}"
@@ -52,8 +54,8 @@ print_header() {
     local datetime=$(date '+%a %b %d %H:%M')
 
     local hline=""
-    for ((i=0; i<DF_WIDTH; i++)); do hline+="═"; done
-    local inner=$((DF_WIDTH - 2))
+    for ((i=0; i<WIDTH; i++)); do hline+="═"; done
+    local inner=$((WIDTH - 2))
 
     # Header content
     local h_left="✦ ${user}@${hostname}"

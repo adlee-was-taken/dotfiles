@@ -5,43 +5,33 @@
 
 set -e
 
-readonly DOTFILES_HOME="${DOTFILES_HOME:-$HOME/.dotfiles}"
+# ============================================================================
+# Source Configuration
+# ============================================================================
 
-# Source shared colors
-source "$DOTFILES_HOME/zsh/lib/colors.zsh" 2>/dev/null || {
+_df_source_config() {
+    local locations=(
+        "${DOTFILES_HOME:-$HOME/.dotfiles}/zsh/lib/utils.zsh"
+        "$HOME/.dotfiles/zsh/lib/utils.zsh"
+    )
+    for loc in "${locations[@]}"; do
+        [[ -f "$loc" ]] && { source "$loc"; return 0; }
+    done
+    
+    # Fallback defaults
     DF_RED=$'\033[0;31m' DF_GREEN=$'\033[0;32m' DF_YELLOW=$'\033[1;33m'
-    DF_BLUE=$'\033[0;34m' DF_CYAN=$'\033[0;36m' DF_MAGENTA=$'\033[0;35m'
-    DF_NC=$'\033[0m' DF_GREY=$'\033[38;5;242m' DF_LIGHT_BLUE=$'\033[38;5;39m'
-    DF_BOLD=$'\033[1m' DF_DIM=$'\033[2m' DF_LIGHT_GREEN=$'\033[38;5;82m'
+    DF_BLUE=$'\033[0;34m' DF_CYAN=$'\033[0;36m' DF_NC=$'\033[0m'
+    DF_GREY=$'\033[38;5;242m' DF_LIGHT_BLUE=$'\033[38;5;39m'
+    DF_BOLD=$'\033[1m' DF_LIGHT_GREEN=$'\033[38;5;82m'
+    DOTFILES_HOME="${DOTFILES_HOME:-$HOME/.dotfiles}"
+    DF_WIDTH="${DF_WIDTH:-66}"
 }
 
-# Source utils.zsh
-source "$DOTFILES_HOME/zsh/lib/utils.zsh" 2>/dev/null
-
-# Color codes
-readonly RED='\033[0;31m'
-readonly GREEN='\033[0;32m'
-readonly YELLOW='\033[1;33m'
-readonly BLUE='\033[0;34m'
-readonly CYAN='\033[0;36m'
-readonly MAGENTA='\033[0;35m'
-readonly NC='\033[0m'
-
-# Source shared colors
-source "$DOTFILES_HOME/zsh/lib/colors.zsh" 2>/dev/null || {
-     DF_RED=$'\033[0;31m' DF_GREEN=$'\033[0;32m' DF_YELLOW=$'\033[1;33m'
-     DF_BLUE=$'\033[0;34m' DF_CYAN=$'\033[0;36m' DF_NC=$'\033[0m'
-     DF_GREY=$'\033[38;5;242m' DF_LIGHT_BLUE=$'\033[38;5;39m'
-     DF_BOLD=$'\033[1m' DF_DIM=$'\033[2m'
-}
-
-
+_df_source_config
 
 # ============================================================================
-# MOTD-style header
+# Header
 # ============================================================================
-
-DF_WIDTH=66
 
 print_header() {
     if declare -f df_print_header &>/dev/null; then
@@ -49,239 +39,104 @@ print_header() {
     else
         local user="${USER:-root}"
         local hostname="${HOSTNAME:-$(hostname -s 2>/dev/null)}"
-        local script_name="dotfiles-sync"
         local datetime=$(date '+%a %b %d %H:%M')
-
-
-        # Build horizontal line
-        local hline=""
-        for ((i=0; i<DF_WIDTH; i++)); do hline+="═"; done
-        local inner=$((DF_WIDTH - 2))
-
-        # Header content
-        local h_left="✦ ${user}@${hostname}"
-        local h_center="${script_name}"
-        local h_right="${datetime}"
-        local h_pad=$(((inner - ${#h_left} - ${#h_center} - ${#h_right}) / 2))
-        local h_spaces=""
-        for ((i=0; i<h_pad; i++)); do h_spaces+=" "; done
+        local width="${DF_WIDTH:-66}"
+        local hline="" && for ((i=0; i<width; i++)); do hline+="═"; done
 
         echo ""
-        echo -e "${DF_GREY}╒${hline}!!!!!!!╕${DF_NC}"
-        echo -e "${DF_GREY}│${DF_NC} ${DF_BOLD}${DF_LIGHT_BLUE}${h_left}${DF_NC}${h_spaces}${DF_LIGHT_GREEN}${h_center}${h_spaces}${DF_NC}${DF_BOLD}${h_right}${DF_NC} ${DF_GREY}│${DF_NC}"
+        echo -e "${DF_GREY}╒${hline}╕${DF_NC}"
+        echo -e "${DF_GREY}│${DF_NC} ${DF_BOLD}${DF_LIGHT_BLUE}✦ ${user}@${hostname}${DF_NC}    ${DF_LIGHT_GREEN}dotfiles-sync${DF_NC}      ${datetime} ${DF_GREY}│${DF_NC}"
         echo -e "${DF_GREY}╘${hline}╛${DF_NC}"
+        echo ""
     fi
 }
 
 # ============================================================================
-# Helper functions
+# Helper Functions
 # ============================================================================
 
-print_status() {
-    echo -e "${CYAN}⎯${NC} $1"
-}
-
-print_success() {
-    echo -e "${GREEN}✓${NC} $1"
-}
-
-print_error() {
-    echo -e "${RED}✗${NC} $1" >&2
-}
-
-print_warning() {
-    echo -e "${YELLOW}⚠${NC} $1"
-}
-
-print_section() {
-    echo ""
-    echo -e "${BLUE}▶${NC} $1"
-    echo -e "${CYAN}─────────────────────────────────────────────────────────────${NC}"
-}
+print_status() { echo -e "${DF_CYAN}⎯${DF_NC} $1"; }
+print_success() { echo -e "${DF_GREEN}✓${DF_NC} $1"; }
+print_error() { echo -e "${DF_RED}✗${DF_NC} $1" >&2; }
+print_warning() { echo -e "${DF_YELLOW}⚠${DF_NC} $1"; }
+print_section() { echo ""; echo -e "${DF_BLUE}▶${DF_NC} $1"; }
 
 # ============================================================================
-# Sync functions
+# Sync Functions
 # ============================================================================
 
 check_git_repo() {
-    if ! git -C "$DOTFILES_HOME" rev-parse --git-dir > /dev/null 2>&1; then
-        print_error "Not a git repository: $DOTFILES_HOME"
-        exit 1
-    fi
-}
-
-check_git_config() {
-    if ! git config --global user.name > /dev/null 2>&1; then
-        print_error "Git user.name not configured"
-        exit 1
-    fi
-
-    if ! git config --global user.email > /dev/null 2>&1; then
-        print_error "Git user.email not configured"
-        exit 1
-    fi
+    git -C "$DOTFILES_HOME" rev-parse --git-dir > /dev/null 2>&1 || { print_error "Not a git repository: $DOTFILES_HOME"; exit 1; }
 }
 
 get_sync_status() {
     cd "$DOTFILES_HOME"
-
     local local_commits=$(git rev-list --count @{u}..HEAD 2>/dev/null || echo 0)
     local remote_commits=$(git rev-list --count HEAD..@{u} 2>/dev/null || echo 0)
-
     echo "$local_commits:$remote_commits"
 }
 
 show_status() {
     print_section "Sync Status"
-
     cd "$DOTFILES_HOME"
-
     print_status "Local branch: $(git rev-parse --abbrev-ref HEAD)"
     print_status "Last commit: $(git log -1 --pretty=format:'%h - %s' 2>/dev/null || echo 'N/A')"
-    print_status "Last update: $(git log -1 --pretty=format:'%ar' 2>/dev/null || echo 'N/A')"
-
+    
     local status=$(get_sync_status)
     local local_commits="${status%:*}"
     local remote_commits="${status#*:}"
-
+    
     echo ""
-    if [[ $local_commits -gt 0 ]]; then
-        print_warning "$local_commits commit(s) ahead of remote"
-    fi
-
-    if [[ $remote_commits -gt 0 ]]; then
-        print_warning "$remote_commits commit(s) behind remote"
-    fi
-
-    if [[ $local_commits -eq 0 ]] && [[ $remote_commits -eq 0 ]]; then
-        print_success "In sync with remote"
-    fi
+    [[ $local_commits -gt 0 ]] && print_warning "$local_commits commit(s) ahead of remote"
+    [[ $remote_commits -gt 0 ]] && print_warning "$remote_commits commit(s) behind remote"
+    [[ $local_commits -eq 0 && $remote_commits -eq 0 ]] && print_success "In sync with remote"
 }
 
 show_status_short() {
     cd "$DOTFILES_HOME"
-
-    # Count local changes
     local changes=$(git status --porcelain | wc -l)
-
-    # Check commits ahead/behind
     local status=$(get_sync_status)
     local local_commits="${status%:*}"
     local remote_commits="${status#*:}"
 
     if [[ $changes -gt 0 ]]; then
-        echo -e "  ${YELLOW}⚠${NC} Dotfiles: ${changes} local change(s) not pushed"
-        echo -e "    Run: ${CYAN}dfpush${NC} or ${CYAN}dotfiles-sync.sh push${NC}"
+        echo -e "  ${DF_YELLOW}⚠${DF_NC} Dotfiles: ${changes} local change(s) not pushed"
     elif [[ $local_commits -gt 0 ]]; then
-        echo -e "  ${YELLOW}⚠${NC} Dotfiles: ${local_commits} commit(s) not pushed"
-        echo -e "    Run: ${CYAN}git push${NC} in ~/.dotfiles"
+        echo -e "  ${DF_YELLOW}⚠${DF_NC} Dotfiles: ${local_commits} commit(s) not pushed"
     elif [[ $remote_commits -gt 0 ]]; then
-        echo -e "  ${YELLOW}⚠${NC} Dotfiles: ${remote_commits} commit(s) behind remote"
-        echo -e "    Run: ${CYAN}dfpull${NC} or ${CYAN}dotfiles-sync.sh pull${NC}"
-    #else
-    #    echo -e "  ${GREEN}✓${NC} Dotfiles: in sync"
-    fi
-    echo ""
-}
-
-show_diff() {
-    print_section "Local Changes"
-
-    cd "$DOTFILES_HOME"
-
-    if git status --porcelain | grep -I -q .; then
-        print_status "Modified files:"
-        git status --porcelain | sed 's/^/  /'
-    else
-        print_success "No local changes"
+        echo -e "  ${DF_YELLOW}⚠${DF_NC} Dotfiles: ${remote_commits} commit(s) behind remote"
     fi
 }
 
 pull_changes() {
     print_section "Pulling Changes"
-
     cd "$DOTFILES_HOME"
-
     print_status "Fetching from remote..."
     git fetch origin
-
-    local status=$(get_sync_status)
-    local remote_commits="${status#*:}"
-
-    if [[ $remote_commits -gt 0 ]]; then
-        print_status "Pulling $remote_commits remote commit(s)..."
-        git pull origin
-        print_success "Changes pulled"
-    else
-        print_success "Already up to date"
-    fi
+    git pull origin && print_success "Changes pulled" || print_success "Already up to date"
 }
 
 push_changes() {
     local commit_msg="$1"
-
     print_section "Pushing Changes"
-
     cd "$DOTFILES_HOME"
-
-    if ! git status --porcelain | grep -I -q .; then
+    
+    if ! git status --porcelain | grep -q .; then
         print_warning "No local changes to push"
         return
     fi
-
+    
     print_status "Staging changes..."
     git add -A
-
-    # If no commit message provided, prompt for one
+    
     if [[ -z "$commit_msg" ]]; then
-        print_status "Enter commit message (or press Ctrl+C to cancel):"
-        read -p "  > " commit_msg
-
-        if [[ -z "$commit_msg" ]]; then
-            print_error "Commit cancelled"
-            return 1
-        fi
+        read -p "Commit message: " commit_msg
+        [[ -z "$commit_msg" ]] && { print_error "Commit cancelled"; return 1; }
     fi
-
-    print_status "Committing: $commit_msg"
+    
     git commit -m "$commit_msg"
-
-    print_status "Pushing to remote..."
     git push origin
-
     print_success "Changes pushed"
-}
-
-auto_sync() {
-    print_section "Auto-Sync"
-
-    cd "$DOTFILES_HOME"
-
-    # Pull remote changes
-    print_status "Pulling from remote..."
-    git fetch origin
-
-    if git status --porcelain | grep -I -q .; then
-        print_status "Resolving conflicts automatically..."
-        git pull --strategy=ours
-    else
-        git pull origin
-    fi
-
-    print_success "Auto-sync complete"
-}
-
-watch_sync() {
-    local interval="${1:-300}"
-
-    print_section "Watch Mode"
-    print_status "Auto-syncing every $interval seconds"
-    print_status "Press Ctrl+C to stop"
-
-    while true; do
-        auto_sync
-        sleep "$interval"
-    done
 }
 
 # ============================================================================
@@ -290,60 +145,22 @@ watch_sync() {
 
 main() {
     check_git_repo
-    check_git_config
-
+    
     case "${1:-status}" in
         status)
-            if [[ "$2" == "-s" || "$2" == "--short" ]]; then
-                show_status_short
-            else
-                print_header
-                show_status
-                show_diff
-            fi
+            [[ "$2" == "-s" || "$2" == "--short" ]] && show_status_short || { print_header; show_status; }
             ;;
         push)
-            print_header
-            shift
-            push_changes "$*"
+            print_header; shift; push_changes "$*"
             ;;
         pull)
-            print_header
-            pull_changes
-            ;;
-        diff)
-            print_header
-            show_diff
-            ;;
-        auto)
-            auto_sync
-            ;;
-        watch)
-            print_header
-            watch_sync "${2:-300}"
+            print_header; pull_changes
             ;;
         -s|--short)
             show_status_short
             ;;
         *)
-            echo "Usage: $0 {status [-s]|push [message]|pull|diff|auto|watch [interval]}"
-            echo ""
-            echo "Commands:"
-            echo "  status            Show sync status (default)"
-            echo "  status -s         Show abbreviated one-line status"
-            echo "  push [message]    Push local changes (prompts if no message)"
-            echo "  pull              Pull remote changes"
-            echo "  diff              Show local changes"
-            echo "  auto              Automatically sync (pull remote)"
-            echo "  watch [sec]       Auto-sync every N seconds (default: 300)"
-            echo ""
-            echo "Options:"
-            echo "  -s, --short       Abbreviated output (one line)"
-            echo ""
-            echo "Examples:"
-            echo "  $0 push \"Updated aliases\""
-            echo "  $0 push                      # Will prompt for message"
-            echo "  $0 status -s                 # Quick status check"
+            echo "Usage: $0 {status [-s]|push [message]|pull}"
             exit 1
             ;;
     esac
