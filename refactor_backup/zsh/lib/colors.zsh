@@ -4,7 +4,7 @@
 # Source this file in scripts and functions to get consistent color support.
 #
 # Usage in zsh functions:
-#   source "${0:A:h}/../lib/colors.zsh"
+#   source "${0:A:h}/../lib/colors.zsh" 2>/dev/null || source "$HOME/.dotfiles/zsh/lib/colors.zsh"
 #
 # Usage in bash scripts:
 #   source "$HOME/.dotfiles/zsh/lib/colors.zsh"
