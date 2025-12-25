@@ -15,7 +15,7 @@ _df_source_config() {
     for loc in "${locations[@]}"; do
         [[ -f "$loc" ]] && { source "$loc"; return 0; }
     done
-    
+
     # Fallback defaults
     DF_GREEN=$'\033[0;32m' DF_YELLOW=$'\033[1;33m' DF_CYAN=$'\033[0;36m'
     DF_NC=$'\033[0m' DF_GREY=$'\033[38;5;242m' DF_LIGHT_BLUE=$'\033[38;5;39m'
@@ -46,7 +46,7 @@ done
 
 print_header() {
     if declare -f df_print_header &>/dev/null; then
-        df_print_header "dotfiles-version"
+        df_print_header "dotfiles-version "
     else
         local user="${USER:-root}"
         local hostname="${HOSTNAME:-$(hostname -s 2>/dev/null)}"

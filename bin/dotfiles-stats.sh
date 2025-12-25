@@ -25,7 +25,7 @@ readonly WIDTH="${DF_WIDTH:-66}"
 
 print_header() {
     if declare -f df_print_header &>/dev/null; then
-        df_print_header "dotfiles-stats"
+        df_print_header "dotfiles-stats "
     else
         local user="${USER:-root}"
         local hostname="${HOSTNAME:-$(hostname -s 2>/dev/null)}"

@@ -24,7 +24,7 @@ typeset -g WIDTH="${DF_WIDTH:-66}"
 
 print_header() {
     if declare -f df_print_header &>/dev/null; then
-        df_print_header "dotfiles-compile"
+        df_print_header "dotfiles-compile "
     else
         local user="${USER:-root}"
         local hostname="${HOST:-$(hostname -s 2>/dev/null)}"
