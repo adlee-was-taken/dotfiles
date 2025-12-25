@@ -191,10 +191,17 @@ check_bin_scripts() {
     print_section "Bin Script Symlinks: ${DF_LIGHT_GREY}.local/bin${DF_NC}"
 
     local scripts=(
+        "dotfiles-analytics.sh"
+        "dotfiles-compile.sh"
+        "dotfiles-diff.sh"
         "dotfiles-doctor.sh"
-        "dotfiles-sync.sh"
-        "dotfiles-update.sh"
+       "dotfiles-stats.sh"
+       "dotfiles-sync.sh"
+       "dotfiles-tour.sh"
+       "dotfiles-update.sh"
+       "dotfiles-vault.sh"
         "dotfiles-version.sh"
+       "dotfiles-profile.sh"
     )
 
     for script in "${scripts[@]}"; do
