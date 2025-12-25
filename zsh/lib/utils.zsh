@@ -97,7 +97,6 @@ df_print_header() {
     echo -e "${DF_GREY}╒${hline}╕${DF_NC}"
     echo -e "${DF_GREY}│${DF_NC} ${DF_BOLD}${user_color}${h_left}${DF_NC}${left_spaces}${DF_LIGHT_GREEN}${h_center}${right_spaces}${DF_NC}${DF_BOLD}${h_right}${DF_NC} ${DF_GREY}│${DF_NC}"
     echo -e "${DF_GREY}╘${hline}╛${DF_NC}"
-    echo ""
 }
 
 # Print a header box for functions (simpler, no user@host)
