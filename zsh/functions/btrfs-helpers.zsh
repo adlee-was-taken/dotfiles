@@ -144,8 +144,8 @@ btrfs-health() {
     [[ -z "$errors" ]] && df_print_indent "✓ No errors" || { df_print_indent "✗ Errors detected:"; echo "$errors" | sed 's/^/    /'; ((issues++)); }
     
     echo ""
-    df_print_section "Space Allocation"
-    local used_pct=$(sudo btrfs filesystem usage "/" -b 2>/dev/null | grep "Used:" | awk -F"%" '{print $1}' | awk -F"(" '{print $2"%"}' | tail -1)
+    df_print_section "System Space Allocation"
+    local used_pct=$(sudo btrfs filesystem usage "/" -b 2>/dev/null | grep "Used:" | awk -F"%" '{print $1}' | awk -F"(" '{print $2}' | tail -1)
     if [[ -n "$used_pct" ]]; then
         (( used_pct >= 90 )) && { df_print_indent "✗ ${used_pct}% full - critical!"; ((issues++)); } || \
         (( used_pct >= 80 )) && df_print_indent "⚠ ${used_pct}% full" || df_print_indent "✓ ${used_pct}% used"
