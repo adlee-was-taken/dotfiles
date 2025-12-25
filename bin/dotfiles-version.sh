@@ -22,7 +22,7 @@ fi
 source "$DOTFILES_DIR/zsh/lib/colors.zsh" 2>/dev/null || {
     DF_GREEN=$'\033[0;32m' DF_YELLOW=$'\033[1;33m' DF_CYAN=$'\033[0;36m'
     DF_NC=$'\033[0m' DF_GREY=$'\033[38;5;242m' DF_LIGHT_BLUE=$'\033[38;5;39m'
-    DF_BOLD=$'\033[1m' DF_DIM=$'\033[2m'
+    DF_BOLD=$'\033[1m' DF_DIM=$'\033[2m' DF_LIGHT_GREEN=$'\033[38;5;82m'
 }
 
 CHECK_ONLY=false
@@ -54,10 +54,10 @@ print_header() {
         local datetime=$(date '+%a %b %d %H:%M')
         local width=66
         local hline="" && for ((i=0; i<width; i++)); do hline+="═"; done
-        
+
         echo ""
         echo -e "${DF_GREY}╒${hline}╕${DF_NC}"
-        echo -e "${DF_GREY}│${DF_NC} ${DF_BOLD}${DF_LIGHT_BLUE}✦ ${user}@${hostname}${DF_NC}      ${DF_DIM}dotfiles-version${DF_NC}      ${datetime} ${DF_GREY}│${DF_NC}"
+        echo -e "${DF_GREY}│${DF_NC} ${DF_BOLD}${DF_LIGHT_BLUE}✦ ${user}@${hostname}      ${DF_LIGHT_GREEN}dotfiles-version${DF_NC}       ${datetime} ${DF_GREY}│${DF_NC}"
         echo -e "${DF_GREY}╘${hline}╛${DF_NC}"
         echo ""
     fi

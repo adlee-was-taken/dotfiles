@@ -5,7 +5,16 @@
 
 set -e
 
-readonly DOTFILES_HOME="${DOTFILES_HOME:-.}"
+readonly DOTFILES_HOME="${DOTFILES_HOME:-$HOME/.dotfiles}"
+
+# Source shared colors
+source "$DOTFILES_HOME/zsh/lib/colors.zsh" 2>/dev/null || {
+    DF_RED=$'\033[0;31m' DF_GREEN=$'\033[0;32m' DF_YELLOW=$'\033[1;33m'
+    DF_BLUE=$'\033[0;34m' DF_CYAN=$'\033[0;36m' DF_MAGENTA=$'\033[0;35m'
+    DF_NC=$'\033[0m' DF_GREY=$'\033[38;5;242m' DF_LIGHT_BLUE=$'\033[38;5;39m'
+    DF_BOLD=$'\033[1m' DF_DIM=$'\033[2m' DF_LIGHT_GREEN=$'\033[38;5;82m'
+}
+
 
 # Color codes
 readonly RED='\033[0;31m'
@@ -33,29 +42,33 @@ source "$DOTFILES_HOME/zsh/lib/colors.zsh" 2>/dev/null || {
 DF_WIDTH=66
 
 print_header() {
-    local user="${USER:-root}"
-    local hostname="${HOSTNAME:-$(hostname -s 2>/dev/null)}"
-    local script_name="dotfiles-sync"
-    local datetime=$(date '+%a %b %d %H:%M')
+    if declare -f df_print_header &>/dev/null; then
+        df_print_header "dotfiles-sync"
+    else
+        local user="${USER:-root}"
+        local hostname="${HOSTNAME:-$(hostname -s 2>/dev/null)}"
+        local script_name="dotfiles-sync"
+        local datetime=$(date '+%a %b %d %H:%M')
 
 
-    # Build horizontal line
-    local hline=""
-    for ((i=0; i<DF_WIDTH; i++)); do hline+="═"; done
-    local inner=$((DF_WIDTH - 2))
+        # Build horizontal line
+        local hline=""
+        for ((i=0; i<DF_WIDTH; i++)); do hline+="═"; done
+        local inner=$((DF_WIDTH - 2))
 
-    # Header content
-    local h_left="✦ ${user}@${hostname}"
-    local h_center="${script_name}"
-    local h_right="${datetime}"
-    local h_pad=$(((inner - ${#h_left} - ${#h_center} - ${#h_right}) / 2))
-    local h_spaces=""
-    for ((i=0; i<h_pad; i++)); do h_spaces+=" "; done
+        # Header content
+        local h_left="✦ ${user}@${hostname}"
+        local h_center="${script_name}"
+        local h_right="${datetime}"
+        local h_pad=$(((inner - ${#h_left} - ${#h_center} - ${#h_right}) / 2))
+        local h_spaces=""
+        for ((i=0; i<h_pad; i++)); do h_spaces+=" "; done
 
-    echo ""
-    echo -e "${DF_GREY}╒${hline}╕${DF_NC}"
-    echo -e "${DF_GREY}│${DF_NC} ${DF_BOLD}${DF_LIGHT_BLUE}${h_left}${DF_NC}${h_spaces}${DF_LIGHT_GREEN}${h_center}${h_spaces}${DF_NC}${DF_BOLD}${h_right}${DF_NC} ${DF_GREY}│${DF_NC}"
-    echo -e "${DF_GREY}╘${hline}╛${DF_NC}"
+        echo ""
+        echo -e "${DF_GREY}╒${hline}!!!!!!!╕${DF_NC}"
+        echo -e "${DF_GREY}│${DF_NC} ${DF_BOLD}${DF_LIGHT_BLUE}${h_left}${DF_NC}${h_spaces}${DF_LIGHT_GREEN}${h_center}${h_spaces}${DF_NC}${DF_BOLD}${h_right}${DF_NC} ${DF_GREY}│${DF_NC}"
+        echo -e "${DF_GREY}╘${hline}╛${DF_NC}"
+    fi
 }
 
 # ============================================================================
