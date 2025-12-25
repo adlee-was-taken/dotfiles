@@ -1,9 +1,14 @@
 # ============================================================================
 # Snapper Snapshot Functions for CachyOS/Arch with limine-snapper-sync
 # ============================================================================
+# Note: This relies on limine-snapper-sync service for automatic boot menu
+# integration. We only validate that sync occurred, not trigger it manually.
+# ============================================================================
 
 source "${0:A:h}/../lib/utils.zsh" 2>/dev/null || \
 source "$HOME/.dotfiles/zsh/lib/utils.zsh" 2>/dev/null
+
+LIMINE_CONF="/boot/limine.conf"
 
 # ============================================================================
 # Core Snapshot Functions
@@ -11,7 +16,6 @@ source "$HOME/.dotfiles/zsh/lib/utils.zsh" 2>/dev/null
 
 snap-create() {
     local desc="$*"
-    local limine="/boot/limine.conf"
     
     df_print_func_name "Snapper Snapshot Creation"
     
@@ -21,30 +25,22 @@ snap-create() {
         [[ -z "$desc" ]] && { df_print_error "Required"; return 1; }
     fi
     
-    [[ ! -f "$limine" ]] && { df_print_error "Limine not found: $limine"; return 1; }
-    
-    df_print_step "Checking limine.conf before snapshot"
-    local before=$(sudo grep -cP "^\\s*///\\d+\\s*│" "$limine" 2>/dev/null || echo "0")
-    df_print_success "Before: $before entries"
+    # Check limine.conf exists (with sudo)
+    if ! sudo test -f "$LIMINE_CONF"; then
+        df_print_warning "Limine config not found: $LIMINE_CONF"
+    fi
     
     df_print_step "Creating snapshot: \"$desc\""
     local num=$(sudo snapper -c root create --description "$desc" --print-number)
     [[ -z "$num" ]] && { df_print_error "Failed"; return 1; }
     df_print_success "Created: #$num"
     
-    df_print_step "Triggering limine-snapper-sync..."
-    sudo systemctl start limine-snapper-sync.service && df_print_success "Triggered" || df_print_warning "May run automatically"
-    sleep 2
+    # Wait for limine-snapper-sync to run (triggered automatically)
+    df_print_step "Waiting for limine-snapper-sync..."
+    sleep 3
     
-    df_print_step "Validating"
-    local after=$(sudo grep -cP "^\\s*///\\d+\\s*│" "$limine" 2>/dev/null || echo "0")
-    
-    if sudo grep -qP "^\\s*///$num\\s*│" "$limine" 2>/dev/null; then
-        df_print_success "Snapshot #$num in limine.conf"
-        (( after > before )) && df_print_success "Added $((after - before)) entry"
-    else
-        df_print_warning "Snapshot #$num not yet in limine.conf (may sync later)"
-    fi
+    # Validate sync occurred
+    _snap_validate_limine "$num"
     
     echo ""
     df_print_section "Summary"
@@ -53,6 +49,24 @@ snap-create() {
     
     # Return the snapshot number for use by other functions
     echo "$num"
+}
+
+# Validate a snapshot is in limine.conf
+_snap_validate_limine() {
+    local num="$1"
+    
+    if ! sudo test -f "$LIMINE_CONF"; then
+        df_print_info "Limine config not found (non-limine system?)"
+        return 0
+    fi
+    
+    if sudo grep -qP "^\\s*///$num\\s*│" "$LIMINE_CONF" 2>/dev/null; then
+        df_print_success "Snapshot #$num synced to boot menu"
+        return 0
+    else
+        df_print_info "Snapshot #$num not yet in boot menu (sync may be pending)"
+        return 1
+    fi
 }
 
 snap-list() {
@@ -67,38 +81,72 @@ snap-show() {
     sudo snapper -c root list | grep "^\s*$1\s"
     echo ""
     df_print_section "In limine.conf"
-    sudo grep -qP "^\\s*///$1\\s*│" /boot/limine.conf 2>/dev/null && \
-        sudo grep -P "^\\s*///$1\\s*│" /boot/limine.conf || df_print_warning "Not found"
+    if sudo test -f "$LIMINE_CONF"; then
+        sudo grep -qP "^\\s*///$1\\s*│" "$LIMINE_CONF" 2>/dev/null && \
+            sudo grep -P "^\\s*///$1\\s*│" "$LIMINE_CONF" || df_print_warning "Not found in boot menu"
+    else
+        df_print_info "Limine not configured"
+    fi
 }
 
 snap-delete() {
     [[ -z "$1" ]] && { echo "Usage: snap-delete <num>"; return 1; }
     df_print_func_name "Delete Snapshot #$1"
     
-    local before=$(sudo grep -cP "^\\s*///\\d+\\s*│" /boot/limine.conf 2>/dev/null || echo "0")
     sudo snapper -c root delete "$1" && df_print_success "Deleted #$1" || { df_print_error "Failed"; return 1; }
     
-    df_print_step "Syncing limine..."
-    sudo systemctl start limine-snapper-sync.service; sleep 2
+    # Wait for limine-snapper-sync to process deletion
+    df_print_step "Waiting for boot menu sync..."
+    sleep 3
     
-    sudo grep -qP "^\\s*///$1\\s*│" /boot/limine.conf 2>/dev/null && df_print_error "Still in limine!" || df_print_success "Removed from limine"
+    if sudo test -f "$LIMINE_CONF"; then
+        sudo grep -qP "^\\s*///$1\\s*│" "$LIMINE_CONF" 2>/dev/null && \
+            df_print_warning "Still in boot menu (sync pending)" || \
+            df_print_success "Removed from boot menu"
+    fi
 }
 
 snap-sync() {
-    df_print_func_name "Limine-Snapper-Sync"
-    df_print_step "Triggering sync..."
-    sudo systemctl start limine-snapper-sync.service && { sleep 2; df_print_success "Done"; } || df_print_error "Failed"
+    df_print_func_name "Limine-Snapper-Sync Status"
+    
+    df_print_step "Service status:"
+    systemctl status limine-snapper-sync.service --no-pager -n 3 2>/dev/null || \
+        df_print_warning "Service not found"
+    
+    echo ""
+    df_print_step "Path unit status:"
+    systemctl status limine-snapper-sync.path --no-pager -n 3 2>/dev/null || \
+        df_print_info "Path unit not found (may use different trigger)"
+    
+    echo ""
+    if sudo test -f "$LIMINE_CONF"; then
+        local count=$(sudo grep -cP "^\\s*///\\d+\\s*│" "$LIMINE_CONF" 2>/dev/null || echo "0")
+        df_print_info "Snapshots in boot menu: $count"
+    fi
 }
 
 snap-check() {
-    df_print_func_name "Limine Snapshot Entries"
+    df_print_func_name "Limine Snapshot Validation"
+    
+    if ! sudo test -f "$LIMINE_CONF"; then
+        df_print_warning "Limine config not found: $LIMINE_CONF"
+        return 1
+    fi
+    
     local latest=$(sudo snapper -c root list | tail -n +3 | grep -v "^\s*0\s" | tail -1 | awk '{print $1}')
-    [[ -z "$latest" ]] && { df_print_warning "No snapshots"; return 1; }
-    df_print_info "Latest: #$latest"
-    sudo grep -qP "^\\s*///$latest\\s*│" /boot/limine.conf 2>/dev/null && \
-        df_print_success "Latest in limine.conf" || df_print_error "Latest NOT in limine.conf"
-    local count=$(sudo grep -cP "^\\s*///\\d+\\s*│" /boot/limine.conf 2>/dev/null || echo "0")
-    df_print_info "Total entries: $count"
+    [[ -z "$latest" ]] && { df_print_warning "No snapshots found"; return 1; }
+    
+    df_print_info "Latest snapshot: #$latest"
+    
+    if sudo grep -qP "^\\s*///$latest\\s*│" "$LIMINE_CONF" 2>/dev/null; then
+        df_print_success "Latest snapshot is in boot menu"
+    else
+        df_print_warning "Latest snapshot NOT in boot menu"
+        df_print_info "Check: systemctl status limine-snapper-sync"
+    fi
+    
+    local count=$(sudo grep -cP "^\\s*///\\d+\\s*│" "$LIMINE_CONF" 2>/dev/null || echo "0")
+    df_print_info "Total boot menu entries: $count"
 }
 
 # ============================================================================
@@ -107,7 +155,6 @@ snap-check() {
 
 sys-update() {
     local update_date=$(date +"%Y-%m-%d %H:%M")
-    local limine="/boot/limine.conf"
     local pre_num=""
     local post_num=""
     local update_cmd=""
@@ -202,22 +249,16 @@ sys-update() {
     fi
     
     # -------------------------------------------------------------------------
-    # Sync with Limine
+    # Validate Limine Sync (service handles actual sync)
     # -------------------------------------------------------------------------
     echo ""
-    df_print_step "Syncing with limine bootloader..."
+    df_print_step "Validating boot menu sync..."
     
-    if [[ -f "$limine" ]]; then
-        sudo systemctl start limine-snapper-sync.service 2>/dev/null
-        sleep 2
-        
-        if [[ -n "$post_num" ]] && sudo grep -qP "^\\s*///$post_num\\s*│" "$limine" 2>/dev/null; then
-            df_print_success "Snapshot #$post_num added to boot menu"
-        else
-            df_print_info "Limine sync triggered (may take a moment)"
-        fi
-    else
-        df_print_info "Limine not detected, skipping boot menu sync"
+    # Give limine-snapper-sync time to process
+    sleep 3
+    
+    if [[ -n "$post_num" ]]; then
+        _snap_validate_limine "$post_num"
     fi
     
     # -------------------------------------------------------------------------
