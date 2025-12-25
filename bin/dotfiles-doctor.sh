@@ -209,9 +209,10 @@ check_bin_scripts() {
         else
             check_fail "$script not linked"
             if [[ "$DO_FIX" == true ]]; then
-                ln -s $DOTFILES_HOME/bin/$script "$HOME/.local/bin/$script"
+                ln -s "$DOTFILES_HOME/bin/$script" "$HOME/.local/bin/$script"
                 chmod +x "$HOME/.local/bin/$script"
-                check_fixed "Created symlink & made executable: $script"
+                check_fixed "Created symlink  made executable: $script"
+            fi
         fi
     done
 }
