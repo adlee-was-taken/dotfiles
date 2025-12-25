@@ -88,7 +88,7 @@ check_fixed() {
 
 check_os() {
     print_section "Operating System"
-    
+
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
         if grep -qi "cachyos" /etc/os-release 2>/dev/null; then
             check_pass "Running CachyOS"
@@ -100,16 +100,16 @@ check_os() {
     else
         check_fail "Not running on Linux"
     fi
-    
+
     check_pass "Kernel: $(uname -r)"
 }
 
 check_shell() {
     print_section "Shell Configuration"
-    
+
     [[ -f "$HOME/.zshrc" ]] && check_pass "Zsh configuration exists" || check_fail "Zsh configuration missing"
     [[ "$SHELL" == *"zsh"* ]] && check_pass "Zsh is default shell" || check_warn "Zsh is not default shell"
-    
+
     if command -v zsh &>/dev/null; then
         check_pass "Zsh version: $(zsh --version | awk '{print $2}')"
     fi
@@ -117,14 +117,14 @@ check_shell() {
 
 check_symlinks() {
     print_section "Symlinks"
-    
+
     local symlinks=(
         "$HOME/.zshrc"
         "$HOME/.gitconfig"
         "$HOME/.vimrc"
         "$HOME/.tmux.conf"
     )
-    
+
     for symlink in "${symlinks[@]}"; do
         if [[ -L "$symlink" ]]; then
             if [[ -e "$symlink" ]]; then
@@ -144,14 +144,14 @@ check_symlinks() {
 
 check_pacman() {
     print_section "Package Manager"
-    
+
     if ! command -v pacman &>/dev/null; then
         check_fail "Pacman not found"
         return
     fi
-    
+
     check_pass "Pacman available"
-    
+
     if command -v paru &>/dev/null; then
         check_pass "AUR helper: paru"
     elif command -v yay &>/dev/null; then
@@ -163,7 +163,7 @@ check_pacman() {
 
 check_optional_tools() {
     print_section "Optional Tools"
-    
+
     local tools=("fzf" "bat" "eza" "tmux" "nvim")
     for tool in "${tools[@]}"; do
         command -v "$tool" &>/dev/null && check_pass "$tool" || check_warn "$tool not installed"
@@ -172,31 +172,31 @@ check_optional_tools() {
 
 check_dotfiles_dir() {
     print_section "Dotfiles Directory"
-    
+
     if [[ ! -d "$DOTFILES_HOME" ]]; then
         check_fail "Dotfiles not found"
         return
     fi
-    
+
     check_pass "Dotfiles: $DOTFILES_HOME"
-    
+
     [[ -f "$DOTFILES_HOME/dotfiles.conf" ]] && check_pass "Config file exists" || check_warn "Config file missing"
     [[ -d "$DOTFILES_HOME/.git" ]] && check_pass "Git repo initialized" || check_warn "Not a git repository"
-    
+
     check_pass "Version: ${DOTFILES_VERSION:-unknown}"
     check_pass "Display width: ${DF_WIDTH:-66}"
 }
 
 check_bin_scripts() {
-    print_section "Bin Scripts"
-    
+    print_section "Symlinks in ${HOME}/.local/bin for Bin Scripts"
+
     local scripts=(
         "dotfiles-doctor.sh"
         "dotfiles-sync.sh"
         "dotfiles-update.sh"
         "dotfiles-version.sh"
     )
-    
+
     for script in "${scripts[@]}"; do
         if [[ -x "$HOME/.local/bin/$script" ]]; then
             check_pass "$script"
@@ -221,13 +221,13 @@ print_summary() {
     echo ""
     printf "${DF_CYAN}─%.0s${DF_NC}" $(seq 1 "$width")
     echo ""
-    
+
     if [[ $FAILED_CHECKS -eq 0 ]]; then
         echo -e "${DF_GREEN}✓${DF_NC} All checks passed ($PASSED_CHECKS/$TOTAL_CHECKS)"
     else
         echo -e "${DF_RED}✗${DF_NC} Issues found: $FAILED_CHECKS failed, $WARNING_CHECKS warnings"
     fi
-    
+
     [[ $FIXED_CHECKS -gt 0 ]] && echo -e "${DF_CYAN}⚙${DF_NC} Auto-fixed: $FIXED_CHECKS issues"
     echo ""
 }
@@ -238,18 +238,18 @@ print_summary() {
 
 main() {
     df_print_header "dotfiles-doctor"
-    
+
     check_os
     check_pacman
     check_shell
     check_dotfiles_dir
     check_symlinks
-    
+
     if [[ "$QUICK_MODE" != true ]]; then
         check_optional_tools
         check_bin_scripts
     fi
-    
+
     print_summary
 }
 
