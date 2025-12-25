@@ -216,7 +216,18 @@ show_motd_mini() {
     local alert=""
     (( failed > 0 )) && alert=" ${DF_RED}[${failed} failed]${DF_NC}"
 
-    echo "${DF_DIM}──${DF_NC} ${DF_BOLD}${hostname}${DF_NC} ${DF_DIM}│${DF_NC} up:${uptime} ${DF_DIM}│${DF_NC} mem:${mem}${alert} ${DF_DIM}──${DF_NC}"
+
+    # Stats line
+    local s1="${DF_GREY}｢${DF_YELLOW}▲ ${DF_NC}${uptime}${DF_GREY}｣"
+    local s2="${DF_GREY}｢${DF_CYAN}◆ ${DF_NC}${load}${DF_GREY}｣"
+    local s3="${DF_GREY}｢${DF_GREEN}◇ ${DF_NC}${mem}${DF_GREY}｣"
+    local s4="${DF_GREY}｢${DF_BLUE}⊡ ${DF_NC}${disk}${DF_GREY}｣"
+
+    if [ "$EUID" -ne 0 ];then 
+        echo "${DF_DIM}──${DF_NC} ${DF_BOLD}${DF_LIGHT_BLUE}${hostname}${DF_NC}${s1}─${s2}─${s3}─${s4}${DF_DIM}──${DF_NC}"
+    else
+        echo "${DF_DIM}──${DF_NC} ${DF_BOLD}${DF_RED}${hostname}${DF_NC}${s1}─${s2}─${s3}─${s4}${DF_DIM}──${DF_NC}"
+    fi 
 }
 
 # ============================================================================
