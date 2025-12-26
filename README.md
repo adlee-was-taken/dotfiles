@@ -7,6 +7,8 @@ Personal configuration for a productive development environment on **Arch Linux*
 [![OS](https://img.shields.io/badge/OS-Arch%20%2F%20CachyOS-blue.svg)](https://archlinux.org/)
 [![Version](https://img.shields.io/badge/Version-1.2.4-blue.svg)](https://github.com/adlee-was-taken/dotfiles)
 
+## ADLee Theme Prompt
+
 ```
 ┌｢alee@catchthesethighs｣ ｢~/.dotfiles ⎇ main｣ ｢⇑3｣ 
 └%
