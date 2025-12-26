@@ -58,6 +58,7 @@ espanso/match/*.backup
 
 # --- Generated files ---
 dotfiles.conf.wizard
+dotfiles.conf
 git/.gitconfig
 
 # --- Package managers ---
