@@ -5,6 +5,7 @@ Personal configuration for a productive development environment on **Arch Linux*
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Shell](https://img.shields.io/badge/Shell-Zsh-green.svg)](https://www.zsh.org/)
 [![OS](https://img.shields.io/badge/OS-Arch%20%2F%20CachyOS-blue.svg)](https://archlinux.org/)
+[![Version](https://img.shields.io/badge/Version-1.2.4-blue.svg)](https://github.com/adlee-was-taken/dotfiles)
 
 ```
 ┌[alee@battlestation]─[~/.dotfiles ⎇ main]─[⇑3]
@@ -22,35 +23,46 @@ See [INSTALL.md](INSTALL.md) for detailed instructions.
 
 ---
 
-## Features
+## Features Overview
 
-| Feature | Description |
-|---------|-------------|
-| **Dynamic MOTD** | System info on shell start |
-| **Two-Line Prompt** | Git status, command timer, update indicator |
-| **Command Palette** | Fuzzy launcher (`Ctrl+Space`) |
-| **Tmux Workspaces** | Simple templates + tmuxinator integration |
-| **Systemd Helpers** | Quick service management |
-| **Btrfs/Snapper** | Filesystem health + snapshot management |
-| **Secrets Vault** | Encrypted storage (age/gpg) |
-| **Password Manager** | LastPass CLI integration |
-| **Python Templates** | Project scaffolding (Flask, FastAPI, CLI, etc.) |
+| Category | Features |
+|----------|----------|
+| **Shell** | Two-line prompt • Command timer • Git integration • Smart suggestions • Command palette (Ctrl+Space) |
+| **Automation** | Auto-load project environments • Long-running command notifications • Machine-specific configs |
+| **Diagnostics** | Enhanced analytics • Startup profiling • Security audits • Health checks • Testing framework |
+| **Tmux** | Simple templates • Tmuxinator integration • Workspace management • Layout saving |
+| **System** | Systemd helpers • Btrfs utilities • Snapper snapshots with limine integration |
+| **Development** | Python project templates • SSH manager • Password manager • Secrets vault |
+| **Tools** | Plugin manager • FZF extras • Directory bookmarks • Custom MOTD |
 
 ---
 
-## Dotfiles Management
+## Core Commands
+
+### Dotfiles Management
 
 | Command | Alias | Description |
 |---------|-------|-------------|
-| `dotfiles-doctor.sh` | `dfd` | Health check |
-| `dotfiles-doctor.sh --fix` | `dffix` | Auto-fix issues |
-| `dotfiles-sync.sh push` | `dfpush` | Push changes |
-| `dotfiles-sync.sh pull` | `dfpull` | Pull changes |
-| `dotfiles-update.sh` | `dfu` | Update dotfiles |
-| `dotfiles-vault.sh` | `vault` | Secrets manager |
-| `source ~/.zshrc` | `reload` | Reload config |
+| `dotfiles-doctor.sh` | `dfd` | Health check and diagnostics |
+| `dotfiles-doctor.sh --fix` | `dffix` | Auto-fix common issues |
+| `dotfiles-sync.sh push` | `dfpush` | Push changes to git |
+| `dotfiles-sync.sh pull` | `dfpull` | Pull latest changes |
+| `dotfiles-update.sh` | `dfu` | Update dotfiles from repo |
+| `dotfiles-vault.sh` | `vault` | Manage encrypted secrets |
+| `source ~/.zshrc` | `reload` | Reload shell configuration |
 
-**Quick Edit:** `v.zshrc`, `v.conf`, `v.alias`, `v.motd`
+**Quick Edit:** `v.zshrc`, `v.conf`, `v.alias`, `v.motd`, `v.theme`
+
+### New Commands
+
+| Command | Description |
+|---------|-------------|
+| `dotfiles-analytics.sh` | Enhanced history analytics (hourly, weekly, trends, suggestions) |
+| `dotfiles-profile.sh` | Startup time profiling and optimization tips |
+| `dotfiles-diff.sh` | Show changes, audit security, check permissions |
+| `dotfiles-tour.sh` | Interactive tour and feature walkthrough |
+| `dotfiles-compile.sh` | Compile zsh files for faster startup |
+| `dftest` | Run test suite |
 
 ---
 
@@ -65,9 +77,10 @@ See [INSTALL.md](INSTALL.md) for detailed instructions.
 | `sclog <service>` | Follow journal logs |
 | `sc-failed` | Show failed services |
 | `sc-boot` | Boot time analysis |
+| `sc-search <query>` | Search for services |
 | `scf` | Interactive manager (fzf) |
 
-**Aliases:** `scs` (status), `scstart`, `scstop`, `screload`, `jctl`, `jctlf`
+**Additional:** `scs` (status), `scstart`, `scstop`, `screload`, `sc-timers`, `jctl`, `jctlf`
 
 ---
 
@@ -77,131 +90,265 @@ See [INSTALL.md](INSTALL.md) for detailed instructions.
 
 | Command | Alias | Description |
 |---------|-------|-------------|
-| `btrfs-usage` | `btru` | Filesystem usage |
+| `btrfs-usage` | `btru` | Filesystem usage statistics |
 | `btrfs-health` | `btrh` | Quick health check |
-| `btrfs-scrub` | - | Start integrity check |
-| `btrfs-balance` | - | Balance operation |
-| `btrfs-compress` | `btrc` | Compression stats |
+| `btrfs-scrub` | - | Start data integrity check |
+| `btrfs-balance` | - | Balance filesystem |
+| `btrfs-compress` | `btrc` | Compression statistics |
+| `btrfs-info` | `btri` | Full filesystem information |
 
 ### Snapper Snapshots
 
 | Command | Alias | Description |
 |---------|-------|-------------|
 | `snap-create "desc"` | `snap` | Create snapshot |
-| `snap-list` | `snapls` | List snapshots |
-| `snap-check` | `snapcheck` | Verify limine sync |
-| `sys-update` | - | Update with pre/post snapshot |
+| `snap-list` | `snapls` | List recent snapshots |
+| `snap-check` | `snapcheck` | Verify limine boot menu sync |
+| `sys-update` | - | System update with pre/post snapshots |
+| `sys-rollback <num>` | `rollback` | Rollback to snapshot |
+
+**Note:** Snapshots automatically sync to limine boot menu via `limine-snapper-sync` service.
 
 ---
 
 ## Tmux Workspaces
 
-Manage tmux sessions with simple templates or full tmuxinator projects.
+Dual-mode system: simple templates for quick layouts OR tmuxinator for complex projects.
 
 ### Quick Commands
 
 | Command | Alias | Description |
 |---------|-------|-------------|
-| `tw <name> [template]` | - | Create/attach workspace |
+| `tw <name> [template]` | - | Create/attach workspace (auto-detects mode) |
 | `tw-list` | `twl` | List active workspaces |
 | `tw-templates` | `twt` | Show available templates |
-| `tw-save <name>` | `tws` | Save current layout |
+| `tw-save <name>` | `tws` | Save current layout as template |
 | `twf` | - | Fuzzy search workspaces |
+| `tw-sync` | - | Toggle synchronized panes |
 
-### Built-in Templates
+### Simple Templates (.tmux files)
 
-| Template | Description |
-|----------|-------------|
-| `dev` | Editor (50%) + terminal + logs |
+| Template | Layout Description |
+|----------|-------------------|
+| `dev` | Editor (50%) + terminal (25%) + logs (25%) |
 | `ops` | 4-pane monitoring grid |
-| `ssh-multi` | 4 panes for multi-server |
-| `debug` | Main (70%) + helper (30%) |
+| `ssh-multi` | 4 panes for multi-server management |
+| `debug` | Main workspace (70%) + helper (30%) |
 | `review` | Side-by-side comparison |
+| `full` | Single full-screen pane |
 
 ### Tmuxinator Integration
 
-For complex projects with per-pane commands and startup scripts:
-
-```bash
-# Install
-sudo pacman -S tmuxinator
-
-# Create project from template
-txi-new myproject dev
-
-# Edit configuration
-txi-edit myproject
-
-# Start project
-txi myproject
-```
+For projects requiring per-pane commands, environment variables, and startup scripts:
 
 | Command | Alias | Description |
 |---------|-------|-------------|
-| `txi <name>` | - | Start/attach project |
-| `txi-new <n> [tmpl]` | `txin` | Create project |
-| `txi-edit <name>` | `txie` | Edit YAML config |
+| `txi <name>` | - | Start/attach tmuxinator project |
+| `txi-new <n> [tmpl]` | `txin` | Create project (dev, ops, web, data, minimal) |
+| `txi-edit <name>` | `txie` | Edit project YAML |
 | `txi-list` | `txil` | List projects |
 | `txif` | - | Fuzzy search projects |
+| `txi-templates` | `txit` | Show available templates |
 
-**Templates:** `dev`, `ops`, `web`, `data`, `minimal`
-
-The `tw` command auto-detects: running session → tmuxinator project → simple template.
+**Smart Detection:** `tw` automatically uses tmuxinator if a project exists, otherwise creates simple workspace.
 
 ---
 
-## Command Palette
+## Machine-Specific Configuration
 
-Press **`Ctrl+Space`** for the fuzzy command launcher.
+Per-machine settings that sync via git without conflicts.
 
-Searches aliases, functions, history, git commands, bookmarks, and quick actions.
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `machine-info` | Show current machine detection |
+| `machine-create` | Create config for this machine |
+| `machine-edit` | Edit machine config |
+| `machines` | List all machine configs |
+
+### Configuration Hierarchy
+
+1. `dotfiles.conf` (base settings)
+2. `machines/default.zsh` (shared overrides)
+3. `machines/type-<type>.zsh` (laptop/desktop/server/virtual)
+4. `machines/<hostname>.zsh` (machine-specific)
+5. `~/.zshrc.local` (local, not synced)
+
+**Auto-Detection:** Automatically loads correct config based on hostname and hardware.
+
+---
+
+## Project Environments
+
+Automatically activates project-specific settings when entering directories.
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `project-env status` | Show current configuration |
+| `project-env create` | Create `.dotfiles-local` in current directory |
+| `project-env edit` | Edit current project's settings |
+| `project-env allow <file>` | Trust a project environment file |
+| `project-env on/off` | Enable/disable auto-loading |
+
+### Features
+
+- Auto-loads `.dotfiles-local`, `.envrc`, or `.env.local` files
+- Auto-activates Python virtualenvs
+- Auto-switches Node versions via `.nvmrc`
+- Security prompts for untrusted directories
+- Trusted directory configuration
+
+---
+
+## Command Palette & Bookmarks
+
+### Command Palette (Ctrl+Space)
+
+Fuzzy search through:
+- Aliases and functions
+- Command history
+- Git commands
+- Bookmarks
+- Quick actions
 
 ### Directory Bookmarks
 
 | Command | Alias | Description |
 |---------|-------|-------------|
-| `bookmark <name> [path]` | `bm` | Save bookmark |
+| `bookmark add <name> [path]` | `bm` | Save bookmark |
 | `bookmark list` | `bm list` | List bookmarks |
-| `jump <name>` | `j` | Go to bookmark |
+| `bookmark go <name>` | `bmg` | Jump to bookmark |
+| `bm` | - | Fuzzy search bookmarks (fzf) |
 
 ---
 
-## Secrets Vault
+## Enhanced Analytics & Profiling
 
-Encrypted storage for API keys using `age` or `gpg`.
+### Analytics Commands
 
 | Command | Description |
 |---------|-------------|
-| `vault init` | Initialize |
-| `vault set <key>` | Store secret |
-| `vault get <key>` | Retrieve secret |
-| `vault list` | List keys |
-| `vault shell` | Export to environment |
+| `dotfiles-analytics.sh` | Dashboard with top commands |
+| `dfanalytics hourly` | Commands by hour of day |
+| `dfanalytics weekly` | Usage by day of week |
+| `dfanalytics projects` | Commands grouped by directory |
+| `dfanalytics trends` | 30-day usage trends |
+| `dfanalytics tools` | Tool usage breakdown (Git, Docker, etc.) |
+| `dfanalytics suggestions` | Alias suggestions and typo detection |
+
+### Profiling Commands
+
+| Command | Description |
+|---------|-------------|
+| `dotfiles-profile.sh` | Quick startup time measurement (5 runs) |
+| `dfprofile --detailed` | Function-level analysis with zprof |
+| `dfprofile --benchmark` | Hyperfine benchmark (if installed) |
+| `dfprofile --compare` | Compare full shell vs minimal |
+| `dfprofile --tips` | Optimization suggestions |
 
 ---
 
-## Password Manager (LastPass)
+## Security & Diagnostics
+
+### Diff & Audit
+
+| Command | Description |
+|---------|-------------|
+| `dotfiles-diff.sh` | Show uncommitted git changes |
+| `dfdiff --installed` | Compare installed vs source files |
+| `dfdiff --symlinks` | Verify symlink integrity |
+| `dfdiff --secrets` | Scan for exposed secrets |
+| `dfdiff --permissions` | Check file permissions |
+| `dfdiff --audit` | Full security audit |
+
+### Notifications
+
+| Command | Description |
+|---------|-------------|
+| `notify-toggle` | Enable/disable notifications |
+| `notify-status` | Show configuration and capabilities |
+| `notify-test` | Send test notification |
+
+**Configuration:** Desktop notifications + terminal bell for commands >60s (configurable).
+
+---
+
+## Plugin Manager
+
+Lightweight plugin management without heavy frameworks.
+
+| Command | Description |
+|---------|-------------|
+| `plugin install <repo>` | Install from GitHub (e.g., zsh-users/zsh-autosuggestions) |
+| `plugin load <name>` | Load installed plugin |
+| `plugin lazy <n> <cmds>` | Lazy-load plugin on command use |
+| `plugin update` | Update all plugins |
+| `plugin list` | List installed plugins |
+| `plugin remove <name>` | Remove plugin |
+| `plugin recommended` | Show recommended plugins |
+
+---
+
+## FZF Extras
+
+Enhanced fuzzy finders for system exploration.
+
+| Command | Description |
+|---------|-------------|
+| `envf` | Browse environment variables |
+| `pathf` | Explore PATH directories |
+| `procf` | Process manager with actions |
+| `killf` | Fuzzy kill processes |
+| `aliasf` | Browse aliases |
+| `funcf` | Browse functions |
+| `histf` | Enhanced history search |
+| `ff [dir]` | Find files |
+| `ffo [dir]` | Find and open file |
+| `fdir [dir]` | Find and cd to directory |
+| `gbf` | Git branch switcher |
+| `glogf` | Git commit browser |
+
+---
+
+## Secrets & Passwords
+
+### Vault (Encrypted Storage)
+
+| Command | Description |
+|---------|-------------|
+| `vault init` | Initialize encrypted vault |
+| `vault set <key>` | Store secret |
+| `vault get <key>` | Retrieve secret |
+| `vault list` | List stored keys |
+| `vault shell` | Export secrets to environment |
+
+### Password Manager (LastPass)
 
 | Command | Description |
 |---------|-------------|
 | `pw <query>` | Search and copy password |
 | `pw show <item>` | Show entry details |
 | `pw list` | List all entries |
-| `pw gen [len]` | Generate password |
+| `pw gen [len]` | Generate password (default: 20 chars) |
 | `pwf` | Fuzzy search (fzf) |
 
 ---
 
-## Python Templates
+## Python Project Templates
 
-| Command | Alias | Description |
-|---------|-------|-------------|
-| `py-new <name>` | `pynew` | Basic project |
-| `py-flask <name>` | `pyflask` | Flask web app |
+| Command | Alias | Template |
+|---------|-------|----------|
+| `py-new <name>` | `pynew` | Basic Python project |
+| `py-flask <name>` | `pyflask` | Flask web application |
 | `py-fastapi <name>` | `pyfast` | FastAPI REST API |
-| `py-cli <name>` | `pycli` | CLI with Click |
-| `py-data <name>` | `pydata` | Data science |
-| `venv` | - | Activate virtualenv |
+| `py-cli <name>` | `pycli` | CLI tool with Click |
+| `py-data <name>` | `pydata` | Data science project with Jupyter |
+| `venv` | - | Activate virtualenv (auto-detects) |
+
+All templates include: virtual environment, `.gitignore`, git initialization, and dependencies.
 
 ---
 
@@ -209,10 +356,31 @@ Encrypted storage for API keys using `age` or `gpg`.
 
 | Command | Alias | Description |
 |---------|-------|-------------|
-| `ssh-save <n> <user@host>` | `sshs` | Save profile |
-| `ssh-connect <name>` | `sshc` | Connect (auto tmux) |
-| `ssh-list` | `sshl` | List profiles |
-| `sshf` | - | Fuzzy search |
+| `ssh-save <n> <user@host>` | `sshs` | Save connection profile |
+| `ssh-connect <name>` | `sshc` | Connect (auto-creates tmux session) |
+| `ssh-list` | `sshl` | List saved profiles |
+| `sshf` | - | Fuzzy search connections |
+
+Profiles support: custom ports, SSH keys, options, and auto-tmux integration.
+
+---
+
+## Testing Framework
+
+Simple unit testing for shell functions.
+
+```bash
+# Run all tests
+dftest
+
+# Run specific test file
+dftest utils
+
+# Write tests (tests/test_*.zsh)
+describe "my function"
+it "should do something"
+assert_eq "$(my_func)" "expected"
+```
 
 ---
 
@@ -222,30 +390,23 @@ Encrypted storage for API keys using `age` or `gpg`.
 `..`, `...`, `....`, `~`, `c.` (dotfiles dir)
 
 ### Git
-`g`, `gs` (status), `ga` (add), `gc` (commit), `gp` (push), `gl` (pull), `gd` (diff), `gco` (checkout), `glog`
+`g`, `gs` (status), `ga` (add), `gc` (commit), `gp` (push), `gl` (pull), `gd` (diff), `gco` (checkout), `gb` (branch), `glog`
 
 ### Docker
 `d`, `dc` (compose), `dps`, `dpa`, `di` (images), `dex` (exec -it)
 
-### Tools (conditional)
+### System
+`h` (history), `c` (clear), `myip`, `ports`
+
+### Tool Integration
 - `ls`/`ll`/`la`/`lt` → `eza` (if installed)
 - `cat` → `bat` (if installed)
 
 ---
 
-## Zsh Theme
-
-The `adlee` theme provides:
-- Two-line prompt with git branch + dirty indicator
-- Command timer for commands >10s (color-coded by duration)
-- Package update count indicator
-- Root detection (red `#` vs blue `%`)
-
----
-
 ## Configuration
 
-Edit `~/.dotfiles/dotfiles.conf`:
+Edit `~/.dotfiles/dotfiles.conf` for global settings:
 
 ```bash
 # Display
@@ -255,15 +416,30 @@ MOTD_STYLE="compact"          # compact, mini, full, none
 # Features
 ENABLE_SMART_SUGGESTIONS="true"
 ENABLE_COMMAND_PALETTE="true"
+ENABLE_SHELL_ANALYTICS="false"
+
+# Notifications
+DF_NOTIFY_ENABLED="true"
+DF_NOTIFY_THRESHOLD="60"
+DF_NOTIFY_METHODS="desktop bell"
+
+# Project Environments
+DF_PROJECT_ENV_ENABLED="true"
+DF_PROJECT_AUTO_VENV="true"
+DF_PROJECT_AUTO_NVM="true"
 
 # Tmuxinator
 TMUXINATOR_ENABLED="auto"
 TW_PREFER_TMUXINATOR="true"
+
+# Plugin Manager
+DF_PLUGIN_DIR="$HOME/.dotfiles/zsh/plugins"
 ```
 
 ### Local Overrides
 
-Create `~/.zshrc.local` for machine-specific settings.
+- `~/.zshrc.local` - User-specific settings (not synced)
+- `machines/<hostname>.zsh` - Machine-specific config (synced)
 
 ---
 
@@ -271,434 +447,136 @@ Create `~/.zshrc.local` for machine-specific settings.
 
 ```
 ~/.dotfiles/
-├── install.sh              # Installer
-├── dotfiles.conf           # Configuration
-├── bin/                    # Scripts → ~/.local/bin
+├── install.sh              # Main installer
+├── dotfiles.conf           # Central configuration
+├── bin/                    # Management scripts
+│   ├── dotfiles-doctor.sh
+│   ├── dotfiles-sync.sh
+│   ├── dotfiles-analytics.sh
+│   ├── dotfiles-profile.sh
+│   ├── dotfiles-diff.sh
+│   ├── dotfiles-tour.sh
+│   └── ...
 ├── zsh/
 │   ├── .zshrc
 │   ├── aliases.zsh
-│   ├── lib/                # colors, config, utils, bootstrap
+│   ├── lib/                # Core libraries
+│   │   ├── bootstrap.zsh   # Single entry point
+│   │   ├── config.zsh
+│   │   ├── colors.zsh
+│   │   ├── utils.zsh
+│   │   ├── machines.zsh
+│   │   └── plugins.zsh
 │   ├── themes/adlee.zsh-theme
 │   └── functions/          # Feature modules
+│       ├── motd.zsh
+│       ├── command-palette.zsh
+│       ├── tmux-workspaces.zsh
+│       ├── tmuxinator.zsh
+│       ├── project-env.zsh
+│       ├── notifications.zsh
+│       ├── fzf-extras.zsh
+│       ├── systemd-helpers.zsh
+│       ├── btrfs-helpers.zsh
+│       ├── snapper.zsh
+│       ├── ssh-manager.zsh
+│       ├── password-manager.zsh
+│       ├── python-templates.zsh
+│       └── smart-suggest.zsh
+├── machines/               # Per-machine configs
+│   ├── default.zsh
+│   ├── type-laptop.zsh
+│   └── type-server.zsh
+├── tests/                  # Test framework
+│   ├── run-tests.zsh
+│   └── test_*.zsh
 ├── vim/.vimrc
 ├── tmux/.tmux.conf
 ├── espanso/                # Text expansion
+├── setup/                  # Setup wizards
 └── .tmux-templates/        # Workspace layouts
 ```
 
 ---
 
+## First-Run Experience
+
+After installation, run the interactive tour:
+
+```bash
+dotfiles-tour.sh          # Full interactive walkthrough
+dotfiles-tour.sh --quick  # Quick reference card
+```
+
+Or verify installation:
+
+```bash
+dfd              # Health check
+dftest           # Run tests
+dfprofile        # Check startup time
+```
+
+---
+
+## Recommended Workflow
+
+1. **Initial Setup**
+   ```bash
+   ./install.sh
+   dotfiles-tour.sh
+   machine-create  # Create machine-specific config
+   ```
+
+2. **Daily Use**
+   ```bash
+   Ctrl+Space      # Command palette
+   tw myproject    # Start workspace
+   dfd             # Regular health checks
+   ```
+
+3. **Customization**
+   ```bash
+   v.conf          # Edit configuration
+   machine-edit    # Edit machine config
+   plugin install  # Add plugins
+   ```
+
+4. **Maintenance**
+   ```bash
+   dfupdate        # Pull latest changes
+   dfprofile       # Check performance
+   dfaudit         # Security audit
+   plugin update   # Update plugins
+   ```
+
+---
+
+## Optimization Tips
+
+1. **Startup Time**
+   ```bash
+   dfprofile --tips        # Get optimization suggestions
+   dfcompile              # Compile zsh files
+   plugin lazy <name>     # Lazy-load heavy plugins
+   ```
+
+2. **Analytics**
+   ```bash
+   dfanalytics suggestions  # Find alias opportunities
+   dfanalytics tools       # Identify unused tools
+   ```
+
+3. **Machine-Specific**
+   - Laptops: Use `MOTD_STYLE="mini"` for faster startup
+   - Servers: Disable `DF_NOTIFY_ENABLED="false"`
+   - VMs: Use `type-virtual.zsh` for minimal features
+
+---
+
 ## License
 
-MIT – See [LICENSE](LICENSE)
+MIT License - See [LICENSE](LICENSE)
 
 **Author:** Aaron D. Lee  
-**Repository:** https://github.com/adlee-was-taken/dotfiles
-
-
-# Dotfiles Improvements
-
-This directory contains suggested improvements for your dotfiles project. These additions enhance functionality, maintainability, and user experience.
-
-## Summary of Additions
-
-| Category | Files Added | Description |
-|----------|-------------|-------------|
-| Machine Config | `zsh/lib/machines.zsh`, `machines/*.zsh` | Per-machine configuration support |
-| Performance | `bin/dotfiles-profile.sh` | Startup time profiling |
-| Notifications | `zsh/functions/notifications.zsh` | Long-running command notifications |
-| Security | `bin/dotfiles-diff.sh` | Diff, audit, and secret detection |
-| Project Env | `zsh/functions/project-env.zsh` | Auto-load project environments |
-| Analytics | `bin/dotfiles-analytics.sh` | Enhanced history analytics |
-| Testing | `tests/run-tests.zsh`, `tests/test_*.zsh` | Unit testing framework |
-| First-Run | `bin/dotfiles-tour.sh` | Interactive tour and changelog |
-| FZF Extras | `zsh/functions/fzf-extras.zsh` | Additional fuzzy finders |
-| Plugin Mgr | `zsh/lib/plugins.zsh` | Lightweight plugin management |
-
----
-
-## Installation
-
-### Option 1: Copy All Files
-
-```bash
-# Backup first
-cp -r ~/.dotfiles ~/.dotfiles.backup.$(date +%Y%m%d)
-
-# Copy improvements
-cp -r /path/to/improvements/* ~/.dotfiles/
-```
-
-### Option 2: Selective Installation
-
-Copy only the features you want:
-
-```bash
-# Machine-specific configs
-cp zsh/lib/machines.zsh ~/.dotfiles/zsh/lib/
-mkdir -p ~/.dotfiles/machines
-cp machines/*.zsh ~/.dotfiles/machines/
-
-# Notifications
-cp zsh/functions/notifications.zsh ~/.dotfiles/zsh/functions/
-
-# Profiling
-cp bin/dotfiles-profile.sh ~/.dotfiles/bin/
-chmod +x ~/.dotfiles/bin/dotfiles-profile.sh
-```
-
-### Option 3: Integration
-
-Add to your `.zshrc` to load new features:
-
-```zsh
-# In ~/.dotfiles/zsh/.zshrc, add after other sources:
-
-# Load machine-specific configuration
-[[ -f "$DOTFILES_DIR/zsh/lib/machines.zsh" ]] && \
-    source "$DOTFILES_DIR/zsh/lib/machines.zsh"
-
-# Load notifications
-[[ -f "$DOTFILES_DIR/zsh/functions/notifications.zsh" ]] && \
-    source "$DOTFILES_DIR/zsh/functions/notifications.zsh"
-
-# Load project environments
-[[ -f "$DOTFILES_DIR/zsh/functions/project-env.zsh" ]] && \
-    source "$DOTFILES_DIR/zsh/functions/project-env.zsh"
-
-# Load FZF extras
-[[ -f "$DOTFILES_DIR/zsh/functions/fzf-extras.zsh" ]] && \
-    source "$DOTFILES_DIR/zsh/functions/fzf-extras.zsh"
-```
-
----
-
-## Feature Details
-
-### 1. Machine-Specific Configuration
-
-**Files:** `zsh/lib/machines.zsh`, `machines/*.zsh`
-
-Automatically loads different settings based on hostname or machine type.
-
-```bash
-# See current machine detection
-machine-info
-
-# Create config for this machine
-machine-create
-
-# Edit machine config
-machine-edit
-
-# List all machine configs
-machines
-```
-
-**Configuration hierarchy:**
-1. `dotfiles.conf` (base)
-2. `machines/default.zsh` (shared overrides)
-3. `machines/type-<type>.zsh` (laptop/desktop/server/virtual)
-4. `machines/<hostname>.zsh` (machine-specific)
-5. `~/.zshrc.local` (local, not synced)
-
----
-
-### 2. Startup Profiling
-
-**File:** `bin/dotfiles-profile.sh`
-
-Measure and optimize shell startup time.
-
-```bash
-dotfiles-profile.sh              # Quick timing (5 runs)
-dotfiles-profile.sh --detailed   # zprof function-level analysis
-dotfiles-profile.sh --benchmark  # Hyperfine benchmark
-dotfiles-profile.sh --compare    # Full vs minimal shell
-dotfiles-profile.sh --tips       # Optimization suggestions
-dotfiles-profile.sh --all        # Run everything
-```
-
----
-
-### 3. Long-Running Command Notifications
-
-**File:** `zsh/functions/notifications.zsh`
-
-Get notified when commands taking longer than 60 seconds complete.
-
-```bash
-# Toggle notifications
-notify-toggle
-
-# Test notification
-notify-test
-
-# Show status
-notify-status
-
-# Adjust threshold
-df_notify_threshold 120  # 2 minutes
-```
-
-**Configuration in `dotfiles.conf`:**
-```bash
-DF_NOTIFY_ENABLED="true"
-DF_NOTIFY_THRESHOLD="60"
-DF_NOTIFY_METHODS="desktop bell"
-```
-
----
-
-### 4. Diff & Security Audit
-
-**File:** `bin/dotfiles-diff.sh`
-
-Compare configurations and audit for security issues.
-
-```bash
-dotfiles-diff.sh              # Show uncommitted changes
-dotfiles-diff.sh --installed  # Compare installed vs source
-dotfiles-diff.sh --symlinks   # Verify symlink integrity
-dotfiles-diff.sh --secrets    # Scan for exposed secrets
-dotfiles-diff.sh --permissions # Check file permissions
-dotfiles-diff.sh --audit      # Full security audit
-```
-
----
-
-### 5. Project-Local Environments
-
-**File:** `zsh/functions/project-env.zsh`
-
-Auto-load project settings when entering directories (like direnv).
-
-```bash
-# Create project env file
-project-env create
-
-# Edit current project's env
-project-env edit
-
-# Show status
-project-env status
-
-# Allow/deny files
-project-env allow .dotfiles-local
-project-env deny .dotfiles-local
-```
-
-**Features:**
-- Auto-loads `.dotfiles-local`, `.envrc`, or `.env.local`
-- Auto-activates Python virtualenvs
-- Auto-switches Node versions via `.nvmrc`
-- Security prompts for untrusted directories
-
----
-
-### 6. Enhanced Shell Analytics
-
-**File:** `bin/dotfiles-analytics.sh`
-
-Advanced command history analysis.
-
-```bash
-dotfiles-analytics.sh             # Dashboard
-dotfiles-analytics.sh hourly      # Commands by hour
-dotfiles-analytics.sh weekly      # Usage by day of week
-dotfiles-analytics.sh projects    # Group by directory
-dotfiles-analytics.sh trends      # 30-day trends
-dotfiles-analytics.sh complexity  # Command complexity
-dotfiles-analytics.sh tools       # Tool usage breakdown
-dotfiles-analytics.sh suggestions # Alias suggestions
-```
-
----
-
-### 7. Testing Framework
-
-**Files:** `tests/run-tests.zsh`, `tests/test_*.zsh`
-
-Simple unit testing for shell functions.
-
-```bash
-# Run all tests
-./tests/run-tests.zsh
-
-# Run specific test file
-./tests/run-tests.zsh utils
-
-# Or use alias
-dftest
-```
-
-**Writing tests:**
-```zsh
-describe "my function"
-
-it "should do something"
-assert_eq "$(my_func)" "expected"
-
-it "should handle errors"
-assert_fail "my_func invalid_arg"
-```
-
----
-
-### 8. First-Run Experience & Tour
-
-**File:** `bin/dotfiles-tour.sh`
-
-Interactive introduction for new users.
-
-```bash
-dotfiles-tour.sh           # Interactive tour
-dotfiles-tour.sh --quick   # Quick reference card
-dotfiles-tour.sh --changelog # Recent changes
-```
-
----
-
-### 9. FZF Extras
-
-**File:** `zsh/functions/fzf-extras.zsh`
-
-Additional fuzzy finders.
-
-| Command | Description |
-|---------|-------------|
-| `envf` | Browse environment variables |
-| `pathf` | Explore PATH directories |
-| `procf` | Process manager |
-| `killf` | Fuzzy kill processes |
-| `aliasf` | Browse aliases |
-| `funcf` | Browse functions |
-| `histf` | Enhanced history search |
-| `ff` | Find files |
-| `fdir` | Find directories |
-| `gbf` | Git branch switcher |
-| `glogf` | Git commit browser |
-
----
-
-### 10. Plugin Manager
-
-**File:** `zsh/lib/plugins.zsh`
-
-Lightweight plugin management without heavy frameworks.
-
-```bash
-# Install a plugin
-plugin install zsh-users/zsh-autosuggestions
-
-# List plugins
-plugin list
-
-# Update all plugins
-plugin update
-
-# Remove a plugin
-plugin remove zsh-autosuggestions
-
-# Show recommended plugins
-plugin recommended
-
-# Lazy-load a plugin
-plugin lazy zsh-nvm nvm node npm
-```
-
----
-
-## New Aliases Reference
-
-| Alias | Command | Description |
-|-------|---------|-------------|
-| `dfprofile` | `dotfiles-profile.sh` | Startup profiling |
-| `dfdiff` | `dotfiles-diff.sh` | Show changes |
-| `dfaudit` | `dotfiles-diff.sh --audit` | Security audit |
-| `dftour` | `dotfiles-tour.sh` | Interactive tour |
-| `dfanalytics` | `dotfiles-analytics.sh` | Enhanced analytics |
-| `dftest` | `tests/run-tests.zsh` | Run tests |
-| `quickref` | `dotfiles-tour.sh --quick` | Quick reference |
-| `profile` | `dotfiles-profile.sh` | Startup profiling |
-| `audit` | `dotfiles-diff.sh --audit` | Security audit |
-| `tour` | `dotfiles-tour.sh` | Interactive tour |
-
----
-
-## Configuration Options
-
-Add to `dotfiles.conf`:
-
-```bash
-# === NEW: Notification Settings ===
-DF_NOTIFY_ENABLED="true"
-DF_NOTIFY_THRESHOLD="60"
-DF_NOTIFY_METHODS="desktop bell"
-DF_NOTIFY_SOUND="/usr/share/sounds/freedesktop/stereo/complete.oga"
-DF_NOTIFY_ONLY_FAILURES="false"
-
-# === NEW: Project Environment ===
-DF_PROJECT_ENV_ENABLED="true"
-DF_PROJECT_ENV_FILES=".dotfiles-local .envrc .env.local"
-DF_PROJECT_ENV_TRUSTED_DIRS="$HOME/projects $HOME/work"
-DF_PROJECT_AUTO_VENV="true"
-DF_PROJECT_AUTO_NVM="true"
-
-# === NEW: Plugin Manager ===
-DF_PLUGIN_DIR="$HOME/.dotfiles/zsh/plugins"
-```
-
----
-
-## Verification
-
-After installation, verify everything works:
-
-```bash
-# Health check
-dfd
-
-# Run tests
-dftest
-
-# Profile startup
-dfprofile
-
-# Security audit
-dfaudit
-
-# Take the tour
-dftour
-```
-
----
-
-## File Structure
-
-```
-dotfiles-improvements/
-├── bin/
-│   ├── dotfiles-analytics.sh    # Enhanced history analytics
-│   ├── dotfiles-diff.sh         # Diff and security audit
-│   ├── dotfiles-profile.sh      # Startup profiling
-│   └── dotfiles-tour.sh         # First-run experience
-├── machines/
-│   ├── default.zsh              # Shared machine config
-│   ├── type-laptop.zsh          # Laptop-specific
-│   └── type-server.zsh          # Server-specific
-├── tests/
-│   ├── run-tests.zsh            # Test runner
-│   ├── test_config.zsh          # Config tests
-│   └── test_utils.zsh           # Utils tests
-├── zsh/
-│   ├── aliases-extended.zsh     # Extended aliases
-│   ├── functions/
-│   │   ├── fzf-extras.zsh       # Additional fzf utilities
-│   │   ├── notifications.zsh    # Command notifications
-│   │   └── project-env.zsh      # Project environments
-│   └── lib/
-│       ├── machines.zsh         # Machine detection
-│       └── plugins.zsh          # Plugin manager
-└── README.md                    # This file
-```
+**Repository:** https://github.com/adlee-was-taken/dotfiles  
+**Version:** 1.2.4
