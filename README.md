@@ -8,7 +8,7 @@ Personal configuration for a productive development environment on **Arch Linux*
 [![Version](https://img.shields.io/badge/Version-1.2.4-blue.svg)](https://github.com/adlee-was-taken/dotfiles)
 
 ```
-┌[alee@battlestation]─[~/.dotfiles ⎇ main]─[⇑3]
+┌｢alee@catchthesethighs｣ ｢~/.dotfiles ⎇ main｣ ｢⇑3｣ 
 └%
 ```
 
