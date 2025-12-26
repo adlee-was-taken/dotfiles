@@ -78,10 +78,10 @@ _adlee_build_prompt() {
     # %(#.TRUE.FALSE) - red for root, blue for users
     if [[ -n $UPDATE_PKG_COUNT && $UPDATE_PKG_COUNT -gt 0 ]];then
         PROMPT='%{$FG[241]%}┌｢%{$FG[118]%}%n@%m%{$reset_color$FG[241]%}｣ ｢%{$FG[179]%}%~%{$reset_color$FG[241]%}$(git_prompt_info)%{$FG[241]%}｣ ｢%{$FG[111]%}⇑${UPDATE_PKG_COUNT}%{$reset_color$FG[241]%}｣
-%{$FG[241]%}└%{$FX[bold]%}%(#.%{$FG[196]%}.%{$FG[069]%})%#%{$reset_color%} '
+%{$FG[241]%}└%{$FX[bold]%}%(#.%{$FG[196]%}.%{$FG[069]%})%# %{$reset_color%}'
     else
         PROMPT='%{$FG[241]%}┌｢%{$FG[118]%}%n@%m%{$reset_color$FG[241]%}｣ ｢%{$FG[179]%}%~%{$reset_color$FG[241]%}$(git_prompt_info)%{$FG[241]%}｣
-%{$FG[241]%}└%{$FX[bold]%}%(#.%{$FG[196]%}.%{$FG[069]%})%#%{$reset_color%} '
+%{$FG[241]%}└%{$FX[bold]%}%(#.%{$FG[196]%}.%{$FG[069]%})%# %{$reset_color%}'
     fi
 }
 
