@@ -75,6 +75,7 @@ main() {
     # Full output
     df_print_header "dotfiles-version"
 
+    echo ""
     echo -e "${DF_CYAN}Local:${DF_NC}"
     echo -e "  Version:  ${DF_GREEN}${DOTFILES_VERSION}${DF_NC}"
     echo -e "  Commit:   ${local_commit}"

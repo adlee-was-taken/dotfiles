@@ -13,6 +13,7 @@ source "${DOTFILES_HOME:-$HOME/.dotfiles}/zsh/lib/bootstrap.zsh" 2>/dev/null || 
     echo "Warning: bootstrap.zsh not found, using fallbacks"
     DF_RED=$'\033[0;31m' DF_GREEN=$'\033[0;32m' DF_YELLOW=$'\033[1;33m'
     DF_BLUE=$'\033[0;34m' DF_CYAN=$'\033[0;36m' DF_NC=$'\033[0m'
+    DF_LIGHT_GREY=$'\033[0;37m'
     DOTFILES_HOME="${DOTFILES_HOME:-$HOME/.dotfiles}"
     df_print_header() { echo "=== $1 ==="; }
     df_print_success() { echo -e "${DF_GREEN}✓${DF_NC} $1"; }
@@ -188,37 +189,58 @@ check_dotfiles_dir() {
 }
 
 check_bin_scripts() {
-    print_section "Bin Script Symlinks: ${DF_LIGHT_GREY}.local/bin${DF_NC}"
-
-    local scripts=(
-        "dotfiles-analytics.sh"
-        "dotfiles-compile.sh"
-        "dotfiles-diff.sh"
-        "dotfiles-doctor.sh"
-        "dotfiles-stats.sh"
-        "dotfiles-sync.sh"
-        "dotfiles-tour.sh"
-        "dotfiles-update.sh"
-        "dotfiles-vault.sh"
-        "dotfiles-version.sh"
-        "dotfiles-profile.sh"
-    )
-
-    for script in "${scripts[@]}"; do
-        if [[ -x "$HOME/.local/bin/$script" ]]; then
-            check_pass "$script"
-        elif [[ -f "$HOME/.local/bin/$script" ]]; then
-            check_warn "$script exists but not executable"
-            if [[ "$DO_FIX" == true ]]; then
-                chmod +x "$HOME/.local/bin/$script"
-                check_fixed "Made executable: $script"
+    print_section "Bin Script Symlinks: ${DF_LIGHT_GREY}~/.local/bin${DF_NC}"
+    
+    # Ensure ~/.local/bin exists
+    if [[ ! -d "$HOME/.local/bin" ]]; then
+        check_warn "~/.local/bin does not exist"
+        if [[ "$DO_FIX" == true ]]; then
+            mkdir -p "$HOME/.local/bin"
+            check_fixed "Created ~/.local/bin"
+        else
+            return
+        fi
+    fi
+    
+    # Iterate directly over scripts in bin directory
+    for script_path in "$DOTFILES_HOME/bin"/*.sh; do
+        # Skip if no matches (glob returned literal)
+        [[ -f "$script_path" ]] || continue
+        
+        local script=$(basename "$script_path")
+        local target="$HOME/.local/bin/$script"
+        
+        if [[ -L "$target" ]]; then
+            # It's a symlink
+            if [[ -e "$target" ]]; then
+                # Valid symlink
+                check_pass "$script"
+            else
+                # Broken symlink
+                check_fail "$script is broken symlink"
+                if [[ "$DO_FIX" == true ]]; then
+                    rm "$target"
+                    ln -s "$script_path" "$target"
+                    check_fixed "Recreated symlink: $script"
+                fi
+            fi
+        elif [[ -f "$target" ]]; then
+            # Regular file (not symlink)
+            if [[ -x "$target" ]]; then
+                check_warn "$script is regular file (not symlink)"
+            else
+                check_warn "$script exists but not executable"
+                if [[ "$DO_FIX" == true ]]; then
+                    chmod +x "$target"
+                    check_fixed "Made executable: $script"
+                fi
             fi
         else
+            # Doesn't exist
             check_fail "$script not linked"
             if [[ "$DO_FIX" == true ]]; then
-                ln -s "$DOTFILES_HOME/bin/$script" "$HOME/.local/bin/$script"
-                chmod +x "$HOME/.local/bin/$script"
-                check_fixed "Created executable symlink: $script"
+                ln -s "$script_path" "$target"
+                check_fixed "Created symlink: $script"
             fi
         fi
     done
