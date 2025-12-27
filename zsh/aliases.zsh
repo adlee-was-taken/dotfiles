@@ -308,6 +308,14 @@ alias dfc='dotfiles-cli'
 alias hist="history"
 alias cls="clear"
 alias q="exit"
+alias vm="mv"
+
+# Docker Stuff
+dkr-rbld() {
+    sudo docker-compose down 
+    sudo docker-compose up --build -d
+}
+
 
 # Markdown viewer with glow
 if command -v glow &>/dev/null; then
