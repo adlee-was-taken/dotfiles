@@ -133,19 +133,19 @@ print_header() {
     local hostname="${HOSTNAME:-$(hostname -s 2>/dev/null)}"
     local script_name="install.sh"
     local datetime=$(date '+%a %b %d %H:%M')
-    
+
     # Colors
     local _M_RESET=$'\033[0m'
     local _M_BOLD=$'\033[1m'
     local _M_DIM=$'\033[2m'
     local _M_BLUE=$'\033[38;5;39m'
     local _M_GREY=$'\033[38;5;242m'
-    
+
     # Build horizontal line
     local hline=""
     for ((i=0; i<_M_WIDTH; i++)); do hline+="═"; done
     local inner=$((_M_WIDTH - 2))
-    
+
     # Header content
     local h_left="✦ ${user}@${hostname}"
     local h_center="${script_name}"
@@ -153,7 +153,7 @@ print_header() {
     local h_pad=$(((inner - ${#h_left} - ${#h_center} - ${#h_right}) / 2))
     local h_spaces=""
     for ((i=0; i<h_pad; i++)); do h_spaces+=" "; done
-    
+
     echo ""
     echo -e "${_M_GREY}╒${hline}╕${_M_RESET}"
     echo -e "${_M_GREY}│${_M_RESET} ${_M_BOLD}${_M_BLUE}${h_left}${_M_RESET}${h_spaces}${_M_DIM}${h_center}${h_spaces}${h_right}${_M_RESET} ${_M_GREY}│${_M_RESET}"
@@ -232,7 +232,7 @@ detect_os() {
     fi
 
     source /etc/os-release
-    
+
     if [[ "$ID" != "arch" && "$ID" != "cachyos" ]]; then
         print_error "This dotfiles is configured for Arch/CachyOS only"
         print_error "Detected: $ID $VERSION_ID"
@@ -672,6 +672,15 @@ main() {
 
     detect_os
 
+    # Run wizard if requested
+    if [[ "$RUN_WIZARD" == true ]]; then
+        run_wizard || {
+            print_warning "Wizard cancelled"
+            exit 0
+        }
+        echo ""
+    fi
+
     # Handle --deps-only
     if [[ "$DEPS_ONLY" == true ]]; then
         install_dependencies
@@ -715,6 +724,129 @@ main() {
         print_warning "Installation cancelled"
         exit 0
     fi
+}
+
+# ============================================================================
+# Interactive Configuration Wizard
+# ============================================================================
+
+run_wizard() {
+    clear
+    cat << 'EOF'
+╔═══════════════════════════════════════════════════════════╗
+║                                                           ║
+║     █████╗ ██████╗ ██╗     ███████╗███████╗               ║
+║    ██╔══██╗██╔══██╗██║     ██╔════╝██╔════╝               ║
+║    ███████║██║  ██║██║     █████╗  █████╗                 ║
+║    ██╔══██║██║  ██║██║     ██╔══╝  ██╔══╝                 ║
+║    ██║  ██║██████╔╝███████╗███████╗███████╗               ║
+║    ╚═╝  ╚═╝╚═════╝ ╚══════╝╚══════╝╚══════╝               ║
+║                                                           ║
+║              D O T F I L E S                              ║
+║         Configuration Wizard                              ║
+║                                                           ║
+╚═══════════════════════════════════════════════════════════╝
+EOF
+    echo ""
+    echo "Let's set up your dotfiles configuration."
+    echo ""
+
+    # Personal Information
+    echo -e "${BLUE}Personal Information${NC}"
+    echo "────────────────────"
+    read -p "Full Name [${USER_FULLNAME:-}]: " wizard_name
+    wizard_name="${wizard_name:-$USER_FULLNAME}"
+
+    read -p "Email [${USER_EMAIL:-}]: " wizard_email
+    wizard_email="${wizard_email:-$USER_EMAIL}"
+
+    read -p "GitHub Username [${USER_GITHUB:-}]: " wizard_github
+    wizard_github="${wizard_github:-$USER_GITHUB}"
+
+    echo ""
+
+    # Display Settings
+    echo -e "${BLUE}Display Settings${NC}"
+    echo "────────────────"
+    echo "MOTD (Message of the Day) Style:"
+    echo "  1) compact  - Box with system info (recommended)"
+    echo "  2) mini     - Single line"
+    echo "  3) full     - Extended info"
+    echo "  4) none     - Disable MOTD"
+    echo ""
+    read -p "Choice [1]: " motd_choice
+
+    case "${motd_choice:-1}" in
+        1) wizard_motd="compact" ;;
+        2) wizard_motd="mini" ;;
+        3) wizard_motd="full" ;;
+        4) wizard_motd="none" ;;
+        *) wizard_motd="compact" ;;
+    esac
+
+    echo ""
+
+    # Feature Toggles
+    echo -e "${BLUE}Features${NC}"
+    echo "────────"
+
+    if ask_yes_no "Enable smart command suggestions (typo correction)?"; then
+        wizard_suggestions="true"
+    else
+        wizard_suggestions="false"
+    fi
+
+    if ask_yes_no "Enable command palette (Ctrl+Space fuzzy launcher)?"; then
+        wizard_palette="true"
+    else
+        wizard_palette="false"
+    fi
+
+    echo ""
+
+    # Summary
+    echo -e "${BLUE}Configuration Summary${NC}"
+    echo "─────────────────────"
+    echo "  Name:              $wizard_name"
+    echo "  Email:             $wizard_email"
+    echo "  GitHub:            $wizard_github"
+    echo "  MOTD Style:        $wizard_motd"
+    echo "  Smart Suggestions: $wizard_suggestions"
+    echo "  Command Palette:   $wizard_palette"
+    echo ""
+
+    if ! ask_yes_no "Save this configuration?"; then
+        echo "Configuration not saved."
+        return 1
+    fi
+
+    # Save to dotfiles.conf
+    local config_file="$DOTFILES_DIR/dotfiles.conf"
+
+    if [[ -f "$config_file" ]]; then
+        # Update existing values
+        sed -i "s/^USER_FULLNAME=.*/USER_FULLNAME=\"$wizard_name\"/" "$config_file"
+        sed -i "s/^USER_EMAIL=.*/USER_EMAIL=\"$wizard_email\"/" "$config_file"
+        sed -i "s/^USER_GITHUB=.*/USER_GITHUB=\"$wizard_github\"/" "$config_file"
+        sed -i "s/^MOTD_STYLE=.*/MOTD_STYLE=\"$wizard_motd\"/" "$config_file"
+        sed -i "s/^ENABLE_SMART_SUGGESTIONS=.*/ENABLE_SMART_SUGGESTIONS=\"$wizard_suggestions\"/" "$config_file"
+        sed -i "s/^ENABLE_COMMAND_PALETTE=.*/ENABLE_COMMAND_PALETTE=\"$wizard_palette\"/" "$config_file"
+
+        # Also update git config if not set
+        if [[ -z "$(grep '^GIT_USER_NAME=' "$config_file")" ]]; then
+            sed -i "s/^GIT_USER_NAME=.*/GIT_USER_NAME=\"$wizard_github\"/" "$config_file"
+        fi
+        if [[ -z "$(grep '^GIT_USER_EMAIL=' "$config_file")" ]]; then
+            sed -i "s/^GIT_USER_EMAIL=.*/GIT_USER_EMAIL=\"$wizard_email\"/" "$config_file"
+        fi
+    fi
+
+    echo ""
+    echo -e "${GREEN}✓${NC} Configuration saved!"
+    echo ""
+
+    # Reload the config
+    load_config
 }
 
 main "$@"

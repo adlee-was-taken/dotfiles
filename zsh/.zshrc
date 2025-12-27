@@ -279,6 +279,13 @@ _deferred_load() {
     _has_cmd fzf && _setup_fzf
     
     # -----------------------------------------------------------------------
+    # Load machine-specific configuration
+    # This must be loaded early so machine configs can override other settings
+    # -----------------------------------------------------------------------
+    local machines_lib="$_dotfiles_dir/zsh/lib/machines.zsh"
+    [[ -f "$machines_lib" ]] && source "$machines_lib"
+    
+    # -----------------------------------------------------------------------
     # Load all function files from functions directory
     # Excludes command-palette.zsh (already loaded) and motd.zsh (loaded separately)
     # -----------------------------------------------------------------------
