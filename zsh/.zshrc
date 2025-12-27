@@ -57,8 +57,10 @@ zstyle ':omz:update' frequency 13
 COMPLETION_WAITING_DOTS="true"
 HIST_STAMPS="yyyy-mm-dd"
 
-# Disable oh-my-zsh auto-update check on every load (slow)
+# Disable oh-my-zsh auto-update check on every load (slow) etc.
 DISABLE_AUTO_UPDATE="true"
+DISABLE_MAGIC_FUNCTIONS="true"
+DISABLE_COMPFIX="true"
 
 # ============================================================================
 # Plugins - Optimized Selection
