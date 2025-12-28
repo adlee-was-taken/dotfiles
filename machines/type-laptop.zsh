@@ -29,3 +29,7 @@ fi
 # --- Suspend/hibernate helpers ---
 alias suspend='systemctl suspend'
 alias hibernate='systemctl hibernate'
+
+# --- Use neovim on laptops / vim on servers ---
+alias vim="nvim"
+alias vimc="/usr/bin/vim"

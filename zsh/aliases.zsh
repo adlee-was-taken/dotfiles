@@ -182,6 +182,13 @@ alias v.motd='${EDITOR:-vim} ~/.dotfiles/zsh/functions/motd.zsh'
 alias v.theme='${EDITOR:-vim} ~/.dotfiles/zsh/themes/adlee.zsh-theme'
 alias v.machine='${EDITOR:-vim} ~/.dotfiles/machines/${DF_HOSTNAME:-$(hostname -s)}.zsh'
 
+if [[ ${DEFAULT_EDITOR} = "nvim" ]]; then
+    alias vim='nvim'
+    alias vimc='/usr/bin/vim'
+else
+    alias vim='/usr/bin/vim'
+fi
+
 # ============================================================================
 # Reload
 # ============================================================================
@@ -312,7 +319,7 @@ alias vm="mv"
 
 # Docker Stuff
 dkr-rbld() {
-    sudo docker-compose down 
+    sudo docker-compose down
     sudo docker-compose up --build -d
 }
 
