@@ -276,17 +276,17 @@ fi
 _deferred_load() {
     # Setup tool aliases
     _setup_tool_aliases
-    
+
     # Setup FZF
     _has_cmd fzf && _setup_fzf
-    
+
     # -----------------------------------------------------------------------
     # Load machine-specific configuration
     # This must be loaded early so machine configs can override other settings
     # -----------------------------------------------------------------------
     local machines_lib="$_dotfiles_dir/zsh/lib/machines.zsh"
     [[ -f "$machines_lib" ]] && source "$machines_lib"
-    
+
     # -----------------------------------------------------------------------
     # Load all function files from functions directory
     # Excludes command-palette.zsh (already loaded) and motd.zsh (loaded separately)
@@ -295,13 +295,13 @@ _deferred_load() {
     if [[ -d "$func_dir" ]]; then
         for func_file in "$func_dir"/*.zsh; do
             [[ -f "$func_file" ]] || continue
-            
+
             # Skip files that are loaded elsewhere
             case "${func_file:t}" in
                 command-palette.zsh) continue ;;  # Loaded early for keybindings
                 motd.zsh) continue ;;             # Loaded after prompt
             esac
-            
+
             source "$func_file"
         done
     fi
@@ -342,14 +342,14 @@ else
     # Method 2: Use sched for deferred loading (built-in)
     # Runs after first prompt is displayed
     zmodload zsh/sched 2>/dev/null
-    
+
     _first_prompt_hook() {
         # Remove this hook after first run
         add-zsh-hook -d precmd _first_prompt_hook
-        
+
         # Run deferred loading
         _deferred_load
-        
+
         # Show MOTD after prompt
         if [[ -f "$_dotfiles_dir/zsh/functions/motd.zsh" ]]; then
             source "$_dotfiles_dir/zsh/functions/motd.zsh"
@@ -359,11 +359,11 @@ else
                 full) show_motd_full ;;
             esac
         fi
-        
+
         # Background tasks
         _background_tasks
     }
-    
+
     autoload -Uz add-zsh-hook
     add-zsh-hook precmd _first_prompt_hook
 fi
@@ -384,3 +384,11 @@ fi
 # End - Profiling output (uncomment zprof at top to use)
 # ============================================================================
 # zprof
+#
+#
+
+
+export PYENV_ROOT="$HOME/.pyenv"
+export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init --path)"
+eval "$(pyenv init -)"
